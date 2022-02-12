@@ -13,13 +13,12 @@ Text Domain: 1o-merchant-plugin
 if (!defined('WPINC')) {
   die;
 }
+/*temp for error logging */
+define('OOMP_ERROR_LOG', true);
 
 //Required for plugin update
 require_once(plugin_dir_path(__FILE__) . '/updates/plugin-update-checker.php');
 new FCMPluginUpdateChecker_1_7('https://graphiccaffeine.com/wp-admin/admin-ajax.php', __FILE__);
-
-define('OOMP_VER_NUM', '1.0.0'); // same as plugin version up top.
-define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
 
 // Auto update variables fpr plugin
 add_filter('all_plugins', function ($plugins) {
@@ -46,6 +45,10 @@ $oomp_load_items = array(
   'css' => false, // load core plugin frontend css
 );
 
+/* Define some Plugin items */
+define('OOMP_VER_NUM', '1.0.0'); // same as plugin version up top.
+define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
+define('OOMP_GRAPHQL_URL', 'https://playground.1o.io/graphql'); // GraphQL URL for 1o
 define('OOMP_LOC_CORE', dirname(__FILE__) . '/');
 define('OOMP_LOC_CORE_INC', dirname(__FILE__) . '/assets/inc/');
 define('OOMP_LOC_CORE_IMG', plugins_url('assets/img/', __FILE__));
@@ -55,7 +58,9 @@ define('OOMP_LOC_VENDOR_PATH', dirname(__FILE__) . '/vendor/');
 define('OOMP_LOC_VENDOR_URL', plugins_url('vendor/', __FILE__));
 
 /* add the global to the admin menu for use */
-add_action('admin_menu', function () { global $oomp_load_items;}, 999);
+add_action('admin_menu', function () {
+  global $oomp_load_items;
+}, 999);
 
 // Front End Scripts
 add_action('wp_enqueue_scripts', function () {
