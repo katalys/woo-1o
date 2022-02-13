@@ -12,14 +12,14 @@ class Oo_graphQLRequest
       $error = new WP_Error('Error-401', 'Cannot Process Directive - Order Id is blank.', 'API Error');
       wp_send_json_error($error, 403);
     }
-    $fulfillStatus = isset($args['fulfilled-status']) ? json_encode($args['fulfilled-status']) : 'unknown';
-    $externalData = isset($args['external-data']) ? addslashes(json_encode($args['external-data'])) : '';
-    $shippingRates = isset($args['shipping-rates']) ? json_encode($args['shipping-rates']) : '';
+    $fulfillStatus = isset($args['fulfilled-status']) ? $args['fulfilled-status'] : 'unknown';
+    $externalData = isset($args['external-data']) ? $args['external-data'] : '';
+    $shippingRates = isset($args['shipping-rates']) ? $args['shipping-rates'] : '';
 
     /* Set up Query Array */
     $queryArray = array();
     $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {lineItems { quantity price tax total currency productExternalId variantExternalId}}}';
-    $queryArray['update_ship_rates'] = 'mutation m($id: ID!, $shippingRates: [ShippingRateInput]) {updateOrder(id: $id, shippingRates: $shippingRates) {id __typename shippingRates {handle title amount}}}';
+    $queryArray['update_ship_rates'] = "mutation m(\$id:ID!,\$shippingRates:[ShippingRateInput]){updateOrder(id:\$id,shippingRates:\$shippingRates){id __typename shippingRates{handle title amount}}}";
     $queryArray['complete_order'] = 'mutation M($id: ID!, $fulfillmentStatus: OrderFulfillment, $externalData: JsonString) {updateOrder(id: $id, fulfillmentStatus: $fulfillmentStatus, externalData: $externalData) {id fulfillmentStatus externalData}}';
 
     if ($requestType == '' || !isset($queryArray[$requestType])) {
@@ -31,47 +31,52 @@ class Oo_graphQLRequest
     $data = $queryArray[$requestType];
 
     /* $queryURL is dynamic based on store keys */
-    $queryURL = '';
+    $queryURL = OOMP_GRAPHQL_URL;
+    $variables = '';
+    $contentType = 'application/graphql';
     switch ($requestType) {
-      case 'line_items':
-        $queryURL = OOMP_GRAPHQL_URL;
-        break;
-      case 'update_ship_rates':
+      case 'update_ship_rates_temp':
         $queryURL = OOMP_GRAPHQL_URL . '?variables={"id":"' . $orderId . '","shippingRates":' . $shippingRates . '}';
         break;
-      case 'complete_order':
+      case 'complete_order_temp':
         $queryURL = OOMP_GRAPHQL_URL . '?variables={"id":"' . $orderId . '","fulfillmentStatus":"' . $fulfillStatus . '","externalData":"' . $externalData . '"}';
         break;
-      default:
-        $queryURL = OOMP_GRAPHQL_URL;
+      case 'update_ship_rates':
+        $variables = ((object) array("id" => $orderId, "shippingRates" => $shippingRates));
+        $contentType = 'application/json';
+        break;
+      case 'complete_order':
+        $externalData = json_encode($externalData);
+        $variables = ((object) array("id" => $orderId, "fulfillmentStatus" => $fulfillStatus, "externalData" => $externalData));
+        $contentType = 'application/json';
         break;
     }
 
-    if (OOMP_ERROR_LOG)
-      error_log('$queryURL[' . $requestType . ']:  ' . print_r($queryURL, true)) . "\n";
+    /* Process out the body for request to GraphQL */
+    if ($variables != '') {
+      $data = json_encode((object) array("query" => $data, "variables" => $variables));
+    }
 
     $response = wp_remote_get(
       $queryURL,
       array(
         'method' => 'POST',
         'headers' => array(
-          'Content-Type' => 'application/graphql',
+          'Content-Type' => $contentType,
           'user-agent' => '1o WordPress API: ' . get_bloginfo('url') . '|' . $orderId,
           'Authorization' => 'Bearer ' . $authCode,
         ),
-        'body' => ($data),
+        'body' => $data,
       )
     );
 
     if (OOMP_ERROR_LOG)
-      error_log('body: ' . print_r($response['body'], true)) . "\n";
+      error_log("\n" . 'wp_remote_get[body]:[queryURL:' . $queryURL . "]\n" . "[data: $data]\n" . print_r($response, true)) . "\n";
 
     /* Response needs to be specific for this request */
     if ($requestType == 'update_ship_rates') {
       header("HTTP/1.1 200 OK");
-      if (OOMP_ERROR_LOG)
-        error_log('update_ship_rates: ' . print_r($shippingRates, true)) . "\n";
-      echo $shippingRates;
+      echo json_encode($shippingRates);
       exit;
       return 'ok';
     } else {

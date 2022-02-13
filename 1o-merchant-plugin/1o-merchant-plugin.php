@@ -3,7 +3,7 @@
 Plugin Name: 1o Merchant Plugin
 URI: https://fischercreativemedia.com
 Description: Plugin to add functionality for 1o cart.
-Version: 1.0.0
+Version: 1.0.4
 Author: Don Fischer
 Author URI: https://fischercreativemedia.com
 Text Domain: 1o-merchant-plugin
@@ -43,10 +43,11 @@ $oomp_load_items = array(
   'admin_css' => true, // load admin css
   'js' => false, // load core plugin frontend js
   'css' => false, // load core plugin frontend css
+  'settings' => true, // settings page
 );
 
 /* Define some Plugin items */
-define('OOMP_VER_NUM', '1.0.0'); // same as plugin version up top.
+define('OOMP_VER_NUM', '1.0.4'); // same as plugin version up top.
 define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
 define('OOMP_GRAPHQL_URL', 'https://playground.1o.io/graphql'); // GraphQL URL for 1o
 define('OOMP_LOC_CORE', dirname(__FILE__) . '/');
@@ -79,6 +80,11 @@ add_action('admin_enqueue_scripts', function () {
   if ($oomp_load_items['admin_js'])
     wp_enqueue_script('1o-merchant-plugin-admin-js', OOMP_LOC_CORE_JS . '1o-merchant-plugin-admin.js', array('jquery'), time(), true);
 });
+
+// Include the Settings Page Class
+if (file_exists(OOMP_LOC_CORE_INC . 'settings-page.php') && $oomp_load_items['settings']) {
+  require_once(OOMP_LOC_CORE_INC . 'settings-page.php');
+}
 
 // Functions
 if (file_exists(OOMP_LOC_CORE_INC . '1o-merchant-plugin-core-functions.php') && $oomp_load_items['functions']) {
