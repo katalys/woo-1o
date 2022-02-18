@@ -3,18 +3,25 @@
 class OneO_REST_DataController
 {
 
-  // Here initialize our namespace and resource name.
+  /**
+   * Initiallize namespace variable and resourse name.
+   */
   public function __construct()
   {
     $this->namespace = OOMP_NAMESPACE;
   }
 
+  /**
+   * Returns current namespace used for 1o plugin.
+   */
   public function get_namespace()
   {
     return $this->namespace;
   }
 
-  // Register our routes.
+  /**
+   * Register namespace Routes with WordPress for 1o Plugin to use.
+   */
   public function register_routes()
   {
     register_rest_route($this->namespace, '/(?P<integrationId>[A-Za-z0-9\-]+)', array(
@@ -52,7 +59,11 @@ class OneO_REST_DataController
     }
   }
 
-  /* Get all Headers */
+  /**
+   * Get all Headers from request.
+   * 
+   * @return array $headers   :Array of all headers
+   */
   public static function get_all_headers()
   {
     if (function_exists('getallheaders')) {
@@ -68,6 +79,12 @@ class OneO_REST_DataController
     }
   }
 
+  /**
+   * Get Authorization Header from headers for verifying Paseto token.
+   * 
+   * @param array $headers    :Array of all headers to process.
+   * @return string $token    :'Authorization', '1o-bearer-token' or 'bearer' header value or false.
+   */
   public static function get_token_from_headers($headers)
   {
     $token = '';
@@ -246,7 +263,9 @@ class OneO_REST_DataController
           // insert into Woo & grab Woo order ID 
           $newOrderID = oneO_addWooOrder($orderData, $order_id);
           //$newOrderID = oneO_addWooOrder($products, $email, $order_id);
-
+          if ($newOrderID === false) {
+            return  $processed = 'exists';
+          }
           # Step 4: Create new Paseto for 1o request.
           $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
 
@@ -274,7 +293,10 @@ class OneO_REST_DataController
   }
 
   /**
-   * Process 1o order data for insert into Woo
+   * Process 1o order data for insert into easy array for insert into WC
+   * 
+   * @param array $orderData    :Array of order data from 1o
+   * @return array $returnArr   :Array of processed order data or false if none.
    */
   public static function process_order_data($orderData)
   {
@@ -340,6 +362,7 @@ class OneO_REST_DataController
         'totalTax' => $data->totalTax,
         'chosenShipping' => $data->chosenShippingRateHandle,
         'currency' => $data->currency,
+        'externalData' => ($data->externalData != '' ? json_decode($data->externalData) : (object) array()),
       );
       $transact = array(
         'id' => $transactions->id,
@@ -584,17 +607,36 @@ function get_oneO_options()
   return $tempDB_IntegrationID_Call;
 }
 
-
-
 /* Initialize the settings page object */
 if (is_admin())
   $oneO_settings = new oneO_Settings();
 
+/**
+ * Set order data and add it to WooCommerce
+ * 
+ * @param array $orderData  :Array of order data to process.
+ * @param int $orderid      :Order ID from 1o.
+ * @return int $orderKey    :Order Key ID after insert into WC orders.
+ */
 function oneO_addWooOrder($orderData, $orderid)
 {
   /* TO DO : Check to make sure the order has not already been added to Woo */
 
   $email = $orderData['customer']['email'];
+  $externalData = $orderData['order']['externalData'];
+  $wooOrderkey = isset($externalData->WooID) && $externalData->WooID != '' ? $externalData->WooID : false;
+  if (OOMP_ERROR_LOG)
+    error_log("\nexternalData:\n" . print_r($externalData, true));
+  if ($wooOrderkey !== false) {
+    $checkKey = oneO_order_key_exists("_order_key", $wooOrderkey);
+    if (OOMP_ERROR_LOG)
+      error_log("\ncheckKey: " . ($checkKey ? 'true' : 'false'));
+    // if order key exists, order has already been porcessed.
+    // Maybe we need a way to update order in future?
+    if ($checkKey) {
+      return false;
+    }
+  }
   $products = $orderData['products'];
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
@@ -657,7 +699,18 @@ function oneO_addWooOrder($orderData, $orderid)
     'postcode'   => $bZip,
     'country'    => $bCountry,
   );
-  $order->set_address($billingAddress, 'billing');
+  //$order->set_address($billingAddress, 'billing'); //this is the old way to do it.
+  // Set billing address
+  $order->set_billing_first_name($bFName);
+  $order->set_billing_last_name($bLName);
+  $order->set_billing_company('');
+  $order->set_billing_address_1($bAddress_1);
+  $order->set_billing_address_2($bAddress_2);
+  $order->set_billing_city($bCity);
+  $order->set_billing_state($bState);
+  $order->set_billing_postcode($bZip);
+  $order->set_billing_country($bCountry);
+  $order->set_billing_phone($bPhone);
 
   /* Shipping */
   $sName = $orderData['shipping']['shipName'];
@@ -673,28 +726,6 @@ function oneO_addWooOrder($orderData, $orderid)
   $sZip = $orderData['shipping']['shipZip'];
   $sCountry = $orderData['shipping']['shipCountry'];
   $shippingAddress = array(
-    /*
-    SHIPPING META FILEDS FOR REFERENCE:
-    _shipping_first_name
-    _shipping_last_name
-    _shipping_company
-    _shipping_address_1
-    _shipping_address_2
-    _shipping_city
-    _shipping_state
-    _shipping_postcode
-    _shipping_country
-    _shipping_phone
-    
-    _order_currency
-    _cart_discount
-    _cart_discount_tax
-    _order_shipping
-    _order_shipping_tax
-    _order_tax
-    _order_total
-    
-    */
     'first_name' => $sFName,
     'last_name'  => $sLName,
     'email'      => $sEmail,
@@ -717,10 +748,18 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_shipping_state($sState);
   $order->set_shipping_postcode($sZip);
   $order->set_shipping_country($sCountry);
-  //$order->set_shipping_email($sEmail);
   $order->set_shipping_phone($sPhone);
 
-
+  /*
+    ORDER META FILEDS FOR REFERENCE:   
+    _order_currency
+    _cart_discount
+    _cart_discount_tax
+    _order_shipping
+    _order_shipping_tax
+    _order_tax
+    _order_total
+    */
   /*
   OTHER DATA IN $OrderData NOT USED :
     [order][status] => FULFILLED // 1o status
@@ -729,31 +768,27 @@ function oneO_addWooOrder($orderData, $orderid)
   $orderTotal = $orderData['order']['total'];
   $taxPaid = $orderData['order']['totalTax'];
   $currency = $orderData['order']['currency'];
-
-  $order->set_currency($currency);
-  $transID = $orderData['transactions']['id'];
+  $transID = $orderData['transactions']['id']; //might not be needed
   $transName = $orderData['transactions']['name'];
   $shippingCost = $orderData['order']['totalShipping'] / 100;
   $chosenShipping = $orderData['order']['chosenShipping'];
-
-  $order->set_payment_method($transName);
   $shippingCostArr = explode("-", $chosenShipping);
+
+  $order->set_currency($currency);
+  $order->set_payment_method($transName);
   $newOrderID = $order->get_id();
   $order_item_id = wc_add_order_item($newOrderID, array('order_item_name' => $shippingCostArr[0], 'order_item_type' => 'shipping'));
   wc_add_order_item_meta($order_item_id, 'cost', $shippingCost, true);
-  //$order_item_id2 = wc_add_order_item($newOrderID, array('order_item_name' => 'Tax', 'order_item_type' => 'tax'));
-  //wc_add_order_item_meta($order_item_id2, 'cost', $taxPaid, true);
   $order->shipping_method_title = $shippingCostArr[0];
-
   /*
-  $shipping_taxes = WC_Tax::calc_shipping_tax('10', WC_Tax::get_shipping_tax_rates());
-  $rate = new WC_Shipping_Rate('flat_rate_shipping', 'Flat rate shipping', '10', $shipping_taxes, 'flat_rate');
-  $item = new WC_Order_Item_Shipping();
-  $item->set_props(array('method_title' => $rate->label, 'method_id' => $rate->id, 'total' => wc_format_decimal($rate->cost), 'taxes' => $rate->taxes, 'meta_data' => $rate->get_meta_data() ));
-  $order->add_item($item);
-  // Set payment gateway
-  $payment_gateways = WC()->payment_gateways->payment_gateways();
-  $order->set_payment_method($payment_gateways['bacs']);
+    $shipping_taxes = WC_Tax::calc_shipping_tax('10', WC_Tax::get_shipping_tax_rates());
+    $rate = new WC_Shipping_Rate('flat_rate_shipping', 'Flat rate shipping', '10', $shipping_taxes, 'flat_rate');
+    $item = new WC_Order_Item_Shipping();
+    $item->set_props(array('method_title' => $rate->label, 'method_id' => $rate->id, 'total' => wc_format_decimal($rate->cost), 'taxes' => $rate->taxes, 'meta_data' => $rate->get_meta_data() ));
+    $order->add_item($item);
+    // Set payment gateway
+    $payment_gateways = WC()->payment_gateways->payment_gateways();
+    $order->set_payment_method($payment_gateways['bacs']);
   */
 
   // Set totals
@@ -763,41 +798,22 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_cart_tax($taxPaid / 100);
   //$order->set_shipping_tax(0);
   $order->set_total($orderTotal / 100);
-
   $order->calculate_totals();
   $order->update_status('completed', 'added by 1o - order:' . $orderid);
   $order->update_meta_data('_is-1o-order', '1');
   $order->update_meta_data('_1o-order-number', $orderid);
-
+  $orderKey = $order->get_order_key();
   $order->save();
-
-  return $order->get_id();
+  if (OOMP_ERROR_LOG)
+    error_log("\nget_shipping_rates_oneo:\n" . print_r(get_shipping_rates_oneo(), true));
+  return $orderKey;
 }
 
-add_filter('manage_edit-shop_order_columns', function ($columns) {
-  $columns['oneo_order_type'] = '1o Order';
-  return $columns;
-});
-
-add_action('manage_shop_order_posts_custom_column', function ($column) {
-  global $post;
-  if ('oneo_order_type' === $column) {
-    $order = wc_get_order($post->ID);
-    $isOneO = $order->get_meta('_is-1o-order', true, 'view') != '' ? (bool) $order->get_meta('_is-1o-order', true, 'view') : false;
-    if ($isOneO) {
-      $oneOID = $order->get_meta('_1o-order-number', true, 'view') != '' ? esc_attr($order->get_meta('_1o-order-number', true, 'view')) : '';
-      echo $oneOID;
-    } else {
-      echo '';
-    }
-  }
-});
-
 /**
- * splits single name string into salutation, first, last, suffix
+ * Splits single name string into salutation, first, last, suffix
  * 
- * @param string $name
- * @return array
+ * @param string $name  :String to split into pieces.
+ * @return array        :Array of split pieces.
  */
 function oneO_doSplitName($name)
 {
@@ -829,4 +845,75 @@ function oneO_doSplitName($name)
   }
   $results['last'] = trim($last);
   return $results;
+}
+
+/**
+ * Get name of shipping method from slug
+ * 
+ * @return array
+ */
+function get_shipping_rates_oneo()
+{
+  $rate_table = array();
+  $shipping_methods = WC()->shipping->get_shipping_methods();
+  foreach ($shipping_methods as $shipping_method) {
+    $shipping_method->init();
+    foreach ($shipping_method->rates as $key => $val)
+      $rate_table[$key] = $val->label;
+  }
+  return $rate_table[WC()->session->get('chosen_shipping_methods')[0]];
+}
+
+/**
+ * Add 1o Order Column to order list page.
+ * 
+ * @param array $columns  Array of culumns (from WP hook)
+ * @return array $columns 
+ */
+add_filter('manage_edit-shop_order_columns', function ($columns) {
+  $columns['oneo_order_type'] = '1o Order';
+  return $columns;
+});
+
+/**
+ * Add data to 1o Order Column on order list page.
+ * 
+ * @param string $column  Name of current column processing (from WP hook)
+ * @echo string column data
+ */
+add_action('manage_shop_order_posts_custom_column', function ($column) {
+  global $post;
+  if ('oneo_order_type' === $column) {
+    $order = wc_get_order($post->ID);
+    $isOneO = $order->get_meta('_is-1o-order', true, 'view') != '' ? (bool) $order->get_meta('_is-1o-order', true, 'view') : false;
+    if ($isOneO) {
+      $oneOID = $order->get_meta('_1o-order-number', true, 'view') != '' ? esc_attr($order->get_meta('_1o-order-number', true, 'view')) : '';
+      echo $oneOID;
+    } else {
+      echo '';
+    }
+  }
+});
+
+/**
+ * Check if order key exists in database
+ * 
+ * @param string $key
+ * @param string $orderKey
+ * @return bool
+ */
+function oneO_order_key_exists($key = "_order_key", $orderKey = '')
+{
+  if ($orderKey == '') {
+    return false;
+  }
+  global $wpdb;
+  $orderQuery = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->postmeta WHERE `meta_key` = '%s' AND `meta_value` = '%s' LIMIT 1;", array($key, $orderKey)));
+  if (OOMP_ERROR_LOG)
+    error_log("\norderQuery:\n" . print_r($orderQuery, true));
+
+  if (isset($orderQuery[0])) {
+    return true;
+  }
+  return false;
 }
