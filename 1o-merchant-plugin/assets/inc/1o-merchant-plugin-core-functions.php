@@ -214,7 +214,7 @@ class OneO_REST_DataController
         if (!empty($data)) {
           foreach ($data as $dkey => $dval) {
             $args['shipping-rates'][] = (object) array(
-              "handle" => $dval['slug'] . '-' . $dval['price_excl'],
+              "handle" => $dval['slug'] . '-' . (isset($dval['price_excl']) ? $dval['price_excl'] : '0'),
               "title" => $dval['name'],
               "amount" => $dval['price_excl'] * 100,
             );
@@ -231,38 +231,36 @@ class OneO_REST_DataController
         $processed = 'ok';
         break;
       case 'complete_order':
-        # Step 1: Insert order into Woo
-        // grab order data from GraphQL
-        /*
-        use this to query data:
-        {order(id: "008aef35-d31b-4340-a0ee-b25a3718a672") {paymentStatus fulfillmentStatus customerName customerEmail customerPhone totalPrice totalTax totalShipping total lineItems {quantity price tax total currency productExternalId variantExternalId }}
-        */
-        $products = array(); // parse this from response
-
-        // create order array
-        // this is for testing right now - need to create from 1o response
-        $products = array(
-          array(
-            "id" => '14',
-            "qty" => 1
-          )
-        );
-        // TEST
-        $email = 'fischer.creative.media@gmail.com';
-        // insert into Woo & grab Woo order ID 
-        $newOrderID = oneO_addWooOrder($products, $email, $order_id);
-        // Pass Woo order ID in external data 
-        # Step 2: Create new Paseto for request.
+        # Step 1: create PASETO
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
-        # Step 3: Do request to graphql to complete order.
-        $args['external-data'] = array('WooID' => $newOrderID);
-        if ($newOrderID != '' && $newOrderID !== false) {
-          $args['fulfilled-status'] = 'FULFILLED';
-        } else {
-          $args['fulfilled-status'] = 'unknown-error';
+
+        # Step 2: Get new order data from 1o - in case anything changed
+        // grab order data from GraphQL
+        $getOrderData = new Oo_graphQLRequest('order_data', $order_id, $newPaseto, $args);
+        if (OOMP_ERROR_LOG)
+          error_log("\n" . '[process_directive: $getOrderData]: ' . "\n" . print_r($getOrderData, true)) . "\n";
+
+        # Step 3: prepare order data for Woo import
+        if ($getOrderData) {
+          $orderData = OneO_REST_DataController::process_order_data($getOrderData->get_request());
+          // insert into Woo & grab Woo order ID 
+          $newOrderID = oneO_addWooOrder($orderData, $order_id);
+          //$newOrderID = oneO_addWooOrder($products, $email, $order_id);
+
+          # Step 4: Create new Paseto for 1o request.
+          $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
+
+          # Step 5: Do request to graphql to complete order.
+          // Pass Woo order ID in external data 
+          $args['external-data'] = array('WooID' => $newOrderID);
+          if ($newOrderID != '' && $newOrderID !== false) {
+            $args['fulfilled-status'] = 'FULFILLED';
+          } else {
+            $args['fulfilled-status'] = 'unknown-error';
+          }
+          $oORequest = new Oo_graphQLRequest('complete_order', $order_id, $newPaseto, $args);
         }
-        $oORequest = new Oo_graphQLRequest('complete_order', $order_id, $newPaseto, $args);
-        # Step 4: If ok response, then return finishing repsponse to initial request.
+        # Step 6: If ok response, then return finishing repsponse to initial request.
         if ($oORequest !== false) {
           $processed = 'ok';
         } else {
@@ -273,6 +271,84 @@ class OneO_REST_DataController
     $retArr['status'] = $processed;
     $retArr['order_id'] = $order_id;
     return (object)$retArr;
+  }
+
+  /**
+   * Process 1o order data for insert into Woo
+   */
+  public static function process_order_data($orderData)
+  {
+    $products = array(); // parse this from response
+    // create order array : below is for testing right now - need to create from 1o response
+    if (is_object($orderData) && !empty($orderData)) {
+      $data = $orderData->data->order;
+      $lineItems = isset($data->lineItems) ? $data->lineItems : array();
+      $transactions = isset($data->transactions[0]) ? $data->transactions[0] : (object) array('id' => '', 'name' => '');
+      if (!empty($lineItems)) {
+        foreach ($lineItems as $k => $v) {
+          $products[] = array(
+            "id" => $v->productExternalId,
+            "qty" => $v->quantity,
+            'price' => $v->price,
+            'currency' => $v->currency,
+            'tax' => $v->tax,
+            'total' => $v->total,
+            'variantExternalId' => $v->variantExternalId,
+          );
+          // the fileds:
+          //  $v->currency
+          //  $v->price
+          //  $v->productExternalId
+          //  $v->quantity
+          //  $v->tax
+          //  $v->total
+          //  $v->variantExternalId
+        }
+      }
+      $billing = array(
+        'billName' => $data->billingName,
+        'billEmail' => $data->billingEmail,
+        'billPhone' => $data->billingPhone,
+        'billAddress1' => isset($data->billingAddressLine_1) ? $data->billingAddressLine_1 : '',
+        'billAddress2' => isset($data->billingAddressLine_2) ? $data->billingAddressLine_2 : '',
+        'billCity' => $data->billingAddressCity,
+        'billState' => $data->billingAddressState,
+        'billZip' => $data->billingAddressZip,
+        'billCountry' => $data->billingAddressCountry,
+      );
+      $shipping = array(
+        'shipName' => $data->shippingName,
+        'shipEmail' => $data->shippingEmail,
+        'shipPhone' => $data->shippingPhone,
+        'shipAddress1' => isset($data->shippingAddressLine_1) ? $data->shippingAddressLine_1 : '',
+        'shipAddress2' => isset($data->shippingAddressLine_2) ? $data->shippingAddressLine_2 : '',
+        'shipCity' => $data->shippingAddressCity,
+        'shipState' => $data->shippingAddressState,
+        'shipZip' => $data->shippingAddressZip,
+        'shipCountry' => $data->shippingAddressCountry,
+      );
+      $customer = array(
+        'email' => isset($data->customerEmail) && $data->customerEmail != '' ? $data->customerEmail : '',
+        'name' => $data->customerName,
+        'phone' => $data->customerPhone,
+      );
+      $order = array(
+        'status' => $data->fulfillmentStatus,
+        'total' => $data->total,
+        'totalPrice' => $data->totalPrice,
+        'totalShipping' => $data->totalShipping,
+        'totalTax' => $data->totalTax,
+        'chosenShipping' => $data->chosenShippingRateHandle,
+        'currency' => $data->currency,
+      );
+      $transact = array(
+        'id' => $transactions->id,
+        'name' => $transactions->name
+      );
+      $retArr = array('products' => $products, 'order' => $order, 'customer' => $customer, 'billing' => $billing, 'shipping' => $shipping, 'transactions' => $transact);
+      return $retArr;
+    }
+    return false;
   }
 
   /**
@@ -514,87 +590,187 @@ function get_oneO_options()
 if (is_admin())
   $oneO_settings = new oneO_Settings();
 
-function oneO_addWooOrder($products, $email, $orderid)
+function oneO_addWooOrder($orderData, $orderid)
 {
+  /* TO DO : Check to make sure the order has not already been added to Woo */
+
+  $email = $orderData['customer']['email'];
+  $products = $orderData['products'];
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
-  #echo '<pre>user: ' . print_r($user, true) . '</pre>';
-
   $args = array(
     'customer_id'   => $user->ID,
     'customer_note' => 'Created via 1o Merchant Plugin',
     'created_via'   => '1o API',
   );
   $order =   wc_create_order($args);
-  echo '<pre>products: ' . print_r($products, true) . '</pre>';
-
-  foreach ($products as $product) {
-    $args = array();
-    $prod = wc_get_product($product['id']);
-    $order->add_product($prod, $product['qty'], $args);
+  if (!empty($products)) {
+    foreach ($products as $product) {
+      $args = array();
+      $prod = wc_get_product($product['id']);
+      //echo print_r($prod);
+      //exit;
+      /* possible args to override:
+          'name' => 'product name',
+          'tax_class' => 'tax class',
+          'product_id' => (int),
+          'variation_id' => (int),
+          'variation' => 'variation name',
+          'subtotal' => $custom_price_for_this_order, // e.g. 32.95
+          'total' => $custom_price_for_this_order, // e.g. 32.95
+          'quantity' => qty (int)
+      */
+      if ($prod->get_price() != ($product['price'] / 100)) {
+        $args['subtotal'] = ($product['price'] / 100);
+        $args['total'] = ($product['total'] / 100);
+      }
+      $order->add_product($prod, $product['qty'], $args);
+    }
   }
-  //$product = wc_get_product(14); // Assuming the ID is 12.
-  #echo '<pre>product: ' . print_r($prod, true) . '</pre>';
-  #echo 'SKU:' . $prod->get_sku();
-  #exit;
+  /* Customer */
+  $name = $orderData['customer']['name'];
+  $phone = $orderData['customer']['phone'];
+  // TODO: Maybe update user meta with name and phone and addresses if new user is created?
+
+  /* Billing */
+  $bName =  $orderData['billing']['billName'];
+  $nameSplit = oneO_doSplitName($bName);
+  $bFName =  $nameSplit['first'];
+  $bLName = $nameSplit['last'];
+  $bEmail = $orderData['billing']['billEmail'];
+  $bPhone =  $orderData['billing']['billPhone'];
+  $bAddress_1 = $orderData['billing']['billAddress1'];
+  $bAddress_2 = $orderData['billing']['billAddress2'];
+  $bCity =  $orderData['billing']['billCity'];
+  $bZip =  $orderData['billing']['billZip'];
+  $bCountry =  $orderData['billing']['billCountry'];
+  $bState =  $orderData['billing']['billState'];
+  $billingAddress    =   array(
+    'first_name' => $bFName,
+    'last_name'  => $bLName,
+    'phone'      => $bPhone,
+    'email'      => $bEmail,
+    'address_1'  => $bAddress_1,
+    'address_2'  => $bAddress_2,
+    'city'       => $bCity,
+    'state'      => $bState,
+    'postcode'   => $bZip,
+    'country'    => $bCountry,
+  );
+  $order->set_address($billingAddress, 'billing');
+
+  /* Shipping */
+  $sName = $orderData['shipping']['shipName'];
+  $nameSplit = oneO_doSplitName($sName);
+  $sFName =  $nameSplit['first'];
+  $sLName = $nameSplit['last'];
+  $sEmail = $orderData['shipping']['shipEmail'];
+  $sPhone = $orderData['shipping']['shipPhone'];
+  $sAddress_1 = $orderData['shipping']['shipAddress1'];
+  $sAddress_2 = $orderData['shipping']['shipAddress2'];
+  $sCity = $orderData['shipping']['shipCity'];
+  $sState = $orderData['shipping']['shipState'];
+  $sZip = $orderData['shipping']['shipZip'];
+  $sCountry = $orderData['shipping']['shipCountry'];
+  $shippingAddress = array(
+    /*
+    SHIPPING META FILEDS FOR REFERENCE:
+    _shipping_first_name
+    _shipping_last_name
+    _shipping_company
+    _shipping_address_1
+    _shipping_address_2
+    _shipping_city
+    _shipping_state
+    _shipping_postcode
+    _shipping_country
+    _shipping_phone
+    
+    _order_currency
+    _cart_discount
+    _cart_discount_tax
+    _order_shipping
+    _order_shipping_tax
+    _order_tax
+    _order_total
+    
+    */
+    'first_name' => $sFName,
+    'last_name'  => $sLName,
+    'email'      => $sEmail,
+    'address_1'  => $sAddress_1,
+    'address_2'  => $sAddress_2,
+    'city'       => $sCity,
+    'state'      => $sState,
+    'postcode'   => $sZip,
+    'phone'      => $sPhone,
+    'country'    => $sCountry,
+  );
+  //$order->set_address($shippingAddress, 'shipping');
+  // Set shipping address
+  $order->set_shipping_first_name($sFName);
+  $order->set_shipping_last_name($sLName);
+  $order->set_shipping_company('');
+  $order->set_shipping_address_1($sAddress_1);
+  $order->set_shipping_address_2($sAddress_2);
+  $order->set_shipping_city($sCity);
+  $order->set_shipping_state($sState);
+  $order->set_shipping_postcode($sZip);
+  $order->set_shipping_country($sCountry);
+  //$order->set_shipping_email($sEmail);
+  $order->set_shipping_phone($sPhone);
+
 
   /*
-    $order->add_product( $product, $quantity, [
-        'subtotal'     => $custom_price_for_this_order, // e.g. 32.95
-        'total'        => $custom_price_for_this_order, // e.g. 32.95
-    ] );
+  OTHER DATA IN $OrderData NOT USED :
+    [order][status] => FULFILLED // 1o status
+    [order][totalPrice] => 2200
     */
+  $orderTotal = $orderData['order']['total'];
+  $taxPaid = $orderData['order']['totalTax'];
+  $currency = $orderData['order']['currency'];
+
+  $order->set_currency($currency);
+  $transID = $orderData['transactions']['id'];
+  $transName = $orderData['transactions']['name'];
+  $shippingCost = $orderData['order']['totalShipping'] / 100;
+  $chosenShipping = $orderData['order']['chosenShipping'];
+
+  $order->set_payment_method($transName);
+  $shippingCostArr = explode("-", $chosenShipping);
+  $newOrderID = $order->get_id();
+  $order_item_id = wc_add_order_item($newOrderID, array('order_item_name' => $shippingCostArr[0], 'order_item_type' => 'shipping'));
+  wc_add_order_item_meta($order_item_id, 'cost', $shippingCost, true);
+  //$order_item_id2 = wc_add_order_item($newOrderID, array('order_item_name' => 'Tax', 'order_item_type' => 'tax'));
+  //wc_add_order_item_meta($order_item_id2, 'cost', $taxPaid, true);
+  $order->shipping_method_title = $shippingCostArr[0];
+
+  /*
+  $shipping_taxes = WC_Tax::calc_shipping_tax('10', WC_Tax::get_shipping_tax_rates());
+  $rate = new WC_Shipping_Rate('flat_rate_shipping', 'Flat rate shipping', '10', $shipping_taxes, 'flat_rate');
+  $item = new WC_Order_Item_Shipping();
+  $item->set_props(array('method_title' => $rate->label, 'method_id' => $rate->id, 'total' => wc_format_decimal($rate->cost), 'taxes' => $rate->taxes, 'meta_data' => $rate->get_meta_data() ));
+  $order->add_item($item);
+  // Set payment gateway
+  $payment_gateways = WC()->payment_gateways->payment_gateways();
+  $order->set_payment_method($payment_gateways['bacs']);
+  */
+
+  // Set totals
+  $order->set_shipping_total($shippingCost / 100);
+  $order->set_discount_total(0);
+  $order->set_discount_tax(0);
+  $order->set_cart_tax($taxPaid / 100);
+  //$order->set_shipping_tax(0);
+  $order->set_total($orderTotal / 100);
+
   $order->calculate_totals();
-  if ($user != false) {
-  } else {
-  }
-  /*
-    $fname          =    get_user_meta( $current_user->ID, 'first_name', true );
-    $lname          =    get_user_meta( $current_user->ID, 'last_name', true );
-    $email          =    $current_user->user_email;
-    $address_1      =    get_user_meta( $current_user->ID, 'billing_address_1', true );
-    $address_2      =    get_user_meta( $current_user->ID, 'billing_address_2', true );
-    $city           =    get_user_meta( $current_user->ID, 'billing_city', true );
-    $postcode       =    get_user_meta( $current_user->ID, 'billing_postcode', true );
-    $country        =    get_user_meta( $current_user->ID, 'billing_country', true );
-    $state          =    get_user_meta( $current_user->ID, 'billing_state', true );
-
-    $billing_address    =   array(
-        'first_name' => $fname,
-        'last_name'  => $lname,
-        'email'      => $email,
-        'address_1'  => $address_1,
-        'address_2'  => $address_2,
-        'city'       => $city,
-        'state'      => $state,
-        'postcode'   => $postcode,
-        'country'    => $country,
-    );
-    $address = array(
-        'first_name' => $fname,
-        'last_name'  => $lname,
-        'email'      => $email,
-        'address_1'  => $address_1,
-        'address_2'  => $address_2,
-        'city'       => $city,
-        'state'      => $state,
-        'postcode'   => $postcode,
-        'country'    => $country,
-    );
-
-    $shipping_cost = 5;
-    $shipping_method = 'Fedex';
-    $order->add_shipping($shipping_cost);
-    $order->set_address($billing_address,'billing');
-    $order->set_address($address,'shipping');
-    $order->set_payment_method('check');//
-    $order->shipping_method_title = $shipping_method;
-    $order->calculate_totals();
-    */
   $order->update_status('completed', 'added by 1o - order:' . $orderid);
   $order->update_meta_data('_is-1o-order', '1');
   $order->update_meta_data('_1o-order-number', $orderid);
+
   $order->save();
+
   return $order->get_id();
 }
 
@@ -616,3 +792,41 @@ add_action('manage_shop_order_posts_custom_column', function ($column) {
     }
   }
 });
+
+/**
+ * splits single name string into salutation, first, last, suffix
+ * 
+ * @param string $name
+ * @return array
+ */
+function oneO_doSplitName($name)
+{
+  $results = array();
+  $r = explode(' ', $name);
+  $size = count($r);
+  //check first for period, assume salutation if so
+  if (mb_strpos($r[0], '.') === false) {
+    $results['salutation'] = '';
+    $results['first'] = $r[0];
+  } else {
+    $results['salutation'] = $r[0];
+    $results['first'] = $r[1];
+  }
+
+  //check last for period, assume suffix if so
+  if (mb_strpos($r[$size - 1], '.') === false) {
+    $results['suffix'] = '';
+  } else {
+    $results['suffix'] = $r[$size - 1];
+  }
+
+  //combine remains into last
+  $start = ($results['salutation']) ? 2 : 1;
+  $end = ($results['suffix']) ? $size - 2 : $size - 1;
+  $last = '';
+  for ($i = $start; $i <= $end; $i++) {
+    $last .= ' ' . $r[$i];
+  }
+  $results['last'] = trim($last);
+  return $results;
+}

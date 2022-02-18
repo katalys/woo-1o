@@ -2,6 +2,7 @@
 /* Plugin Class for Graph QL requests */
 class Oo_graphQLRequest
 {
+  var $theRequest;
   /**
    * $args hold external data & shipping rates and anything else needed later on.
    */
@@ -19,6 +20,8 @@ class Oo_graphQLRequest
     /* Set up Query Array */
     $queryArray = array();
     $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {lineItems { quantity price tax total currency productExternalId variantExternalId}}}';
+    $queryArray['order_data'] = 'query Q {order( id: "' . $orderId . '" ) {billingName billingPhone billingEmail billingAddressCity billingAddressState billingAddressLine_1 billingAddressLine_2 billingAddressCountry billingAddressZip chosenShippingRateHandle currency customerName customerEmail customerPhone fulfillmentStatus lineItems{quantity price tax total currency productExternalId variantExternalId} merchantName paymentStatus shippingName shippingPhone shippingEmail shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressState shippingAddressCountry shippingAddressZip total  totalPrice totalShipping totalTax transactions{id name}}}';
+    #$queryArray['order_data'] = 'query Q {order(id: "' . $orderId . '" ) {billingAddressCity billingAddressCountry billingAddressState billingAddressZip billingEmail billingName billingPhone chosenShippingRateHandle customerEmail customerName customerPhone fulfillmentStatus lineItems{currency price productExternalId quantity tax total variantExternalId} paymentStatus shippingAddressCity shippingAddressCountry shippingAddressState shippingAddressZip shippingEmail shippingName shippingPhone total totalPrice totalShipping totalTax merchantName}}';
     $queryArray['update_ship_rates'] = "mutation m(\$id:ID!,\$shippingRates:[ShippingRateInput]){updateOrder(id:\$id,shippingRates:\$shippingRates){id __typename shippingRates{handle title amount}}}";
     $queryArray['complete_order'] = 'mutation M($id: ID!, $fulfillmentStatus: OrderFulfillment, $externalData: JsonString) {updateOrder(id: $id, fulfillmentStatus: $fulfillmentStatus, externalData: $externalData) {id fulfillmentStatus externalData}}';
 
@@ -70,23 +73,30 @@ class Oo_graphQLRequest
       )
     );
 
+    /*
     if (OOMP_ERROR_LOG)
       error_log("\n" . 'wp_remote_get[body]:[queryURL:' . $queryURL . "]\n" . "[data: $data]\n" . print_r($response, true)) . "\n";
+    */
 
-    /* Response needs to be specific for this request */
     if ($requestType == 'update_ship_rates') {
+      /* Response needs to be specific for this request */
       header("HTTP/1.1 200 OK");
       echo json_encode($shippingRates);
       exit;
-      return 'ok';
     } else {
-      if (OOMP_ERROR_LOG)
-        error_log('$response:  ' . print_r($response, true)) . "\n";
+      /* all other requests */
       if (!is_wp_error($response) && ($response['response']['code'] === 200 || $response['response']['code'] === 201)) {
-        return json_encode($response['body']);
+        $body = wp_remote_retrieve_body($response);
+        $this->theRequest = json_decode($body);
+        return true;
       } else {
-        return json_encode($response);
+        return false;
+        //return json_encode($response);
       }
     }
+  }
+  public function get_request()
+  {
+    return $this->theRequest;
   }
 }
