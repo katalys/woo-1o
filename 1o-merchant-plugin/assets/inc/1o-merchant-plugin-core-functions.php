@@ -205,11 +205,39 @@ class OneO_REST_DataController
         # Step 1: Create new Paseto for request.
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
 
+
         # Step 2: Do request to graphql to get line items.
         $getLineItems = new Oo_graphQLRequest('line_items', $order_id, $newPaseto, $args);
         if (OOMP_ERROR_LOG)
           error_log("\n" . '[process_directive: $getLineItems]: ' . "\n" . print_r($getLineItems, true)) . "\n";
         // Do Something here to process line items??
+        $linesRaw = $getLineItems->get_request();
+        $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : array();
+
+        /** 
+         * Real Shipping Totals
+         * Set up new cart to get real shipping total 
+         * */
+        if (!isset(WC()->cart)) {
+          WC()->initialize_cart();
+          if (!function_exists('wc_get_cart_item_data_hash')) {
+            include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
+          }
+        }
+        //WC()->cart->empty();
+        //set_cart_contents
+        if (!empty($lines)) {
+          foreach ($lines as $lk => $lv) {
+            $product_id = $lv->productExternalId;
+            $quantity = $lv->quantity;
+            WC()->cart->add_to_cart($product_id, $quantity);
+          }
+          WC()->cart->maybe_set_cart_cookies();
+          WC()->cart->calculate_totals();
+          $count = WC()->cart->get_cart_contents_count();
+          $temp = WC()->cart->calculate_shipping();
+        }
+        /* END Real shipping total */
 
         # Step 3: Get shipping rates from Woo.
         $zones = WC_Shipping_Zones::get_zones();
@@ -231,7 +259,7 @@ class OneO_REST_DataController
         if (!empty($data)) {
           foreach ($data as $dkey => $dval) {
             $args['shipping-rates'][] = (object) array(
-              "handle" => $dval['slug'] . '-' . (isset($dval['price_excl']) ? $dval['price_excl'] : '0'),
+              "handle" => $dval['slug'] . '-' . (isset($dval['price_excl']) ? $dval['price_excl'] : '0') . ':' . str_replace(" ", ".", $dval['name']),
               "title" => $dval['name'],
               "amount" => $dval['price_excl'] * 100,
             );
@@ -300,8 +328,7 @@ class OneO_REST_DataController
    */
   public static function process_order_data($orderData)
   {
-    $products = array(); // parse this from response
-    // create order array : below is for testing right now - need to create from 1o response
+    $products = array();
     if (is_object($orderData) && !empty($orderData)) {
       $data = $orderData->data->order;
       $lineItems = isset($data->lineItems) ? $data->lineItems : array();
@@ -317,14 +344,6 @@ class OneO_REST_DataController
             'total' => $v->total,
             'variantExternalId' => $v->variantExternalId,
           );
-          // the fileds:
-          //  $v->currency
-          //  $v->price
-          //  $v->productExternalId
-          //  $v->quantity
-          //  $v->tax
-          //  $v->total
-          //  $v->variantExternalId
         }
       }
       $billing = array(
@@ -621,7 +640,6 @@ if (is_admin())
 function oneO_addWooOrder($orderData, $orderid)
 {
   /* TO DO : Check to make sure the order has not already been added to Woo */
-
   $email = $orderData['customer']['email'];
   $externalData = $orderData['order']['externalData'];
   $wooOrderkey = isset($externalData->WooID) && $externalData->WooID != '' ? $externalData->WooID : false;
@@ -629,14 +647,20 @@ function oneO_addWooOrder($orderData, $orderid)
     error_log("\nexternalData:\n" . print_r($externalData, true));
   if ($wooOrderkey !== false) {
     $checkKey = oneO_order_key_exists("_order_key", $wooOrderkey);
-    if (OOMP_ERROR_LOG)
-      error_log("\ncheckKey: " . ($checkKey ? 'true' : 'false'));
     // if order key exists, order has already been porcessed.
-    // Maybe we need a way to update order in future?
     if ($checkKey) {
+      /**
+       * ?? FUTURE ??: Maybe we need to add a way to update an order? 
+       * If so this is where it should go. 
+       * */
       return false;
     }
   }
+  /* Customer */
+  $name = $orderData['customer']['name'];
+  $phone = $orderData['customer']['phone'];
+  // ?? FUTURE ??: Maybe update user meta with name and phone and addresses if new user is created?
+
   $products = $orderData['products'];
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
@@ -650,8 +674,6 @@ function oneO_addWooOrder($orderData, $orderid)
     foreach ($products as $product) {
       $args = array();
       $prod = wc_get_product($product['id']);
-      //echo print_r($prod);
-      //exit;
       /* possible args to override:
           'name' => 'product name',
           'tax_class' => 'tax class',
@@ -669,12 +691,8 @@ function oneO_addWooOrder($orderData, $orderid)
       $order->add_product($prod, $product['qty'], $args);
     }
   }
-  /* Customer */
-  $name = $orderData['customer']['name'];
-  $phone = $orderData['customer']['phone'];
-  // TODO: Maybe update user meta with name and phone and addresses if new user is created?
 
-  /* Billing */
+  /* Billing Data */
   $bName =  $orderData['billing']['billName'];
   $nameSplit = oneO_doSplitName($bName);
   $bFName =  $nameSplit['first'];
@@ -687,32 +705,8 @@ function oneO_addWooOrder($orderData, $orderid)
   $bZip =  $orderData['billing']['billZip'];
   $bCountry =  $orderData['billing']['billCountry'];
   $bState =  $orderData['billing']['billState'];
-  $billingAddress    =   array(
-    'first_name' => $bFName,
-    'last_name'  => $bLName,
-    'phone'      => $bPhone,
-    'email'      => $bEmail,
-    'address_1'  => $bAddress_1,
-    'address_2'  => $bAddress_2,
-    'city'       => $bCity,
-    'state'      => $bState,
-    'postcode'   => $bZip,
-    'country'    => $bCountry,
-  );
-  //$order->set_address($billingAddress, 'billing'); //this is the old way to do it.
-  // Set billing address
-  $order->set_billing_first_name($bFName);
-  $order->set_billing_last_name($bLName);
-  $order->set_billing_company('');
-  $order->set_billing_address_1($bAddress_1);
-  $order->set_billing_address_2($bAddress_2);
-  $order->set_billing_city($bCity);
-  $order->set_billing_state($bState);
-  $order->set_billing_postcode($bZip);
-  $order->set_billing_country($bCountry);
-  $order->set_billing_phone($bPhone);
 
-  /* Shipping */
+  /* Shipping Data */
   $sName = $orderData['shipping']['shipName'];
   $nameSplit = oneO_doSplitName($sName);
   $sFName =  $nameSplit['first'];
@@ -725,23 +719,23 @@ function oneO_addWooOrder($orderData, $orderid)
   $sState = $orderData['shipping']['shipState'];
   $sZip = $orderData['shipping']['shipZip'];
   $sCountry = $orderData['shipping']['shipCountry'];
-  $shippingAddress = array(
-    'first_name' => $sFName,
-    'last_name'  => $sLName,
-    'email'      => $sEmail,
-    'address_1'  => $sAddress_1,
-    'address_2'  => $sAddress_2,
-    'city'       => $sCity,
-    'state'      => $sState,
-    'postcode'   => $sZip,
-    'phone'      => $sPhone,
-    'country'    => $sCountry,
-  );
-  //$order->set_address($shippingAddress, 'shipping');
-  // Set shipping address
+
+  // Set billing address in order
+  $order->set_billing_first_name($bFName);
+  $order->set_billing_last_name($bLName);
+  $order->set_billing_company(''); // not really used so set to empty string.
+  $order->set_billing_address_1($bAddress_1);
+  $order->set_billing_address_2($bAddress_2);
+  $order->set_billing_city($bCity);
+  $order->set_billing_state($bState);
+  $order->set_billing_postcode($bZip);
+  $order->set_billing_country($bCountry);
+  $order->set_billing_phone($bPhone);
+
+  // Set shipping address in order
   $order->set_shipping_first_name($sFName);
   $order->set_shipping_last_name($sLName);
-  $order->set_shipping_company('');
+  $order->set_shipping_company(''); // not really used so set to empty string.
   $order->set_shipping_address_1($sAddress_1);
   $order->set_shipping_address_2($sAddress_2);
   $order->set_shipping_city($sCity);
@@ -751,24 +745,14 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_shipping_phone($sPhone);
 
   /*
-    ORDER META FILEDS FOR REFERENCE:   
-    _order_currency
-    _cart_discount
-    _cart_discount_tax
-    _order_shipping
-    _order_shipping_tax
-    _order_tax
-    _order_total
-    */
-  /*
   OTHER DATA IN $OrderData NOT USED :
     [order][status] => FULFILLED // 1o status
-    [order][totalPrice] => 2200
-    */
+    [order][totalPrice] => 2200 // calculated on order after other items are added.
+*/
   $orderTotal = $orderData['order']['total'];
   $taxPaid = $orderData['order']['totalTax'];
   $currency = $orderData['order']['currency'];
-  $transID = $orderData['transactions']['id']; //might not be needed
+  $transID = $orderData['transactions']['id']; // ?? might not be needed ??
   $transName = $orderData['transactions']['name'];
   $shippingCost = $orderData['order']['totalShipping'] / 100;
   $chosenShipping = $orderData['order']['chosenShipping'];
@@ -780,6 +764,7 @@ function oneO_addWooOrder($orderData, $orderid)
   $order_item_id = wc_add_order_item($newOrderID, array('order_item_name' => $shippingCostArr[0], 'order_item_type' => 'shipping'));
   wc_add_order_item_meta($order_item_id, 'cost', $shippingCost, true);
   $order->shipping_method_title = $shippingCostArr[0];
+
   /*
     $shipping_taxes = WC_Tax::calc_shipping_tax('10', WC_Tax::get_shipping_tax_rates());
     $rate = new WC_Shipping_Rate('flat_rate_shipping', 'Flat rate shipping', '10', $shipping_taxes, 'flat_rate');
@@ -791,7 +776,7 @@ function oneO_addWooOrder($orderData, $orderid)
     $order->set_payment_method($payment_gateways['bacs']);
   */
 
-  // Set totals
+  // Set totals in order
   $order->set_shipping_total($shippingCost / 100);
   $order->set_discount_total(0);
   $order->set_discount_tax(0);

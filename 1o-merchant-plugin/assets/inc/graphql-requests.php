@@ -21,9 +21,10 @@ class Oo_graphQLRequest
     $queryArray = array();
     $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {lineItems { quantity price tax total currency productExternalId variantExternalId}}}';
     $queryArray['order_data'] = 'query Q {order( id: "' . $orderId . '" ) {externalData billingName billingPhone billingEmail billingAddressCity billingAddressState billingAddressLine_1 billingAddressLine_2 billingAddressCountry billingAddressZip chosenShippingRateHandle currency customerName customerEmail customerPhone fulfillmentStatus lineItems{quantity price tax total currency productExternalId variantExternalId} merchantName paymentStatus shippingName shippingPhone shippingEmail shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressState shippingAddressCountry shippingAddressZip total  totalPrice totalShipping totalTax transactions{id name}}}';
-    #$queryArray['order_data'] = 'query Q {order(id: "' . $orderId . '" ) {billingAddressCity billingAddressCountry billingAddressState billingAddressZip billingEmail billingName billingPhone chosenShippingRateHandle customerEmail customerName customerPhone fulfillmentStatus lineItems{currency price productExternalId quantity tax total variantExternalId} paymentStatus shippingAddressCity shippingAddressCountry shippingAddressState shippingAddressZip shippingEmail shippingName shippingPhone total totalPrice totalShipping totalTax merchantName}}';
-    $queryArray['update_ship_rates'] = "mutation m(\$id:ID!,\$shippingRates:[ShippingRateInput]){updateOrder(id:\$id,shippingRates:\$shippingRates){id __typename shippingRates{handle title amount}}}";
-    $queryArray['complete_order'] = 'mutation M($id: ID!, $fulfillmentStatus: OrderFulfillment, $externalData: JsonString) {updateOrder(id: $id, fulfillmentStatus: $fulfillmentStatus, externalData: $externalData) {id fulfillmentStatus externalData}}';
+    //$queryArray['update_ship_rates'] = "mutation m(\$id:ID!,\$shippingRates:[ShippingRateInput]){updateOrder(id:\$id,shippingRates:\$shippingRates){id __typename shippingRates{handle title amount}}}";
+    $queryArray['update_ship_rates'] = 'mutation M($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id shippingRates{handle amount title}}}';
+    //$queryArray['complete_order'] = 'mutation M($id: ID!, $fulfillmentStatus: OrderFulfillment, $externalData: JsonString) {updateOrder(id: $id, fulfillmentStatus: $fulfillmentStatus, externalData: $externalData) {id fulfillmentStatus externalData}}';
+    $queryArray['complete_order'] = 'mutation CompleteOrder($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id fulfillmentStatus externalData}}';
 
     if ($requestType == '' || !isset($queryArray[$requestType])) {
       /* Error response for 1o */
@@ -38,19 +39,22 @@ class Oo_graphQLRequest
     $variables = '';
     $contentType = 'application/graphql';
     switch ($requestType) {
-      case 'update_ship_rates_temp':
-        $queryURL = OOMP_GRAPHQL_URL . '?variables={"id":"' . $orderId . '","shippingRates":' . $shippingRates . '}';
+      case 'update_ship_rates_old':
+        $variables = ((object) array("id" => $orderId, "shippingRates" => $shippingRates));
+        $contentType = 'application/json';
         break;
-      case 'complete_order_temp':
-        $queryURL = OOMP_GRAPHQL_URL . '?variables={"id":"' . $orderId . '","fulfillmentStatus":"' . $fulfillStatus . '","externalData":"' . $externalData . '"}';
+      case 'complete_order_old':
+        $externalData = json_encode($externalData);
+        $variables = ((object) array("id" => $orderId, "fulfillmentStatus" => $fulfillStatus, "externalData" => $externalData));
+        $contentType = 'application/json';
         break;
       case 'update_ship_rates':
-        $variables = ((object) array("id" => $orderId, "shippingRates" => $shippingRates));
+        $variables = ((object) array("id" => $orderId, "input" => (object) array("shippingRates" => $shippingRates)));
         $contentType = 'application/json';
         break;
       case 'complete_order':
         $externalData = json_encode($externalData);
-        $variables = ((object) array("id" => $orderId, "fulfillmentStatus" => $fulfillStatus, "externalData" => $externalData));
+        $variables = ((object) array("id" => $orderId, "input" => (object) array("fulfillmentStatus" => $fulfillStatus, "externalData" => $externalData)));
         $contentType = 'application/json';
         break;
     }
@@ -78,22 +82,21 @@ class Oo_graphQLRequest
       error_log("\n" . 'wp_remote_get[body]:[queryURL:' . $queryURL . "]\n" . "[data: $data]\n" . print_r($response, true)) . "\n";
     */
 
-    if ($requestType == 'update_ship_rates') {
-      /* Response needs to be specific for this request */
-      header("HTTP/1.1 200 OK");
-      echo json_encode($shippingRates);
-      exit;
+    //if ($requestType == 'update_ship_rates') {
+    /* Response needs to be specific for this request */
+    //header("HTTP/1.1 200 OK");
+    // echo json_encode($shippingRates);
+    // exit;
+    //} else {
+    /* all other requests */
+    if (!is_wp_error($response) && ($response['response']['code'] === 200 || $response['response']['code'] === 201)) {
+      $body = wp_remote_retrieve_body($response);
+      $this->theRequest = json_decode($body);
+      return true;
     } else {
-      /* all other requests */
-      if (!is_wp_error($response) && ($response['response']['code'] === 200 || $response['response']['code'] === 201)) {
-        $body = wp_remote_retrieve_body($response);
-        $this->theRequest = json_decode($body);
-        return true;
-      } else {
-        return false;
-        //return json_encode($response);
-      }
+      return false;
     }
+    //}
   }
   public function get_request()
   {
