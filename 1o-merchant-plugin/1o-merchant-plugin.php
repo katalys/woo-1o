@@ -2,9 +2,9 @@
 /*
 Plugin Name: 1o Merchant Plugin
 URI: https://fischercreativemedia.com
-Description: Plugin to add functionality for 1o cart.
+Description: Plugin to add functionality for 1o cart connection.
 Version: 1.0.4
-Author: Don Fischer
+Author: 1o | Don Fischer
 Author URI: https://fischercreativemedia.com
 Text Domain: 1o-merchant-plugin
 */
@@ -13,29 +13,44 @@ Text Domain: 1o-merchant-plugin
 if (!defined('WPINC')) {
   die;
 }
-/*temp for error logging */
+/* defined constant for error logging */
 define('OOMP_ERROR_LOG', true);
 
-//Required for plugin update
-require_once(plugin_dir_path(__FILE__) . '/updates/plugin-update-checker.php');
-new FCMPluginUpdateChecker_1_7('https://graphiccaffeine.com/wp-admin/admin-ajax.php', __FILE__);
+/**
+ * If plugin is added to WordPress Repository, set to false.
+ * 
+ * If usung External Update process set to true so there can
+ * be a way to update the plugin easily.
+ */
+$useExternalUpdate = true;
+if ($useExternalUpdate) {
+  //Required for plugin update
+  require_once(plugin_dir_path(__FILE__) . '/updates/plugin-update-checker.php');
+  new FCMPluginUpdateChecker_1_7('https://graphiccaffeine.com/wp-admin/admin-ajax.php', __FILE__);
 
-// Auto update variables fpr plugin
-add_filter('all_plugins', function ($plugins) {
-  if (isset($plugins['1o-merchant-plugin/1o-merchant-plugin.php'])) {
-    $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['update-supported'] = true;
-    $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['id'] = 'gc.com/plugins/1omerchantplugin';
-    $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['slug'] = '1o-merchant-plugin';
-    $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['plugin'] = '1o-merchant-plugin/1o-merchant-plugin.php';
-    $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['url'] = 'https://graphiccaffeine.com/fcm-custom-plugins/1o-merchant-plugin/';
-  }
-  return $plugins;
-}, 100);
+  // Auto update variables fpr plugin
+  add_filter('all_plugins', function ($plugins) {
+    if (isset($plugins['1o-merchant-plugin/1o-merchant-plugin.php'])) {
+      $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['update-supported'] = true;
+      $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['id'] = 'gc.com/plugins/1omerchantplugin';
+      $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['slug'] = '1o-merchant-plugin';
+      $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['plugin'] = '1o-merchant-plugin/1o-merchant-plugin.php';
+      $plugins['1o-merchant-plugin/1o-merchant-plugin.php']['url'] = 'https://graphiccaffeine.com/fcm-custom-plugins/1o-merchant-plugin/';
+    }
+    return $plugins;
+  }, 100);
+}
 
-// Let's Initialize Everything
+/**
+ * Let's Initialize Everything
+ * 
+ * If you are not using one of these files, 
+ * set to false to keep it from loading.
+ * 
+ * */
 global $oomp_load_items;
 $oomp_load_items = array(
-  /* if you want to use these files, set to true and then populate the files */
+  /* if you want to use these files, set to true and then populate the files in the folders they reside. */
   'functions' => true, // load additional core funstion
   'ajax' => false, // load ajax funsctions
   'vendors' => true, // load GraphQL & PASETO Libraries.    
@@ -43,10 +58,10 @@ $oomp_load_items = array(
   'admin_css' => true, // load admin css
   'js' => false, // load core plugin frontend js
   'css' => false, // load core plugin frontend css
-  'settings' => true, // settings page
+  'settings' => true, // load settings page
 );
 
-/* Define some Plugin items */
+/* Define Some Plugin items */
 define('OOMP_VER_NUM', '1.0.4'); // same as plugin version up top.
 define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
 define('OOMP_GRAPHQL_URL', 'https://playground.1o.io/graphql'); // GraphQL URL for 1o

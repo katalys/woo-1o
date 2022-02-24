@@ -198,13 +198,27 @@ class OneO_REST_DataController
       default:
         $processed = 'error';
         break;
+      case 'update_taxes':
+        $processed = 'future';
+        if (OOMP_ERROR_LOG)
+          error_log("\n" . '[process_directive: update_taxes]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        break;
+      case 'update_product_pricing':
+        $processed = 'future';
+        if (OOMP_ERROR_LOG)
+          error_log("\n" . '[process_directive: update_product_pricing]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        break;
+      case 'inventory_check':
+        $processed = 'future';
+        if (OOMP_ERROR_LOG)
+          error_log("\n" . '[process_directive: inventory_check]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        break;
       case 'update_available_shipping_rates':
         if (OOMP_ERROR_LOG)
           error_log("\n" . '[process_directive: update_available_shipping_rates]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
 
         # Step 1: Create new Paseto for request.
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
-
 
         # Step 2: Do request to graphql to get line items.
         $getLineItems = new Oo_graphQLRequest('line_items', $order_id, $newPaseto, $args);
@@ -214,18 +228,39 @@ class OneO_REST_DataController
         $linesRaw = $getLineItems->get_request();
         $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : array();
 
+        # Step 3: Get shipping rates from Woo.
         /** 
          * Real Shipping Totals
          * Set up new cart to get real shipping total 
          * */
+        $args['shipping-rates'] = array();
+
         if (!isset(WC()->cart)) {
+          // initiallize the cart of not yet done.
           WC()->initialize_cart();
           if (!function_exists('wc_get_cart_item_data_hash')) {
             include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
           }
         }
-        //WC()->cart->empty();
-        //set_cart_contents
+        if (isset(WC()->customer)) {
+          $countryArr = array(
+            "United States" => 'US',
+            "Canada" => 'CA',
+          );
+          $sCountry = isset($linesRaw->data->order->shippingAddressCountry) ? $linesRaw->data->order->shippingAddressCountry : null;
+          $sCity = isset($linesRaw->data->order->shippingAddressCity) ? $linesRaw->data->order->shippingAddressCity : null;
+          $sState = isset($linesRaw->data->order->shippingAddressState) ? $linesRaw->data->order->shippingAddressState : null;
+          $sZip = isset($linesRaw->data->order->shippingAddressZip) ? $linesRaw->data->order->shippingAddressZip : null;
+          $sAddress1 = isset($linesRaw->data->order->shippingAddressLine_1) ? $linesRaw->data->order->shippingAddressLine_1 : null;
+          $sAddress2 = isset($linesRaw->data->order->shippingAddressLine_2) ? $linesRaw->data->order->shippingAddressLine_2 : null;
+          WC()->customer->set_shipping_country($countryArr[$sCountry]);
+          WC()->customer->set_shipping_state($sState);
+          WC()->customer->set_shipping_postcode($sZip);
+          WC()->customer->set_shipping_city($sCity);
+          WC()->customer->set_shipping_address($sAddress1);
+          WC()->customer->set_shipping_address_1($sAddress1);
+          WC()->customer->set_shipping_address_2($sAddress2);
+        }
         if (!empty($lines)) {
           foreach ($lines as $lk => $lv) {
             $product_id = $lv->productExternalId;
@@ -234,36 +269,35 @@ class OneO_REST_DataController
           }
           WC()->cart->maybe_set_cart_cookies();
           WC()->cart->calculate_totals();
-          $count = WC()->cart->get_cart_contents_count();
-          $temp = WC()->cart->calculate_shipping();
-        }
-        /* END Real shipping total */
+          WC()->cart->calculate_shipping();
+          $countCart = WC()->cart->get_cart_contents_count();
 
-        # Step 3: Get shipping rates from Woo.
-        $zones = WC_Shipping_Zones::get_zones();
-        $methods = array_column($zones, 'shipping_methods');
-        foreach ($methods[0] as $key => $class) {
-          $item = [
-            "slug" => $class->id,
-            "id" => $class->method_title,
-            "name" => $class->title
-          ];
-          if (isset($class->instance_settings["cost"]) && $class->instance_settings["cost"] > 0) {
-            $item["price_excl"] = number_format($class->instance_settings["cost"], 2, '.', '');
-            $item["price_incl"] = number_format($class->instance_settings["cost"] / 100 * 24 + $class->instance_settings["cost"], 2, '.', '');
+          foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
+            // Check if a shipping for the current package exist
+            if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
+              // Loop through shipping rates for the current package
+              foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
+                $rate_id     = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
+                $method_id   = $shipping_rate->get_method_id(); // The shipping method slug
+                $instance_id = $shipping_rate->get_instance_id(); // The instance ID
+                $label_name  = $shipping_rate->get_label(); // The label name of the method
+                $cost        = $shipping_rate->get_cost(); // The cost without tax
+                $tax_cost    = $shipping_rate->get_shipping_tax(); // The tax cost
+                $taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
+                $itemPriceEx = number_format($cost, 2, '.', '');
+                $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
+                //set up rates array for 1o
+                $args['shipping-rates'][] = (object) array(
+                  "handle" => $method_id . '-' . $instance_id . '|' . (isset($itemPriceEx) ? ($itemPriceEx * 100) : '0') . '|' . str_replace(" ", "-", $label_name),
+                  "title" => $label_name,
+                  "amount" => $itemPriceEx * 100,
+                );
+              }
+            }
           }
-          if (isset($class->min_amount) && $class->min_amount > 0) $item["minimum"] = (float)$class->min_amount;
-          $data[] = $item;
-        }
-        $args['shipping-rates'] = array();
-        if (!empty($data)) {
-          foreach ($data as $dkey => $dval) {
-            $args['shipping-rates'][] = (object) array(
-              "handle" => $dval['slug'] . '-' . (isset($dval['price_excl']) ? $dval['price_excl'] : '0') . ':' . str_replace(" ", ".", $dval['name']),
-              "title" => $dval['name'],
-              "amount" => $dval['price_excl'] * 100,
-            );
-          }
+          //clear the cart.
+          WC()->cart->empty_cart();
+          //WC()->cart->destroy_cart_session();
         }
 
         # Step 4: Update shipping rates on GraphQL.
@@ -280,7 +314,6 @@ class OneO_REST_DataController
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
 
         # Step 2: Get new order data from 1o - in case anything changed
-        // grab order data from GraphQL
         $getOrderData = new Oo_graphQLRequest('order_data', $order_id, $newPaseto, $args);
         if (OOMP_ERROR_LOG)
           error_log("\n" . '[process_directive: $getOrderData]: ' . "\n" . print_r($getOrderData, true)) . "\n";
@@ -290,14 +323,13 @@ class OneO_REST_DataController
           $orderData = OneO_REST_DataController::process_order_data($getOrderData->get_request());
           // insert into Woo & grab Woo order ID 
           $newOrderID = oneO_addWooOrder($orderData, $order_id);
-          //$newOrderID = oneO_addWooOrder($products, $email, $order_id);
           if ($newOrderID === false) {
             return  $processed = 'exists';
           }
-          # Step 4: Create new Paseto for 1o request.
+          # Step 3a: Create new Paseto for 1o request.
           $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
 
-          # Step 5: Do request to graphql to complete order.
+          # Step 3b: Do request to graphql to complete order.
           // Pass Woo order ID in external data 
           $args['external-data'] = array('WooID' => $newOrderID);
           if ($newOrderID != '' && $newOrderID !== false) {
@@ -307,7 +339,7 @@ class OneO_REST_DataController
           }
           $oORequest = new Oo_graphQLRequest('complete_order', $order_id, $newPaseto, $args);
         }
-        # Step 6: If ok response, then return finishing repsponse to initial request.
+        # Step 4: If ok response, then return finishing repsponse to initial request.
         if ($oORequest !== false) {
           $processed = 'ok';
         } else {
@@ -317,7 +349,7 @@ class OneO_REST_DataController
     }
     $retArr['status'] = $processed;
     $retArr['order_id'] = $order_id;
-    return (object)$retArr;
+    return (object) $retArr;
   }
 
   /**
@@ -395,10 +427,11 @@ class OneO_REST_DataController
 
   /**
    * Creates PASETO Token for requests to GraphQL
+   * Internal call only
    */
   public static function create_paseto()
   {
-    // base 64 decode ss
+    // Note - need base 64 decode shared secret.
     require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
     $ss = OneO_REST_DataController::get_stored_secret();
     $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
@@ -408,6 +441,13 @@ class OneO_REST_DataController
     return $token;
   }
 
+  /**
+   * Creates PASETO Token for requests to GraphQL
+   * Can be created with an external call
+   * 
+   * @param $echo (bool)
+   * @return $token or echo $token & die
+   */
   public function create_paseto_request($echo = true)
   {
     require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
@@ -423,6 +463,13 @@ class OneO_REST_DataController
     }
   }
 
+  /**
+   * Creates PASETO Token FROM requests from 1o for return response.
+   * Internal call only.
+   * 
+   * @param string $kid    : 'kid' variable from request.
+   * @return string $token : token for response to 1o
+   */
   private function create_paseto_from_request($kid)
   {
     require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
@@ -463,6 +510,9 @@ class OneO_REST_DataController
     }
   }
 
+  /**
+   * gets stored secret from settings DB.
+   */
   public static function get_stored_secret()
   {
     $oneO_settings_options = get_option('oneO_settings_option_name', array()); // Array of All Options
@@ -470,6 +520,9 @@ class OneO_REST_DataController
     return $secret_key;
   }
 
+  /**
+   * gets stored integration id from settings DB.
+   */
   public static function get_stored_intid()
   {
     $oneO_settings_options = get_option('oneO_settings_option_name', array()); // Array of All Options
@@ -477,6 +530,9 @@ class OneO_REST_DataController
     return $int_id;
   }
 
+  /**
+   * gets stored public key from steeings DB.
+   */
   public static function get_stored_public()
   {
     $oneO_settings_options = get_option('oneO_settings_option_name', array()); // Array of All Options
@@ -484,6 +540,10 @@ class OneO_REST_DataController
     return $public_key;
   }
 
+  /**
+   * gets generated 1o endpoint for the store
+   * to be used in requests from 1o GraphQL.
+   */
   public static function get_stored_endpoint()
   {
     return get_rest_url(null, OOMP_NAMESPACE) . '/';
@@ -529,7 +589,9 @@ class OneO_REST_DataController
   }
 }
 
-// Function to register our new routes from the controller.
+/**
+ * Hook to register our new routes from the controller with WordPress.
+ */
 function prefix_register_my_rest_routes()
 {
   global $oneO_controller;
@@ -611,6 +673,9 @@ function oneO_get_stored_endpoint()
   return OneO_REST_DataController::get_stored_endpoint();
 }
 
+/**
+ * Get the 1o Options and parse for use.
+ */
 function get_oneO_options()
 {
   /* Get the options */
@@ -639,7 +704,6 @@ if (is_admin())
  */
 function oneO_addWooOrder($orderData, $orderid)
 {
-  /* TO DO : Check to make sure the order has not already been added to Woo */
   $email = $orderData['customer']['email'];
   $externalData = $orderData['order']['externalData'];
   $wooOrderkey = isset($externalData->WooID) && $externalData->WooID != '' ? $externalData->WooID : false;
@@ -747,7 +811,7 @@ function oneO_addWooOrder($orderData, $orderid)
   /*
   OTHER DATA IN $OrderData NOT USED :
     [order][status] => FULFILLED // 1o status
-    [order][totalPrice] => 2200 // calculated on order after other items are added.
+    [order][totalPrice] => 2200 // (calculated on order after other items are added.)
 */
   $orderTotal = $orderData['order']['total'];
   $taxPaid = $orderData['order']['totalTax'];
@@ -756,25 +820,30 @@ function oneO_addWooOrder($orderData, $orderid)
   $transName = $orderData['transactions']['name'];
   $shippingCost = $orderData['order']['totalShipping'] / 100;
   $chosenShipping = $orderData['order']['chosenShipping'];
-  $shippingCostArr = explode("-", $chosenShipping);
+  $shippingCostArr = explode("|", $chosenShipping);
+  $shipName = isset($shippingCostArr[2]) ? str_replace('-', " ", $shippingCostArr[2]) : '';
+  $shipSlug = isset($shippingCostArr[0]) ?  $shippingCostArr[0] : '';
 
   $order->set_currency($currency);
   $order->set_payment_method($transName);
   $newOrderID = $order->get_id();
-  $order_item_id = wc_add_order_item($newOrderID, array('order_item_name' => $shippingCostArr[0], 'order_item_type' => 'shipping'));
+  $order_item_id = wc_add_order_item($newOrderID, array('order_item_name' => $shipName, 'order_item_type' => 'shipping'));
   wc_add_order_item_meta($order_item_id, 'cost', $shippingCost, true);
-  $order->shipping_method_title = $shippingCostArr[0];
+  $order->shipping_method_title = $shipSlug;
 
-  /*
-    $shipping_taxes = WC_Tax::calc_shipping_tax('10', WC_Tax::get_shipping_tax_rates());
-    $rate = new WC_Shipping_Rate('flat_rate_shipping', 'Flat rate shipping', '10', $shipping_taxes, 'flat_rate');
-    $item = new WC_Order_Item_Shipping();
-    $item->set_props(array('method_title' => $rate->label, 'method_id' => $rate->id, 'total' => wc_format_decimal($rate->cost), 'taxes' => $rate->taxes, 'meta_data' => $rate->get_meta_data() ));
-    $order->add_item($item);
-    // Set payment gateway
-    $payment_gateways = WC()->payment_gateways->payment_gateways();
-    $order->set_payment_method($payment_gateways['bacs']);
-  */
+  /**
+   * Items that might be used in the future. 
+   *
+   * $shipping_taxes = WC_Tax::calc_shipping_tax('10', WC_Tax::get_shipping_tax_rates());
+   * $rate = new WC_Shipping_Rate('flat_rate_shipping', 'Flat rate shipping', '10', $shipping_taxes, 'flat_rate');
+   * $item = new WC_Order_Item_Shipping();
+   * $item->set_props(array('method_title' => $rate->label, 'method_id' => $rate->id, 'total' => wc_format_decimal($rate->cost), 'taxes' => $rate->taxes, 'meta_data' => $rate->get_meta_data() ));
+   * $order->add_item($item);
+   * 
+   * ** Set payment gateway **
+   * $payment_gateways = WC()->payment_gateways->payment_gateways();
+   * $order->set_payment_method($payment_gateways['bacs']);
+   */
 
   // Set totals in order
   $order->set_shipping_total($shippingCost / 100);
@@ -789,8 +858,6 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->update_meta_data('_1o-order-number', $orderid);
   $orderKey = $order->get_order_key();
   $order->save();
-  if (OOMP_ERROR_LOG)
-    error_log("\nget_shipping_rates_oneo:\n" . print_r(get_shipping_rates_oneo(), true));
   return $orderKey;
 }
 
@@ -830,23 +897,6 @@ function oneO_doSplitName($name)
   }
   $results['last'] = trim($last);
   return $results;
-}
-
-/**
- * Get name of shipping method from slug
- * 
- * @return array
- */
-function get_shipping_rates_oneo()
-{
-  $rate_table = array();
-  $shipping_methods = WC()->shipping->get_shipping_methods();
-  foreach ($shipping_methods as $shipping_method) {
-    $shipping_method->init();
-    foreach ($shipping_method->rates as $key => $val)
-      $rate_table[$key] = $val->label;
-  }
-  return $rate_table[WC()->session->get('chosen_shipping_methods')[0]];
 }
 
 /**

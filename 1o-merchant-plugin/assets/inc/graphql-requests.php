@@ -19,7 +19,7 @@ class Oo_graphQLRequest
 
     /* Set up Query Array */
     $queryArray = array();
-    $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {lineItems { quantity price tax total currency productExternalId variantExternalId}}}';
+    $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressState shippingAddressCountry shippingAddressZip lineItems { quantity price tax total currency productExternalId variantExternalId}}}';
     $queryArray['order_data'] = 'query Q {order( id: "' . $orderId . '" ) {externalData billingName billingPhone billingEmail billingAddressCity billingAddressState billingAddressLine_1 billingAddressLine_2 billingAddressCountry billingAddressZip chosenShippingRateHandle currency customerName customerEmail customerPhone fulfillmentStatus lineItems{quantity price tax total currency productExternalId variantExternalId} merchantName paymentStatus shippingName shippingPhone shippingEmail shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressState shippingAddressCountry shippingAddressZip total  totalPrice totalShipping totalTax transactions{id name}}}';
     //$queryArray['update_ship_rates'] = "mutation m(\$id:ID!,\$shippingRates:[ShippingRateInput]){updateOrder(id:\$id,shippingRates:\$shippingRates){id __typename shippingRates{handle title amount}}}";
     $queryArray['update_ship_rates'] = 'mutation M($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id shippingRates{handle amount title}}}';
@@ -64,31 +64,24 @@ class Oo_graphQLRequest
       $data = json_encode((object) array("query" => $data, "variables" => $variables));
     }
 
+    /**
+     * Main Request
+     * Using native wp_remote_get
+     */
     $response = wp_remote_get(
       $queryURL,
       array(
         'method' => 'POST',
         'headers' => array(
           'Content-Type' => $contentType,
-          'user-agent' => '1o WordPress API: ' . get_bloginfo('url') . '|' . $orderId,
+          //'User-Agent' => '1o WordPress API: ' . get_bloginfo('url') . '|' . $orderId,
           'Authorization' => 'Bearer ' . $authCode,
         ),
         'body' => $data,
       )
     );
 
-    /*
-    if (OOMP_ERROR_LOG)
-      error_log("\n" . 'wp_remote_get[body]:[queryURL:' . $queryURL . "]\n" . "[data: $data]\n" . print_r($response, true)) . "\n";
-    */
-
-    //if ($requestType == 'update_ship_rates') {
-    /* Response needs to be specific for this request */
-    //header("HTTP/1.1 200 OK");
-    // echo json_encode($shippingRates);
-    // exit;
-    //} else {
-    /* all other requests */
+    /* Set Request variable and return request success (bool) */
     if (!is_wp_error($response) && ($response['response']['code'] === 200 || $response['response']['code'] === 201)) {
       $body = wp_remote_retrieve_body($response);
       $this->theRequest = json_decode($body);
@@ -96,8 +89,12 @@ class Oo_graphQLRequest
     } else {
       return false;
     }
-    //}
   }
+
+  /**
+   * Get the request. This is the best way to do this and maintain the 
+   * data integrity across different functions.
+   */
   public function get_request()
   {
     return $this->theRequest;
