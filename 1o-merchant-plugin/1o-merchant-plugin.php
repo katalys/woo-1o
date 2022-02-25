@@ -14,7 +14,7 @@ if (!defined('WPINC')) {
   die;
 }
 /* defined constant for error logging */
-define('OOMP_ERROR_LOG', true);
+define('OOMP_ERROR_LOG', false);
 
 /**
  * If plugin is added to WordPress Repository, set to false.

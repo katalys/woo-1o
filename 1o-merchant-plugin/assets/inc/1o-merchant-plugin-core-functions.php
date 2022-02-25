@@ -297,7 +297,6 @@ class OneO_REST_DataController
           }
           //clear the cart.
           WC()->cart->empty_cart();
-          //WC()->cart->destroy_cart_session();
         }
 
         # Step 4: Update shipping rates on GraphQL.
@@ -482,7 +481,8 @@ class OneO_REST_DataController
   /**
    * Gets Directives
    *
-   * @param $directives Get the Directives from the Request Body. May need to be sanitized.
+   * @param $directives           :The Directives from the Request Body. May need to be sanitized.
+   * @return array $directives    :array of directives or empty array.
    */
   public static function get_directives($requestBody)
   {
@@ -508,10 +508,13 @@ class OneO_REST_DataController
       $error = new WP_Error('Error-104', 'Payload Directives not found in Request. You must have at least one Directive.', 'API Error');
       wp_send_json_error($error, 403);
     }
+    return $the_directives;
   }
 
   /**
-   * gets stored secret from settings DB.
+   * Gets stored secret from settings DB.
+   * 
+   * @return string     : stored secret key
    */
   public static function get_stored_secret()
   {
@@ -521,7 +524,9 @@ class OneO_REST_DataController
   }
 
   /**
-   * gets stored integration id from settings DB.
+   * Gets stored integration id from settings DB.
+   * 
+   * @return string     : stored integration ID
    */
   public static function get_stored_intid()
   {
@@ -531,7 +536,9 @@ class OneO_REST_DataController
   }
 
   /**
-   * gets stored public key from steeings DB.
+   * Gets stored public key from steeings DB.
+   * 
+   * @return string     : stored public key
    */
   public static function get_stored_public()
   {
@@ -541,8 +548,10 @@ class OneO_REST_DataController
   }
 
   /**
-   * gets generated 1o endpoint for the store
+   * Gets generated 1o endpoint for the store
    * to be used in requests from 1o GraphQL.
+   * 
+   * @return string     : stored store endpoint
    */
   public static function get_stored_endpoint()
   {
@@ -601,7 +610,13 @@ function prefix_register_my_rest_routes()
 
 add_action('rest_api_init', 'prefix_register_my_rest_routes');
 
-/* Helper function to validate exp of token */
+/**
+ * Helper function to validate exp date of token
+ * 
+ * @param string $rawDecryptedToken   : raw string from decrypted token.
+ * @return bool true (default)        : true if expired or not valid signature.
+ *                                    : false if not expired and valid signature.
+ */
 function check_if_paseto_expired($rawDecryptedToken)
 {
   if (is_object($rawDecryptedToken) && isset($rawDecryptedToken->exp)) {
@@ -619,7 +634,13 @@ function check_if_paseto_expired($rawDecryptedToken)
   }
 }
 
-/* Helper Functions for Processing Token Footer */
+/**
+ * Helper Functions for Processing Token Footer
+ * 
+ * @param string $token   : Bearer token from authorization header (PASETO)
+ * @return bool false     : false on empty, failure or wrong size
+ * @return string $token  : token for processing
+ */
 function process_paseto_footer($token)
 {
   if ($token == '') {
@@ -636,7 +657,13 @@ function process_paseto_footer($token)
   return $count > 3 && $pieces[3] != '' ? ParagonIE\ConstantTime\Base64UrlSafe::decode($pieces[3]) : false;
 }
 
-/* Helper Functions to get Token Footer */
+/**
+ * Helper Functions to get Token Footer
+ * 
+ * @param string $footer : footer string from paseto token
+ * @return bool false    : False on empty or invalid footer
+ * @return string $kid   : KID from footer if present
+ */
 function get_paseto_footer_string($footer)
 {
   if (!empty($footer)) {
@@ -652,22 +679,33 @@ function get_paseto_footer_string($footer)
   return false;
 }
 
-/* other helper funsctions */
+/**
+ * Helper function to get stored shared secret key for store.
+ */
 function oneO_get_stored_secret()
 {
   return OneO_REST_DataController::get_stored_secret();
 }
 
+/**
+ * Helper function to get stored integration ID for store.
+ */
 function oneO_get_stored_intid()
 {
   return OneO_REST_DataController::get_stored_intid();
 }
 
+/**
+ * Helper function to get store public key for store.
+ */
 function oneO_get_stored_public()
 {
   return OneO_REST_DataController::get_stored_public();
 }
 
+/**
+ * Helper function to get endpoint for store.
+ */
 function oneO_get_stored_endpoint()
 {
   return OneO_REST_DataController::get_stored_endpoint();

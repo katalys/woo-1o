@@ -21,9 +21,7 @@ class Oo_graphQLRequest
     $queryArray = array();
     $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressState shippingAddressCountry shippingAddressZip lineItems { quantity price tax total currency productExternalId variantExternalId}}}';
     $queryArray['order_data'] = 'query Q {order( id: "' . $orderId . '" ) {externalData billingName billingPhone billingEmail billingAddressCity billingAddressState billingAddressLine_1 billingAddressLine_2 billingAddressCountry billingAddressZip chosenShippingRateHandle currency customerName customerEmail customerPhone fulfillmentStatus lineItems{quantity price tax total currency productExternalId variantExternalId} merchantName paymentStatus shippingName shippingPhone shippingEmail shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressState shippingAddressCountry shippingAddressZip total  totalPrice totalShipping totalTax transactions{id name}}}';
-    //$queryArray['update_ship_rates'] = "mutation m(\$id:ID!,\$shippingRates:[ShippingRateInput]){updateOrder(id:\$id,shippingRates:\$shippingRates){id __typename shippingRates{handle title amount}}}";
     $queryArray['update_ship_rates'] = 'mutation M($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id shippingRates{handle amount title}}}';
-    //$queryArray['complete_order'] = 'mutation M($id: ID!, $fulfillmentStatus: OrderFulfillment, $externalData: JsonString) {updateOrder(id: $id, fulfillmentStatus: $fulfillmentStatus, externalData: $externalData) {id fulfillmentStatus externalData}}';
     $queryArray['complete_order'] = 'mutation CompleteOrder($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id fulfillmentStatus externalData}}';
 
     if ($requestType == '' || !isset($queryArray[$requestType])) {
@@ -74,7 +72,7 @@ class Oo_graphQLRequest
         'method' => 'POST',
         'headers' => array(
           'Content-Type' => $contentType,
-          //'User-Agent' => '1o WordPress API: ' . get_bloginfo('url') . '|' . $orderId,
+          'User-Agent' => '1o WordPress API: ' . get_bloginfo('url') . '|' . $orderId,
           'Authorization' => 'Bearer ' . $authCode,
         ),
         'body' => $data,

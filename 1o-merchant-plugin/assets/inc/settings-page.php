@@ -153,18 +153,6 @@ class oneO_Settings
             <h2 class="nav-tab-wrapper"> <a href="?page=1o-settings&tab=setting" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a> <a href="?page=1o-settings&tab=getting_started" class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting Started</a> </h2>
             <?php
             if ($active_tab === 'getting_started') {
-                /*
-                $products = array(
-                    array(
-                        "id" => '14',
-                        "qty" => 1
-                    )
-                );
-                // TEST
-                $email = 'fischer.creative.media@gmail.com';
-                $orderid = '12546498478946556fdfdf';
-                oneO_addWooOrder($products, $email, $orderid);
-                */
             ?>
                 <p>Getting Started</p>
                 <p>&nbsp;</p>
@@ -337,22 +325,24 @@ class oneO_Settings
     {
         $endpoint = isset($this->oneO_settings_options['api_endpoint']) ? esc_attr($this->oneO_settings_options['api_endpoint']) : '';
         $endpoint = $endpoint != '' ? $endpoint : get_rest_url(null, OOMP_NAMESPACE);
-        echo '<input class="regular-text medium-text-input" type="text" autocomplete="none" name="oneO_settings_option_name[api_endpoint]" id="api_endpoint" value="' . $endpoint . '" disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>';
-        echo '<p class="description" id="api_endpoint-description">Copy this URL to your account integration settings on 1o.</p>';
-        echo '<script>';
-        echo "document.querySelector('#endpoint_copy').addEventListener('click', function(e){ 
-      var copyText = document.querySelector('#api_endpoint');
-      var copyLink = document.querySelector('#endpoint_copy');
-      copyText.disabled = false;
-      copyText.focus();
-      copyText.select();
-      document.execCommand('copy');
-      copyText.blur();
-      copyText.disabled = true;
-      copyLink.innerHTML = 'Copied!';
-      console.log(copyText.textContent);
-      e.preventDefault();
-   });";
-        echo '</script>';
+        $out = array();
+        $out[] = '<input class="regular-text medium-text-input" type="text" autocomplete="none" name="oneO_settings_option_name[api_endpoint]" id="api_endpoint" value="' . $endpoint . '" disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>';
+        $out[] = '<p class="description" id="api_endpoint-description">Copy this URL to your account integration settings on 1o.</p>';
+        $out[] = '<script>';
+        $out[] = '  document.querySelector(\'#endpoint_copy\').addEventListener(\'click\', function(e){ ';
+        $out[] = '      var copyText = document.querySelector(\'#api_endpoint\');';
+        $out[] = '      var copyLink = document.querySelector(\'#endpoint_copy\');';
+        $out[] = '      copyText.disabled = false;';
+        $out[] = '      copyText.focus();';
+        $out[] = '      copyText.select();';
+        $out[] = '      document.execCommand(\'copy\');';
+        $out[] = '      copyText.blur();';
+        $out[] = '      copyText.disabled = true;';
+        $out[] = '      copyLink.innerHTML = \'Copied!\';';
+        $out[] = '      console.log(copyText.textContent);';
+        $out[] = '      e.preventDefault();';
+        $out[] = '  });';
+        $out[] = '</script>';
+        echo implode("\n", $out);
     }
 }
