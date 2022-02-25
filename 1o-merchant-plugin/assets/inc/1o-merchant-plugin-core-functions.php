@@ -2,13 +2,40 @@
 
 class OneO_REST_DataController
 {
-
   /**
    * Initiallize namespace variable and resourse name.
    */
   public function __construct()
   {
     $this->namespace = OOMP_NAMESPACE;
+  }
+
+  /**
+   * Controller log function - if turned on
+   */
+  public function set_controller_log($name = '', $logged = null)
+  {
+    global $oneOControllerLog;
+    if ($logged !== null && OOMP_ERROR_LOG) {
+      $oneOControllerLog[$name] = $logged;
+    }
+  }
+
+  /**
+   * Gets controller log
+   */
+  public function get_controller_log()
+  {
+    global $oneOControllerLog;
+    return $oneOControllerLog;
+  }
+
+  public function process_controller_log()
+  {
+    global $oneOControllerLog;
+    if (OOMP_ERROR_LOG && is_array($oneOControllerLog) && !empty($oneOControllerLog)) {
+      error_log('controller log:' . "\n" . print_r($oneOControllerLog, true));
+    }
   }
 
   /**
@@ -108,10 +135,8 @@ class OneO_REST_DataController
     $token = OneO_REST_DataController::get_token_from_headers($headers);
     $requestBody = $request->get_json_params();
     $directives = OneO_REST_DataController::get_directives($requestBody);
-    if (OOMP_ERROR_LOG) {
-      error_log("\n" . '[Headers from 1o]: ' . print_r($headers, true) . "\n" . '[Body from 1o]:' . "\n" . print_r($request->get_json_params(), true));
-    }
-
+    OneO_REST_DataController::set_controller_log('Headers from 1o', print_r($headers, true));
+    OneO_REST_DataController::set_controller_log('Body from 1o', print_r($request->get_json_params(), true));
     if (empty($directives) || !is_array($directives)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
@@ -162,9 +187,8 @@ class OneO_REST_DataController
       }
       $out = array("results" => $res_Arr, 'integration_id' => OneO_REST_DataController::get_stored_intid(), 'endpoint' => OneO_REST_DataController::get_stored_endpoint());
       $results = (object)$out;
-
-      if (OOMP_ERROR_LOG)
-        error_log("\n" . '[$results from request to 1o]: ' . "\n" . print_r($results, true));
+      OneO_REST_DataController::set_controller_log('$results from request to 1o]', print_r($results, true));
+      self::process_controller_log();
       wp_send_json_success($results, 200);
     }
     // Return all of our post response data.
@@ -200,30 +224,25 @@ class OneO_REST_DataController
         break;
       case 'update_taxes':
         $processed = 'future';
-        if (OOMP_ERROR_LOG)
-          error_log("\n" . '[process_directive: update_taxes]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        OneO_REST_DataController::set_controller_log('process_future_directive: update_taxes', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
         break;
       case 'update_product_pricing':
         $processed = 'future';
-        if (OOMP_ERROR_LOG)
-          error_log("\n" . '[process_directive: update_product_pricing]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        OneO_REST_DataController::set_controller_log('process_future_directive: update_product_pricing', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
         break;
       case 'inventory_check':
         $processed = 'future';
-        if (OOMP_ERROR_LOG)
-          error_log("\n" . '[process_directive: inventory_check]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        OneO_REST_DataController::set_controller_log('process_future_directive: inventory_check', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
         break;
       case 'update_available_shipping_rates':
-        if (OOMP_ERROR_LOG)
-          error_log("\n" . '[process_directive: update_available_shipping_rates]:' . "\n" . '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
-
+        OneO_REST_DataController::set_controller_log('process_directive: update_available_shipping_rates', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
         # Step 1: Create new Paseto for request.
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
 
         # Step 2: Do request to graphql to get line items.
         $getLineItems = new Oo_graphQLRequest('line_items', $order_id, $newPaseto, $args);
-        if (OOMP_ERROR_LOG)
-          error_log("\n" . '[process_directive: $getLineItems]: ' . "\n" . print_r($getLineItems, true)) . "\n";
+        OneO_REST_DataController::set_controller_log('process_directive: $getLineItems', print_r($getLineItems, true));
+
         // Do Something here to process line items??
         $linesRaw = $getLineItems->get_request();
         $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : array();
@@ -302,8 +321,7 @@ class OneO_REST_DataController
         # Step 4: Update shipping rates on GraphQL.
         $newPaseto2 = OneO_REST_DataController::create_paseto_from_request($kid);
         $updateShipping = new Oo_graphQLRequest('update_ship_rates', $order_id, $newPaseto2, $args);
-        if (OOMP_ERROR_LOG)
-          error_log('$updateShipping:  ' . print_r($updateShipping, true)) . "\n";
+        OneO_REST_DataController::set_controller_log('$updateShipping', print_r($updateShipping, true));
 
         # Step 5: If ok response, then return finishing repsponse to initial request.
         $processed = 'ok';
@@ -314,8 +332,7 @@ class OneO_REST_DataController
 
         # Step 2: Get new order data from 1o - in case anything changed
         $getOrderData = new Oo_graphQLRequest('order_data', $order_id, $newPaseto, $args);
-        if (OOMP_ERROR_LOG)
-          error_log("\n" . '[process_directive: $getOrderData]: ' . "\n" . print_r($getOrderData, true)) . "\n";
+        OneO_REST_DataController::set_controller_log('process_directive: $getOrderData', print_r($getOrderData, true));
 
         # Step 3: prepare order data for Woo import
         if ($getOrderData) {
@@ -745,8 +762,7 @@ function oneO_addWooOrder($orderData, $orderid)
   $email = $orderData['customer']['email'];
   $externalData = $orderData['order']['externalData'];
   $wooOrderkey = isset($externalData->WooID) && $externalData->WooID != '' ? $externalData->WooID : false;
-  if (OOMP_ERROR_LOG)
-    error_log("\nexternalData:\n" . print_r($externalData, true));
+  OneO_REST_DataController::set_controller_log('externalData', print_r($externalData, true));
   if ($wooOrderkey !== false) {
     $checkKey = oneO_order_key_exists("_order_key", $wooOrderkey);
     // if order key exists, order has already been porcessed.
@@ -822,7 +838,7 @@ function oneO_addWooOrder($orderData, $orderid)
   $sZip = $orderData['shipping']['shipZip'];
   $sCountry = $orderData['shipping']['shipCountry'];
 
-  // Set billing address in order
+  /* Set billing address in order */
   $order->set_billing_first_name($bFName);
   $order->set_billing_last_name($bLName);
   $order->set_billing_company(''); // not really used so set to empty string.
@@ -834,7 +850,7 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_billing_country($bCountry);
   $order->set_billing_phone($bPhone);
 
-  // Set shipping address in order
+  /* Set shipping address in order */
   $order->set_shipping_first_name($sFName);
   $order->set_shipping_last_name($sLName);
   $order->set_shipping_company(''); // not really used so set to empty string.
@@ -846,11 +862,12 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_shipping_country($sCountry);
   $order->set_shipping_phone($sPhone);
 
-  /*
-  OTHER DATA IN $OrderData NOT USED :
-    [order][status] => FULFILLED // 1o status
-    [order][totalPrice] => 2200 // (calculated on order after other items are added.)
-*/
+  /**
+   * 
+   * OTHER DATA IN $OrderData NOT USED :
+   * [order][status] => FULFILLED // 1o status
+   * [order][totalPrice] => 2200 // (calculated on order after other items are added.)
+   */
   $orderTotal = $orderData['order']['total'];
   $taxPaid = $orderData['order']['totalTax'];
   $currency = $orderData['order']['currency'];
@@ -982,8 +999,7 @@ function oneO_order_key_exists($key = "_order_key", $orderKey = '')
   }
   global $wpdb;
   $orderQuery = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->postmeta WHERE `meta_key` = '%s' AND `meta_value` = '%s' LIMIT 1;", array($key, $orderKey)));
-  if (OOMP_ERROR_LOG)
-    error_log("\norderQuery:\n" . print_r($orderQuery, true));
+  OneO_REST_DataController::set_controller_log('orderQuery', print_r($orderQuery, true));
 
   if (isset($orderQuery[0])) {
     return true;

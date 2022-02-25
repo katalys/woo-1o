@@ -60,6 +60,9 @@ $oomp_load_items = array(
   'css' => false, // load core plugin frontend css
   'settings' => true, // load settings page
 );
+/* glabal for error loggin */
+global $oneOControllerLog;
+$oneOControllerLog = array();
 
 /* Define Some Plugin items */
 define('OOMP_VER_NUM', '1.0.4'); // same as plugin version up top.
