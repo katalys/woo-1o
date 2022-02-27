@@ -13,7 +13,7 @@ class OneO_REST_DataController
   /**
    * Controller log function - if turned on
    */
-  public function set_controller_log($name = '', $logged = null)
+  public static function set_controller_log($name = '', $logged = null)
   {
     global $oneOControllerLog;
     if ($logged !== null && OOMP_ERROR_LOG) {
@@ -267,12 +267,15 @@ class OneO_REST_DataController
             "Canada" => 'CA',
           );
           $sCountry = isset($linesRaw->data->order->shippingAddressCountry) ? $linesRaw->data->order->shippingAddressCountry : null;
+          $sCountryC = isset($linesRaw->data->order->shippingAddressCountryCode) ? $linesRaw->data->order->shippingAddressCountryCode : null;
           $sCity = isset($linesRaw->data->order->shippingAddressCity) ? $linesRaw->data->order->shippingAddressCity : null;
-          $sState = isset($linesRaw->data->order->shippingAddressState) ? $linesRaw->data->order->shippingAddressState : null;
+          $sState = isset($linesRaw->data->order->shippingAddressSubdivision) ? $linesRaw->data->order->shippingAddressSubdivision : null;
+          $sStateC = isset($linesRaw->data->order->shippingAddressSubdivisionCode) ? $linesRaw->data->order->shippingAddressSubdivisionCode : null;
           $sZip = isset($linesRaw->data->order->shippingAddressZip) ? $linesRaw->data->order->shippingAddressZip : null;
           $sAddress1 = isset($linesRaw->data->order->shippingAddressLine_1) ? $linesRaw->data->order->shippingAddressLine_1 : null;
           $sAddress2 = isset($linesRaw->data->order->shippingAddressLine_2) ? $linesRaw->data->order->shippingAddressLine_2 : null;
-          WC()->customer->set_shipping_country($countryArr[$sCountry]);
+          $sCountry = is_null($sCountryC) || strlen($sCountryC) > 2 ? $countryArr[$sCountry] : $sCountryC;
+          WC()->customer->set_shipping_country($sCountry);
           WC()->customer->set_shipping_state($sState);
           WC()->customer->set_shipping_postcode($sZip);
           WC()->customer->set_shipping_city($sCity);
@@ -401,9 +404,11 @@ class OneO_REST_DataController
         'billAddress1' => isset($data->billingAddressLine_1) ? $data->billingAddressLine_1 : '',
         'billAddress2' => isset($data->billingAddressLine_2) ? $data->billingAddressLine_2 : '',
         'billCity' => $data->billingAddressCity,
-        'billState' => $data->billingAddressState,
+        'billState' => $data->billingAddressSubdivision,
+        'billStateCode' => $data->billingAddressSubdivisionCode,
         'billZip' => $data->billingAddressZip,
         'billCountry' => $data->billingAddressCountry,
+        'billCountryCode' => $data->billingAddressCountryCode,
       );
       $shipping = array(
         'shipName' => $data->shippingName,
@@ -412,9 +417,11 @@ class OneO_REST_DataController
         'shipAddress1' => isset($data->shippingAddressLine_1) ? $data->shippingAddressLine_1 : '',
         'shipAddress2' => isset($data->shippingAddressLine_2) ? $data->shippingAddressLine_2 : '',
         'shipCity' => $data->shippingAddressCity,
-        'shipState' => $data->shippingAddressState,
+        'shipState' => $data->shippingAddressSubdivision,
+        'shipStateCode' => $data->shippingAddressSubdivisionCode,
         'shipZip' => $data->shippingAddressZip,
         'shipCountry' => $data->shippingAddressCountry,
+        'shipCountryCode' => $data->shippingAddressCountryCode,
       );
       $customer = array(
         'email' => isset($data->customerEmail) && $data->customerEmail != '' ? $data->customerEmail : '',
@@ -822,7 +829,9 @@ function oneO_addWooOrder($orderData, $orderid)
   $bCity =  $orderData['billing']['billCity'];
   $bZip =  $orderData['billing']['billZip'];
   $bCountry =  $orderData['billing']['billCountry'];
+  $bCountryC =  $orderData['billing']['billCountryCode'];
   $bState =  $orderData['billing']['billState'];
+  $bStateC =  $orderData['billing']['billStateCode'];
 
   /* Shipping Data */
   $sName = $orderData['shipping']['shipName'];
@@ -835,13 +844,15 @@ function oneO_addWooOrder($orderData, $orderid)
   $sAddress_2 = $orderData['shipping']['shipAddress2'];
   $sCity = $orderData['shipping']['shipCity'];
   $sState = $orderData['shipping']['shipState'];
+  $sStateC = $orderData['shipping']['shipStateCode'];
   $sZip = $orderData['shipping']['shipZip'];
   $sCountry = $orderData['shipping']['shipCountry'];
+  $sCountryC = $orderData['shipping']['shipCountryCode'];
 
   /* Set billing address in order */
   $order->set_billing_first_name($bFName);
   $order->set_billing_last_name($bLName);
-  $order->set_billing_company(''); // not really used so set to empty string.
+  $order->set_billing_company(''); // not really used, so set to empty string.
   $order->set_billing_address_1($bAddress_1);
   $order->set_billing_address_2($bAddress_2);
   $order->set_billing_city($bCity);
@@ -849,11 +860,12 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_billing_postcode($bZip);
   $order->set_billing_country($bCountry);
   $order->set_billing_phone($bPhone);
+  $order->set_billing_email($bEmail);
 
   /* Set shipping address in order */
   $order->set_shipping_first_name($sFName);
   $order->set_shipping_last_name($sLName);
-  $order->set_shipping_company(''); // not really used so set to empty string.
+  $order->set_shipping_company(''); // not really used, so set to empty string.
   $order->set_shipping_address_1($sAddress_1);
   $order->set_shipping_address_2($sAddress_2);
   $order->set_shipping_city($sCity);

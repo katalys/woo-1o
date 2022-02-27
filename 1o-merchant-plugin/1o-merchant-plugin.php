@@ -3,7 +3,7 @@
 Plugin Name: 1o Merchant Plugin
 URI: https://fischercreativemedia.com
 Description: Plugin to add functionality for 1o cart connection.
-Version: 1.0.4
+Version: 1.0.5
 Author: 1o | Don Fischer
 Author URI: https://fischercreativemedia.com
 Text Domain: 1o-merchant-plugin
