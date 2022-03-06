@@ -65,7 +65,7 @@ global $oneOControllerLog;
 $oneOControllerLog = array();
 
 /* Define Some Plugin items */
-define('OOMP_VER_NUM', '1.0.4'); // same as plugin version up top.
+define('OOMP_VER_NUM', '1.0.5'); // same as plugin version up top.
 define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
 define('OOMP_GRAPHQL_URL', 'https://playground.1o.io/graphql'); // GraphQL URL for 1o
 define('OOMP_LOC_CORE', dirname(__FILE__) . '/');

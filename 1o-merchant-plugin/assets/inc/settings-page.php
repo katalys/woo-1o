@@ -154,16 +154,28 @@ class oneO_Settings
             <?php
             if ($active_tab === 'getting_started') {
             ?>
-                <p>Getting Started</p>
+                <h1>Getting Started</h1>
+                <p>Now that you have installed and activated the 1o Merchant Plugin, you are ready to connect your WooCommerce Store and your 1o account. Follow the steps below to connect your WooCommerce Store.</p>
+                <h3>Connecting your store to 1o:</h3>
+                <p>Because you'll be copying and pasting values from your <strong>1o Admin Console</strong> to this plugin, you'll want to open the <strong>Setting</strong> tab above, and keep it open during the next few steps.</p>
+                <ol>
+                    <li><strong>Login</strong> to your <strong>1o Admin Console</strong> at [link to console login].</li>
+                    <li>Navigate to the <strong>General</strong> tab in the 1o Admin Console.</li>
+                    <li><strong>Copy</strong> the <strong>integration ID</strong> code below and <strong>Paste</strong> it into the <strong>Integration ID</strong> field of the 1o plugin Settings tab in this plugin.</li>
+                    <li><strong>Copy</strong> the <strong>API key</strong> code and <strong>Paste</strong> it into the <strong>API Key</strong> field of the 1o plugin Settings tab in this plugin.</li>
+                    <li><strong>Copy</strong> the <strong>Shared secret</strong> code and <strong>Paste</strong> it into the <strong>Shared secret</strong> field of the 1o plugin Settings tab in this plugin.</li>
+                    <li>Click the <strong>Save Settings</strong> button in the 1o plugin Settings tab in this plugin to save your settings.</li>
+                    <li>[does the rest of this make sense?] Return to the 1o Admin Console and click <strong>Save & generate GraphQL ID</strong> button.</li>
+                    <li>Navigate to <strong>GraphQL</strong> tab and copy the url.</li>
+                    <li>Navigate back to your 1o Admin Console > Settings > Apps & integrations and select <strong>WooCommerce</strong>.</li>
+                    <li>Click the <strong>Settings</strong> tab and paste the url in the GraphQL field.</li>
+                    <li>Click <strong>Save</strong> and you are done!</li>
+                    <li style="color:red;">Maybe we want to have 2 sections here? One that tells them how to generate the 1o items and 1 how to enter data into the plugin?</li>
+                </ol>
                 <p>&nbsp;</p>
-                <p>&nbsp;</p>
-                <p>&nbsp;</p>
-                <p>&nbsp;</p>
-                <p>&nbsp;</p>
-                <p>&nbsp;</p>
-                <p>&nbsp;</p>
-                <p>&nbsp;</p>
-                <p>&nbsp;</p>
+                <h3>Need help?</h3>
+                <p>Get in touch with us and we'll install in for you. [is this true for the plugin too?]</p>
+                <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
             <?php
             } else {
                 $pKey = isset($this->oneO_settings_options['public_key']) && $this->oneO_settings_options['public_key'] != '' ? true : false;
@@ -183,12 +195,12 @@ class oneO_Settings
             ?>
             <nav>
                 <ul class="settings-1o-nav">
-                    <li><a href="#">Merchant Login</a></li>
-                    <li><a href="#">About 1o</a></li>
-                    <li><a href="#">Help Center</a></li>
-                    <li><a href="#">Terms</a></li>
-                    <li><a href="#">Privacy</a></li>
-                    <li><a href="#">Get In Touch</a></li>
+                    <li><a href="https://1o.io/users/log-in" target="_blank">Merchant Login</a></li>
+                    <li><a href="https://www.1o.io/" target="_blank">About 1o</a></li>
+                    <li><a href="https://www.1o.io/help-intro.html" target="_blank">Help Center</a></li>
+                    <li><a href="https://www.1o.io/tos.html" target="_blank">Terms</a></li>
+                    <li><a href="https://www.1o.io/privacy.html" target="_blank">Privacy</a></li>
+                    <li><a href="mailto:help@1o.io" target="_blank">Get In Touch</a></li>
                     <li class="nav-1o-vesion-num">Version <?php echo OOMP_VER_NUM; ?></li>
                 </ul>
             </nav>
@@ -327,7 +339,7 @@ class oneO_Settings
         $endpoint = $endpoint != '' ? $endpoint : get_rest_url(null, OOMP_NAMESPACE);
         $out = array();
         $out[] = '<input class="regular-text medium-text-input" type="text" autocomplete="none" name="oneO_settings_option_name[api_endpoint]" id="api_endpoint" value="' . $endpoint . '" disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>';
-        $out[] = '<p class="description" id="api_endpoint-description">Copy this URL to your account integration settings on 1o.</p>';
+        $out[] = '<p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in your 1o Admin Console.</p>';
         $out[] = '<script>';
         $out[] = '  document.querySelector(\'#endpoint_copy\').addEventListener(\'click\', function(e){ ';
         $out[] = '      var copyText = document.querySelector(\'#api_endpoint\');';
