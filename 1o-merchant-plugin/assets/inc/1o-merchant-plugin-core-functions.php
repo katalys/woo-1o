@@ -2,6 +2,7 @@
 
 class OneO_REST_DataController
 {
+
   /**
    * Initiallize namespace variable and resourse name.
    */
@@ -214,7 +215,7 @@ class OneO_REST_DataController
     require_once(OOMP_LOC_CORE_INC . 'graphql-requests.php');
     $processed = null;
     $order_id = isset($args['order_id']) ? esc_attr($args['order_id']) : null;
-    $args = array();
+    $args = !is_array($args) || $args == false ? array() : $args;
 
     /* possible directives:  taxes, pricing, discounts, inventory checks, */
     switch (strtolower($directive)) {
@@ -233,6 +234,138 @@ class OneO_REST_DataController
       case 'inventory_check':
         $processed = 'future';
         OneO_REST_DataController::set_controller_log('process_future_directive: inventory_check', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        break;
+      case 'import_product_from_url':
+        $oORequest = false;
+        # Step 1: Create new Paseto for request.
+        $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
+
+        # Step 2: Parse the product URL.
+        $prodURL = isset($args['product_url']) && $args['product_url'] != '' ? esc_url_raw($args['product_url']) : false;
+
+        # Step 3: If not empty, get product data for request.
+        if ($prodURL !== false) {
+          $productId = url_to_postid($prodURL);
+          $productTemp = new WC_Product_Factory();
+          $productType = $productTemp->get_product_type($productId);
+          // have to use the correct request for the prodyct type
+          // so we need to find out what that is first
+          $product = $productTemp->get_product($productId);
+          echo 'children:' . print_r($product->get_children(), true);
+
+          if ($productType == 'simple') {
+            //$product = new WC_Product($productId);
+            //get regular product data (no variants)
+          } elseif ($productType == 'variable') {
+            //$product = new WC_Product_Variable($productId);
+            //will need to loop through variants
+          }
+          /**
+           * Other types:
+           * simple
+           * grouped
+           * variable
+           * virtual
+           * downloadable
+           * external/affiliate
+           * 
+           * There could also be these types if using a plugin:
+           * subscription
+           * bookable
+           * mempership
+           * bundled
+           * auction
+           *  */
+
+          //exit for now during testing/setup.
+          exit;
+
+          /**
+           * Available data from Product obj
+           */
+          // Get Product General Info
+          /*
+          $product->get_type();
+          $product->get_name();
+          $product->get_slug();
+          $product->get_date_created();
+          $product->get_date_modified();
+          $product->get_status();
+          $product->get_featured();
+          $product->get_catalog_visibility();
+          $product->get_description();
+          $product->get_short_description();
+          $product->get_sku();
+          $product->get_menu_order();
+          $product->get_virtual();
+
+          // Get Product Prices
+          $product->get_price();
+          $product->get_regular_price();
+          $product->get_sale_price();
+          $product->get_date_on_sale_from();
+          $product->get_date_on_sale_to();
+          $product->get_total_sales();
+
+          // Get Product Tax, Shipping & Stock
+          $product->get_tax_status();
+          $product->get_tax_class();
+          $product->get_manage_stock();
+          $product->get_stock_quantity();
+          $product->get_stock_status();
+          $product->get_backorders();
+          $product->get_sold_individually();
+          $product->get_purchase_note();
+          $product->get_shipping_class_id();
+
+          // Get Product Dimensions
+          $product->get_weight();
+          $product->get_length();
+          $product->get_width();
+          $product->get_height();
+          $product->get_dimensions();
+
+          // Get Linked Products
+          $product->get_upsell_ids();
+          $product->get_cross_sell_ids();
+          $product->get_parent_id();
+
+          // Get Product Variations and Attributes
+          $product->get_children(); // get variations
+          $product->get_attributes();
+          $product->get_default_attributes();
+          $product->get_attribute('attributeid'); //get specific attribute value
+
+          // Get Product Taxonomies
+          $product->get_categories();
+          $product->get_category_ids();
+          $product->get_tag_ids();
+
+          // Get Product Downloads
+          $product->get_downloads();
+          $product->get_download_expiry();
+          $product->get_downloadable();
+          $product->get_download_limit();
+
+          // Get Product Images
+          $product->get_image_id();
+          $product->get_image();
+          $product->get_gallery_image_ids();
+
+          // Get Product Reviews
+          $product->get_reviews_allowed();
+          $product->get_rating_counts();
+          $product->get_average_rating();
+          $product->get_review_count();
+          */
+        }
+        //$productURL = new Oo_graphQLRequest('line_items', $order_id, $newPaseto, $args);
+        OneO_REST_DataController::set_controller_log('process_directive: import_product_from_url', print_r($getLineItems, true));
+        if ($oORequest !== false) {
+          $processed = 'ok';
+        } else {
+          $processed = 'error';
+        }
         break;
       case 'update_available_shipping_rates':
         OneO_REST_DataController::set_controller_log('process_directive: update_available_shipping_rates', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
@@ -458,7 +591,8 @@ class OneO_REST_DataController
     require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
     $ss = OneO_REST_DataController::get_stored_secret();
     $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
-    $newPaseto = new Oo_create_paseto_token($ss, $pk, 'P01Y');
+    $expTime = OOMP_PASETO_EXP;
+    $newPaseto = new Oo_create_paseto_token($ss, $pk, $expTime);
     $token = $newPaseto->get_signed_token();
     echo 'new token:' . $token . "\n";
     return $token;
@@ -476,7 +610,8 @@ class OneO_REST_DataController
     require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
     $ss = OneO_REST_DataController::get_stored_secret();
     $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
-    $newPaseto = new Oo_create_paseto_token($ss, $pk, 'P01Y');
+    $expTime = OOMP_PASETO_EXP;
+    $newPaseto = new Oo_create_paseto_token($ss, $pk, $expTime);
     $token = $newPaseto->get_signed_token();
     if ($echo) {
       echo 'new token:' . $token . "\n";
@@ -497,7 +632,8 @@ class OneO_REST_DataController
   {
     require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
     $ss = OneO_REST_DataController::get_stored_secret();
-    $newPaseto = new Oo_create_paseto_token($ss, $kid, 'P01Y');
+    $expTime = OOMP_PASETO_EXP;
+    $newPaseto = new Oo_create_paseto_token($ss, $kid, $expTime);
     $token = $newPaseto->get_signed_token();
     return $token;
   }

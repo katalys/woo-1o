@@ -68,6 +68,7 @@ $oneOControllerLog = array();
 define('OOMP_VER_NUM', '1.0.5'); // same as plugin version up top.
 define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
 define('OOMP_GRAPHQL_URL', 'https://playground.1o.io/graphql'); // GraphQL URL for 1o
+define('OOMP_PASETO_EXP', 'P01Y'); // Paseto Expiry time. Set to PT05M for production
 define('OOMP_LOC_CORE', dirname(__FILE__) . '/');
 define('OOMP_LOC_CORE_INC', dirname(__FILE__) . '/assets/inc/');
 define('OOMP_LOC_CORE_IMG', plugins_url('assets/img/', __FILE__));
