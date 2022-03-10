@@ -251,7 +251,79 @@ class OneO_REST_DataController
           // have to use the correct request for the prodyct type
           // so we need to find out what that is first
           $product = $productTemp->get_product($productId);
-          echo 'children:' . print_r($product->get_children(), true);
+          //echo 'children:' . print_r($product->get_children(), true);
+          $retArr = array();
+
+          // Sample mutation data to post to 1o //
+          // Need to populate with product data //
+          $retArr["name"] = "Intenal prduct name"; //slug
+          $retArr["title"] = "Public product title"; //title
+          $retArr["currency"] = "USD";
+          $retArr["currency_sign"] = "$";
+          $retArr["price"] = 120;
+          $retArr["compare_at_price"] = 140;
+          $retArr["summary_md"] = "Markdown product details"; // what type of markdown?
+          $retArr["summary_html"] = "html product details"; // HTML description
+          $retArr["external_id"] = "p1"; //product ID
+          $retArr["shop_url"] = "https://shop.io/product/p1"; //This is the PRODUCT URL (not really the shop URL)
+          $retArr["images"] = array( // array of images
+            "https://cdn.io/image1.jpg",
+            "https://cdn.io/image2.jpg"
+          );
+          $retArr["option_names"] = array( //option details
+            (object) array(
+              "name" => "Color",
+              "position" => 1,
+              "options" => array(
+                (object) array("name" => "Pink", "position" => 1),
+                (object) array("name" => "Yellow", "position" => 2)
+              ),
+            ),
+            (object) array(),
+            "name" => "Size",
+            "position" => 2,
+            "options" => array(
+              (object) array("name" => "L", "position" => 1),
+              (object) array("name" => "M", "position" => 2)
+            ),
+          );
+          $retArr["variant"] = false; //bool
+          $retArr["variants"] = array( // variant details
+            (object) array(
+              "subtitle" => "Pink / L",
+              "price" => 120,
+              "compare_at_price" => 140,
+              "currency" => "USD",
+              "currency_sign" => "$",
+              "external_id" => "v1",
+              "shop_url" => "https://shop.io/product/p1/variants/v1", // again, this is the VARIANT ID not the shop URL
+              "variant" => true, // this will always be true for a variant.
+              "images" => array( // aray of images.
+                "https://cdn.io/image1_pink.jpg",
+                "https://cdn.io/image2_pink.jpg"
+              ),
+              "option_1_names_path" => array("Color", "Pink"), //available options for vatiant - incremental
+              "option_2_names_path" => array("Size", "L"),
+            ),
+            (object) array(
+              "subtitle" => "Yellow / M",
+              "price" => 130,
+              "compare_at_price" => 130,
+              "currency" => "USD",
+              "currency_sign" => "$",
+              "external_id" => "v2",
+              "shop_url" => "https://shop.io/product/p1/variants/v2",
+              "variant" => true,
+              "images" => array(
+                "https://cdn.io/image1_yellow.jpg",
+                "https://cdn.io/image2_yellow.jpg"
+              ),
+              "option_1_names_path" => array("Color", "Yellow"),
+              "option_2_names_path" => array("Size", "M"),
+            )
+          );
+          $returnObj = (object) $retArr;
+          echo 'obj' . json_encode($returnObj);
 
           if ($productType == 'simple') {
             //$product = new WC_Product($productId);
@@ -259,6 +331,11 @@ class OneO_REST_DataController
           } elseif ($productType == 'variable') {
             //$product = new WC_Product_Variable($productId);
             //will need to loop through variants
+          } elseif ($productType == 'downloadable') {
+            //$product = new WC_Product_Variable($productId);
+            //will need to loop through variants
+          } else {
+            //return wrong type error.
           }
           /**
            * Other types:
