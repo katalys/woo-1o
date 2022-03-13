@@ -254,82 +254,161 @@ class OneO_REST_DataController
           //echo 'children:' . print_r($product->get_children(), true);
           $retArr = array();
 
-          // Sample mutation data to post to 1o //
-          // Need to populate with product data //
-          $retArr["name"] = "Intenal prduct name"; //slug
-          $retArr["title"] = "Public product title"; //title
-          $retArr["currency"] = "USD";
-          $retArr["currency_sign"] = "$";
-          $retArr["price"] = 120;
-          $retArr["compare_at_price"] = 140;
-          $retArr["summary_md"] = "Markdown product details"; // what type of markdown?
-          $retArr["summary_html"] = "html product details"; // HTML description
-          $retArr["external_id"] = "p1"; //product ID
-          $retArr["shop_url"] = "https://shop.io/product/p1"; //This is the PRODUCT URL (not really the shop URL)
-          $retArr["images"] = array( // array of images
-            "https://cdn.io/image1.jpg",
-            "https://cdn.io/image2.jpg"
-          );
-          $retArr["option_names"] = array( //option details
-            (object) array(
-              "name" => "Color",
-              "position" => 1,
-              "options" => array(
-                (object) array("name" => "Pink", "position" => 1),
-                (object) array("name" => "Yellow", "position" => 2)
-              ),
-            ),
-            (object) array(),
-            "name" => "Size",
-            "position" => 2,
-            "options" => array(
-              (object) array("name" => "L", "position" => 1),
-              (object) array("name" => "M", "position" => 2)
-            ),
-          );
-          $retArr["variant"] = false; //bool
-          $retArr["variants"] = array( // variant details
-            (object) array(
-              "subtitle" => "Pink / L",
-              "price" => 120,
-              "compare_at_price" => 140,
-              "currency" => "USD",
-              "currency_sign" => "$",
-              "external_id" => "v1",
-              "shop_url" => "https://shop.io/product/p1/variants/v1", // again, this is the VARIANT ID not the shop URL
-              "variant" => true, // this will always be true for a variant.
-              "images" => array( // aray of images.
-                "https://cdn.io/image1_pink.jpg",
-                "https://cdn.io/image2_pink.jpg"
-              ),
-              "option_1_names_path" => array("Color", "Pink"), //available options for vatiant - incremental
-              "option_2_names_path" => array("Size", "L"),
-            ),
-            (object) array(
-              "subtitle" => "Yellow / M",
-              "price" => 130,
-              "compare_at_price" => 130,
-              "currency" => "USD",
-              "currency_sign" => "$",
-              "external_id" => "v2",
-              "shop_url" => "https://shop.io/product/p1/variants/v2",
-              "variant" => true,
-              "images" => array(
-                "https://cdn.io/image1_yellow.jpg",
-                "https://cdn.io/image2_yellow.jpg"
-              ),
-              "option_1_names_path" => array("Color", "Yellow"),
-              "option_2_names_path" => array("Size", "M"),
-            )
-          );
-          $returnObj = (object) $retArr;
-          echo 'obj' . json_encode($returnObj);
+          if ($productType == 'simple' && $product->get_status() == 'publish') {
+            //echo 'product status:' . $product->get_status() . "\n";
+            $retArr["name"] = $product->get_slug(); //slug
+            $retArr["title"] = $product->get_name(); //title
+            $retArr["currency"] = "USD";
+            $retArr["currency_sign"] = "$";
+            $retArr["price"] = ($product->get_sale_price('view') * 100);
+            $retArr["compare_at_price"] = ($product->get_regular_price('view') * 100);
+            $retArr["summary_md"] = "Markdown product details"; // what type of markdown?
+            $retArr["summary_html"] = $product->get_description(); // HTML description
+            $retArr["external_id"] = $productId; //product ID
+            $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
+            $prdImg = $product->get_image_id('view');
+            if ($prdImg) {
+              $mainImg = wp_get_attachment_image_url($prdImg);
+            }
+            $imgIds = $product->get_gallery_image_ids('view');
+            //echo '$prdImg: ' . print_r($mainImg, true) . "\n";
+            $gallImgs = array();
+            if (!empty($imgIds) && is_array($imgIds)) {
+              foreach ($imgIds as $ikey => $ival) {
+                $tempUrl = wp_get_attachment_image_url($ival);
+                if ($tempUrl) {
+                  $gallImgs[] = $tempUrl;
+                }
+              }
+            }
+            $retArr["images"] = $gallImgs;
+            $options = $product->get_attributes('view');
+            $optArray = array();
+            $optGroup = array();
+            if (is_array($options) && !empty($options)) {
+              foreach ($options as $opk => $opv) {
+                $data = $opv->get_data();
+                $optArray['name'] = $opv->get_taxonomy_object()->attribute_label;
+                $optArray['position'] = $data['position'] + 1;
+                if (is_array($data['options']) && !empty($data['options'])) {
+                  $pv = 1;
+                  foreach ($data['options'] as $dok => $dov) {
+                    $optArray['options'][] = (object) array(
+                      "name" => get_term($dov)->name,
+                      "position" => $pv,
+                    );
+                    $pv++;
+                  }
+                  $optGroup[] = array(
+                    "name" => $optArray['name'],
+                    "position" => $optArray['position'],
+                    "options" => $optArray['options']
+                  );
+                }
+              }
+            }
 
-          if ($productType == 'simple') {
-            //$product = new WC_Product($productId);
+            /*
+            $optNameArr = array();
+            if (is_array($optArray['options']) && !empty($optArray['options'])) {
+              foreach ($optArray['options'] as $oak => $optArrVal) {
+                $optNameArr[$oak] = (object) $optArrVal;
+              }
+            }
+            */
+            /*$retArr["option_names"] = array( //option details
+              (object) array(
+                "name" => "Color",
+                "position" => 1,
+                "options" => array(
+                  (object) array("name" => "Pink", "position" => 1),
+                  (object) array("name" => "Yellow", "position" => 2)
+                ),
+              ),
+              (object) array(,
+                "name" => "Size",
+                "position" => 2,
+                "options" => array(
+                  (object) array("name" => "L", "position" => 1),
+                  (object) array("name" => "M", "position" => 2)
+                ),
+            );*/
+
+            $retArr["option_names"] = $optGroup;
+            $retArr["variant"] = false; //bool
+            $returnObj = (object) $retArr;
+            echo json_encode($returnObj);
             //get regular product data (no variants)
           } elseif ($productType == 'variable') {
             //$product = new WC_Product_Variable($productId);
+            $retArr["name"] = "Intenal prduct name"; //slug
+            $retArr["title"] = "Public product title"; //title
+            $retArr["currency"] = "USD";
+            $retArr["currency_sign"] = "$";
+            $retArr["price"] = 120;
+            $retArr["compare_at_price"] = 140;
+            $retArr["summary_md"] = "Markdown product details"; // what type of markdown?
+            $retArr["summary_html"] = "html product details"; // HTML description
+            $retArr["external_id"] = "p1"; //product ID
+            $retArr["shop_url"] = "https://shop.io/product/p1"; //This is the PRODUCT URL (not really the shop URL)
+            $retArr["images"] = array( // array of images
+              "https://cdn.io/image1.jpg",
+              "https://cdn.io/image2.jpg"
+            );
+            $retArr["option_names"] = array( //option details
+              (object) array(
+                "name" => "Color",
+                "position" => 1,
+                "options" => array(
+                  (object) array("name" => "Pink", "position" => 1),
+                  (object) array("name" => "Yellow", "position" => 2)
+                ),
+              ),
+              (object) array(),
+              "name" => "Size",
+              "position" => 2,
+              "options" => array(
+                (object) array("name" => "L", "position" => 1),
+                (object) array("name" => "M", "position" => 2)
+              ),
+            );
+            $retArr["variant"] = false; //bool
+            $retArr["variants"] = array( // variant details
+              (object) array(
+                "subtitle" => "Pink / L",
+                "price" => 120,
+                "compare_at_price" => 140,
+                "currency" => "USD",
+                "currency_sign" => "$",
+                "external_id" => "v1",
+                "shop_url" => "https://shop.io/product/p1/variants/v1", // again, this is the VARIANT ID not the shop URL
+                "variant" => true, // this will always be true for a variant.
+                "images" => array( // aray of images.
+                  "https://cdn.io/image1_pink.jpg",
+                  "https://cdn.io/image2_pink.jpg"
+                ),
+                "option_1_names_path" => array("Color", "Pink"), //available options for vatiant - incremental
+                "option_2_names_path" => array("Size", "L"),
+              ),
+              (object) array(
+                "subtitle" => "Yellow / M",
+                "price" => 130,
+                "compare_at_price" => 130,
+                "currency" => "USD",
+                "currency_sign" => "$",
+                "external_id" => "v2",
+                "shop_url" => "https://shop.io/product/p1/variants/v2",
+                "variant" => true,
+                "images" => array(
+                  "https://cdn.io/image1_yellow.jpg",
+                  "https://cdn.io/image2_yellow.jpg"
+                ),
+                "option_1_names_path" => array("Color", "Yellow"),
+                "option_2_names_path" => array("Size", "M"),
+              )
+            );
+            $returnObj = (object) $retArr;
+            echo 'obj' . json_encode($returnObj);
             //will need to loop through variants
           } elseif ($productType == 'downloadable') {
             //$product = new WC_Product_Variable($productId);
@@ -363,23 +442,23 @@ class OneO_REST_DataController
           // Get Product General Info
           /*
           $product->get_type();
-          $product->get_name();
-          $product->get_slug();
+            $product->get_name();
+            $product->get_slug();
           $product->get_date_created();
           $product->get_date_modified();
-          $product->get_status();
+            $product->get_status();
           $product->get_featured();
           $product->get_catalog_visibility();
-          $product->get_description();
-          $product->get_short_description();
-          $product->get_sku();
+            $product->get_description();
+            $product->get_short_description();
+            $product->get_sku();
           $product->get_menu_order();
           $product->get_virtual();
 
           // Get Product Prices
-          $product->get_price();
-          $product->get_regular_price();
-          $product->get_sale_price();
+            $product->get_price();
+            $product->get_regular_price();
+            $product->get_sale_price();
           $product->get_date_on_sale_from();
           $product->get_date_on_sale_to();
           $product->get_total_sales();
@@ -409,9 +488,9 @@ class OneO_REST_DataController
 
           // Get Product Variations and Attributes
           $product->get_children(); // get variations
-          $product->get_attributes();
-          $product->get_default_attributes();
-          $product->get_attribute('attributeid'); //get specific attribute value
+            $product->get_attributes();
+            $product->get_default_attributes();
+            $product->get_attribute('attributeid'); //get specific attribute value
 
           // Get Product Taxonomies
           $product->get_categories();
