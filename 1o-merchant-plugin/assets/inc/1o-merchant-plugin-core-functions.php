@@ -245,6 +245,7 @@ class OneO_REST_DataController
 
         # Step 3: If not empty, get product data for request.
         if ($prodURL !== false) {
+          //require_once(OOMP_LOC_VENDOR_PATH . 'markdown-converter/Converter.php');
           $productId = url_to_postid($prodURL);
           $productTemp = new WC_Product_Factory();
           $productType = $productTemp->get_product_type($productId);
@@ -255,16 +256,18 @@ class OneO_REST_DataController
           $retArr = array();
 
           if ($productType == 'simple' && $product->get_status() == 'publish') {
-            //echo 'product status:' . $product->get_status() . "\n";
             $retArr["name"] = $product->get_slug(); //slug
             $retArr["title"] = $product->get_name(); //title
-            $retArr["currency"] = "USD";
-            $retArr["currency_sign"] = "$";
+            $retArr["currency"] = get_woocommerce_currency();
+            $retArr["currency_sign"] = get_woocommerce_currency_symbol();
             $retArr["price"] = ($product->get_sale_price('view') * 100);
             $retArr["compare_at_price"] = ($product->get_regular_price('view') * 100);
-            $retArr["summary_md"] = "Markdown product details"; // what type of markdown?
-            $retArr["summary_html"] = $product->get_description(); // HTML description
-            $retArr["external_id"] = $productId; //product ID
+            $prodDesc = $product->get_description();
+            //$converter = new Markdownify\Converter;
+            //$parsedHTML = $converter->parseString($prodDesc);
+            //$retArr["summary_md"] = $parsedHTML;
+            $retArr["summary_html"] = $prodDesc; // HTML description
+            $retArr["external_id"] = (string) $productId; //product ID
             $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
             $prdImg = $product->get_image_id('view');
             if ($prdImg) {
@@ -283,10 +286,10 @@ class OneO_REST_DataController
             }
             $retArr["images"] = $gallImgs;
             $options = $product->get_attributes('view');
-            $optArray = array();
             $optGroup = array();
             if (is_array($options) && !empty($options)) {
               foreach ($options as $opk => $opv) {
+                $optArray = array();
                 $data = $opv->get_data();
                 $optArray['name'] = $opv->get_taxonomy_object()->attribute_label;
                 $optArray['position'] = $data['position'] + 1;
@@ -307,37 +310,13 @@ class OneO_REST_DataController
                 }
               }
             }
-
-            /*
-            $optNameArr = array();
-            if (is_array($optArray['options']) && !empty($optArray['options'])) {
-              foreach ($optArray['options'] as $oak => $optArrVal) {
-                $optNameArr[$oak] = (object) $optArrVal;
-              }
-            }
-            */
-            /*$retArr["option_names"] = array( //option details
-              (object) array(
-                "name" => "Color",
-                "position" => 1,
-                "options" => array(
-                  (object) array("name" => "Pink", "position" => 1),
-                  (object) array("name" => "Yellow", "position" => 2)
-                ),
-              ),
-              (object) array(,
-                "name" => "Size",
-                "position" => 2,
-                "options" => array(
-                  (object) array("name" => "L", "position" => 1),
-                  (object) array("name" => "M", "position" => 2)
-                ),
-            );*/
-
             $retArr["option_names"] = $optGroup;
             $retArr["variant"] = false; //bool
+            $retArr["variants"] = array(); //bool
             $returnObj = (object) $retArr;
-            echo json_encode($returnObj);
+            $args['product_to_import'] = $returnObj;
+            //echo json_encode($returnObj);
+            //exit;
             //get regular product data (no variants)
           } elseif ($productType == 'variable') {
             //$product = new WC_Product_Variable($productId);
@@ -418,11 +397,11 @@ class OneO_REST_DataController
           }
           /**
            * Other types:
-           * simple
+           *  simple
            * grouped
-           * variable
+           *  variable
            * virtual
-           * downloadable
+           *  downloadable
            * external/affiliate
            * 
            * There could also be these types if using a plugin:
@@ -434,89 +413,95 @@ class OneO_REST_DataController
            *  */
 
           //exit for now during testing/setup.
-          exit;
+          //exit;
+          // nothing function below - (just used for hiding data in editor).  
+          if (isset($test)) {
+            /**
+             * Available data from Product obj
+             */
+            // Get Product General Info
+            /*
+              $product->get_type();
+                $product->get_name();
+                $product->get_slug();
+              $product->get_date_created();
+              $product->get_date_modified();
+                $product->get_status();
+              $product->get_featured();
+              $product->get_catalog_visibility();
+                $product->get_description();
+                $product->get_short_description();
+                $product->get_sku();
+              $product->get_menu_order();
+              $product->get_virtual();
 
-          /**
-           * Available data from Product obj
-           */
-          // Get Product General Info
-          /*
-          $product->get_type();
-            $product->get_name();
-            $product->get_slug();
-          $product->get_date_created();
-          $product->get_date_modified();
-            $product->get_status();
-          $product->get_featured();
-          $product->get_catalog_visibility();
-            $product->get_description();
-            $product->get_short_description();
-            $product->get_sku();
-          $product->get_menu_order();
-          $product->get_virtual();
+              // Get Product Prices
+                $product->get_price();
+                $product->get_regular_price();
+                $product->get_sale_price();
+              $product->get_date_on_sale_from();
+              $product->get_date_on_sale_to();
+              $product->get_total_sales();
 
-          // Get Product Prices
-            $product->get_price();
-            $product->get_regular_price();
-            $product->get_sale_price();
-          $product->get_date_on_sale_from();
-          $product->get_date_on_sale_to();
-          $product->get_total_sales();
+              // Get Product Tax, Shipping & Stock
+              $product->get_tax_status();
+              $product->get_tax_class();
+              $product->get_manage_stock();
+              $product->get_stock_quantity();
+              $product->get_stock_status();
+              $product->get_backorders();
+              $product->get_sold_individually();
+              $product->get_purchase_note();
+              $product->get_shipping_class_id();
 
-          // Get Product Tax, Shipping & Stock
-          $product->get_tax_status();
-          $product->get_tax_class();
-          $product->get_manage_stock();
-          $product->get_stock_quantity();
-          $product->get_stock_status();
-          $product->get_backorders();
-          $product->get_sold_individually();
-          $product->get_purchase_note();
-          $product->get_shipping_class_id();
+              // Get Product Dimensions
+              $product->get_weight();
+              $product->get_length();
+              $product->get_width();
+              $product->get_height();
+              $product->get_dimensions();
 
-          // Get Product Dimensions
-          $product->get_weight();
-          $product->get_length();
-          $product->get_width();
-          $product->get_height();
-          $product->get_dimensions();
+              // Get Linked Products
+              $product->get_upsell_ids();
+              $product->get_cross_sell_ids();
+              $product->get_parent_id();
 
-          // Get Linked Products
-          $product->get_upsell_ids();
-          $product->get_cross_sell_ids();
-          $product->get_parent_id();
+              // Get Product Variations and Attributes
+              $product->get_children(); // get variations
+                $product->get_attributes();
+                $product->get_default_attributes();
+                $product->get_attribute('attributeid'); //get specific attribute value
 
-          // Get Product Variations and Attributes
-          $product->get_children(); // get variations
-            $product->get_attributes();
-            $product->get_default_attributes();
-            $product->get_attribute('attributeid'); //get specific attribute value
+              // Get Product Taxonomies
+              $product->get_categories();
+              $product->get_category_ids();
+              $product->get_tag_ids();
 
-          // Get Product Taxonomies
-          $product->get_categories();
-          $product->get_category_ids();
-          $product->get_tag_ids();
+              // Get Product Downloads
+              $product->get_downloads();
+              $product->get_download_expiry();
+              $product->get_downloadable();
+              $product->get_download_limit();
 
-          // Get Product Downloads
-          $product->get_downloads();
-          $product->get_download_expiry();
-          $product->get_downloadable();
-          $product->get_download_limit();
+              // Get Product Images
+              $product->get_image_id();
+              $product->get_image();
+              $product->get_gallery_image_ids();
 
-          // Get Product Images
-          $product->get_image_id();
-          $product->get_image();
-          $product->get_gallery_image_ids();
-
-          // Get Product Reviews
-          $product->get_reviews_allowed();
-          $product->get_rating_counts();
-          $product->get_average_rating();
-          $product->get_review_count();
-          */
+              // Get Product Reviews
+              $product->get_reviews_allowed();
+              $product->get_rating_counts();
+              $product->get_average_rating();
+              $product->get_review_count();
+              */
+          }
         }
-        //$productURL = new Oo_graphQLRequest('line_items', $order_id, $newPaseto, $args);
-        OneO_REST_DataController::set_controller_log('process_directive: import_product_from_url', print_r($getLineItems, true));
+        $oORequest = new Oo_graphQLRequest('import_product', $args['product_url'], $newPaseto, $args);
+        $resp = $oORequest->get_request();
+        OneO_REST_DataController::set_controller_log('process_directive: import_product_from_url', print_r($oORequest, true));
+
+        //echo print_r($$oORequest, true);
+        //echo print_r($resp, true);
         if ($oORequest !== false) {
           $processed = 'ok';
         } else {

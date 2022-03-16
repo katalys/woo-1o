@@ -8,6 +8,18 @@ class Oo_graphQLRequest
    */
   public function __construct($requestType, $orderId, $authCode, $args)
   {
+    $allowedRequests = array(
+      'line_items',
+      'order_data',
+      'update_ship_rates',
+      'complete_order',
+      'import_product',
+    );
+    if (!isset($requestType) || $requestType == '' || !in_array($requestType, $allowedRequests)) {
+      /* Error response for 1o */
+      $error = new WP_Error('Error-402', 'Cannot Process Directive - improper request type.', 'API Error');
+      wp_send_json_error($error, 403);
+    }
     if ($orderId == '') {
       /* Error response for 1o */
       $error = new WP_Error('Error-401', 'Cannot Process Directive - Order Id is blank.', 'API Error');
@@ -16,6 +28,8 @@ class Oo_graphQLRequest
     $fulfillStatus = isset($args['fulfilled-status']) ? $args['fulfilled-status'] : 'unknown';
     $externalData = isset($args['external-data']) ? $args['external-data'] : '';
     $shippingRates = isset($args['shipping-rates']) ? $args['shipping-rates'] : '';
+    $prodImportData = isset($args['product_to_import']) ? $args['product_to_import'] : '';
+    $prodImportUrl = isset($args['product_url']) ? $args['product_url'] : '';
 
     /* Set up Query Array */
     $queryArray = array();
@@ -23,6 +37,7 @@ class Oo_graphQLRequest
     $queryArray['order_data'] = 'query Q {order( id: "' . $orderId . '" ) {externalData billingName billingPhone billingEmail billingAddressCity billingAddressSubdivision billingAddressSubdivisionCode billingAddressLine_1 billingAddressLine_2 billingAddressCountry billingAddressCountryCode billingAddressZip chosenShippingRateHandle currency customerName customerEmail customerPhone fulfillmentStatus lineItems{quantity price tax total currency productExternalId variantExternalId} merchantName paymentStatus shippingName shippingPhone shippingEmail shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressSubdivision shippingAddressSubdivisionCode shippingAddressCountry shippingAddressCountryCode shippingAddressZip total totalPrice totalShipping totalTax transactions{id name}}}';
     $queryArray['update_ship_rates'] = 'mutation M($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id shippingRates{handle amount title}}}';
     $queryArray['complete_order'] = 'mutation CompleteOrder($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id fulfillmentStatus externalData}}';
+    $queryArray['import_product'] = 'mutation CP($input: ProductInput!) {CreateProduct(input: $input) {id}}';
 
     if ($requestType == '' || !isset($queryArray[$requestType])) {
       /* Error response for 1o */
@@ -53,6 +68,11 @@ class Oo_graphQLRequest
       case 'complete_order':
         $externalData = json_encode($externalData);
         $variables = ((object) array("id" => $orderId, "input" => (object) array("fulfillmentStatus" => $fulfillStatus, "externalData" => $externalData)));
+        $contentType = 'application/json';
+        break;
+      case 'import_product':
+        $prodData = $prodImportData;
+        $variables = ((object) array("input" => $prodData));
         $contentType = 'application/json';
         break;
     }
