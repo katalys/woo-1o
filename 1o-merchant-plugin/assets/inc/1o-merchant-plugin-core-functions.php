@@ -200,13 +200,13 @@ class OneO_REST_DataController
   {
     $return_arr = array();
     $processed = OneO_REST_DataController::process_directive_function($d_key, $d_val, $kid);
-    $status = $processed->status;
-    $order_id = $processed->order_id;
+    $status = isset($processed->status) ? $processed->status : 'unknown';
+    $order_id = isset($processed->order_id) ? $processed->order_id : null;
     $return_arr["in_response_to"] = $d_key; // key
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present
     }
-    $return_arr["status"] = $status; // ok or error
+    $return_arr["status"] = $status; // ok or error or error message
     return (object)$return_arr;
   }
 
@@ -221,19 +221,27 @@ class OneO_REST_DataController
     if (!is_object($product) || !is_array($product)) {
       $options = $product->get_attributes('view');
       $optGroup = array();
+      $optList = array();
+      $optList2 = array();
       if (is_array($options) && !empty($options)) {
         foreach ($options as $opk => $opv) {
           $optArray = array();
           $data = $opv->get_data();
-          $optArray['name'] = $opv->get_taxonomy_object()->attribute_label;
+          $optArrName = $opv->get_taxonomy_object()->attribute_label;
+          $optArray['name'] = $optArrName;
           $optArray['position'] = $data['position'] + 1;
+          $optList2[$opk] = $optArrName;
           if (is_array($data['options']) && !empty($data['options'])) {
             $pv = 1;
             foreach ($data['options'] as $dok => $dov) {
+              $dovName = get_term($dov)->name;
+              $dovSlug = get_term($dov)->slug;
               $optArray['options'][] = (object) array(
-                "name" => get_term($dov)->name,
+                "name" => $dovName,
                 "position" => $pv,
               );
+              $optList[$opk][$dovSlug] = $dovName;
+              $optList2[$dovSlug] = $dovName;
               $pv++;
             }
             $optGroup[] = array(
@@ -245,7 +253,7 @@ class OneO_REST_DataController
         }
       }
     }
-    return $optGroup;
+    return array('group' => $optGroup, 'list' => $optList, 'names' => $optList2);
   }
 
   /**
@@ -261,7 +269,7 @@ class OneO_REST_DataController
       $gallImgs = array();
       if (!empty($imgIds) && is_array($imgIds)) {
         foreach ($imgIds as $ikey => $ival) {
-          $tempUrl = wp_get_attachment_image_url($ival);
+          $tempUrl = wp_get_attachment_image_url($ival, 'full');
           if ($tempUrl) {
             $gallImgs[] = $tempUrl;
           }
@@ -292,94 +300,53 @@ class OneO_REST_DataController
     }
   }
 
-  public static function process_variants($variants = array(), $currency = '', $currencySign = '')
+  public static function process_variants($variants = array(), $optionNames = array(), $productTitle = '', $currency = '', $currencySign = '')
   {
     $processedVariants = array();
     //TODO: check if is a variant ((bool)$variants['vatiants'], I think )
     if (is_array($variants) && !empty($variants)) {
+      $pv = 0;
       foreach ($variants as $variant) {
-        /*
-          [attributes] => Array
-                (
-                    [attribute_pa_color] => blue
-                    [attribute_pa_sleeve-length] => long-sleeve
-                )
-
-            [availability_html] => <p class="stock in-stock">10 in stock</p>
-
-            [backorders_allowed] => 1
-            [dimensions] => Array
-                (
-                    [length] => 
-                    [width] => 
-                    [height] => 
-                )
-
-            [dimensions_html] => N/A
-            [display_price] => 15.99
-            [display_regular_price] => 20.99
-            [image] => Array
-                (
-                    [title] => hoodie-with-logo-2.jpg
-                    [caption] => 
-                    [url] => https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2.jpg
-                    [alt] => 
-                    [src] => https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-416x416.jpg
-                    [srcset] => https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-416x416.jpg 416w, https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-300x300.jpg 300w, https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-150x150.jpg 150w, https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-768x768.jpg 768w, https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-324x324.jpg 324w, https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-100x100.jpg 100w, https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2.jpg 801w
-                    [sizes] => (max-width: 416px) 100vw, 416px
-                    [full_src] => https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2.jpg
-                    [full_src_w] => 801
-                    [full_src_h] => 801
-                    [gallery_thumbnail_src] => https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-100x100.jpg
-                    [gallery_thumbnail_src_w] => 100
-                    [gallery_thumbnail_src_h] => 100
-                    [thumb_src] => https://1o.webtestingsite.com/wp-content/uploads/2022/01/hoodie-with-logo-2-324x324.jpg
-                    [thumb_src_w] => 324
-                    [thumb_src_h] => 324
-                    [src_w] => 416
-                    [src_h] => 416
-                )
-
-            [image_id] => 13
-            [is_downloadable] => 
-            [is_in_stock] => 1
-            [is_purchasable] => 1
-            [is_sold_individually] => no
-            [is_virtual] => 
-            [max_qty] => 
-            [min_qty] => 1
-            [price_html] => <span class="price"><del aria-hidden="true"><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#36;</span>20.99</bdi></span></del> <ins><span class="woocommerce-Price-amount amount"><bdi><span class="woocommerce-Price-currencySymbol">&#36;</span>15.99</bdi></span></ins></span>
-            [sku] => 10356-1
-            [variation_description] => 
-            [variation_id] => 85
-            [variation_is_active] => 1
-            [variation_is_visible] => 1
-            [weight] => 1
-            [weight_html] => 1 lbs
-        )
-        */
         if (isset($variant['variation_is_active']) && (bool) $variant['variation_is_active'] && isset($variant['variation_is_visible'])  && (bool)$variant['variation_is_visible']) {
           $subtitleName = '';
           if (isset($variant['attributes']) && !empty($variant['attributes'])) {
-            $subtitleName = implode(" / ", $variant['attributes']);
+            $tempSTN = array();
+            foreach ($variant['attributes'] as $vav) {
+              $tempSTN[] = $optionNames[$vav];
+            }
+            $subtitleName = implode("/", $tempSTN);
           }
-          $processedVariants[] = (object) array(
-            "subtitle" => $subtitleName, // TODO: get proper names of items - there are slugs.
-            "price" => ($variant['display_price'] * 100),
-            "compare_at_price" => ($variant['display_regular_price'] * 100),
+          $pvtemp = array(
+            //"title" => $productTitle, // Only needed if different than main product.
+            "subtitle" => $subtitleName,
+            "price" => round(($variant['display_price'] * 100), 0, PHP_ROUND_HALF_UP),
+            "compare_at_price" => round(($variant['display_regular_price'] * 100), 0, PHP_ROUND_HALF_UP),
             "currency" => $currency,
             "currency_sign" => $currencySign,
-            "external_id" => $variant['variation_id'],
+            "external_id" => (string) $variant['variation_id'],
             "shop_url" => get_permalink($variant['variation_id']),
             "variant" => true,
+            //'sku' => $variant['sku'], 
+            //TODO: Add SKU to at 1o level.
             "images" => array(
-              $variant['image']['url'] // TODO: verify if they can have multiple images.
-            ),
-            // TODO: NEED to set these up
-            "option_1_names_path" => array("Color", "Pink"), //available options for vatiant - incremental
-            "option_2_names_path" => array("Size", "L"),
+              $variant['image']['url']
+            )
           );
+          $attribs = $variant['attributes'];
+          if (is_array($attribs) && !empty($attribs)) {
+            $np = 1;
+            foreach ($attribs as $attK => $attV) {
+              $attName = str_replace("attribute_", "", $attK);
+              $pvtemp['option_' . $np . '_names_path'] = array(
+                $optionNames[$attName],
+                $optionNames[$attV]
+              );
+              $np++;
+            }
+          }
+          $processedVariants[] = (object)$pvtemp;
         }
+        $pv++;
       }
     }
     return $processedVariants;
@@ -391,12 +358,13 @@ class OneO_REST_DataController
     $processed = null;
     $order_id = isset($args['order_id']) ? esc_attr($args['order_id']) : null;
     $args = !is_array($args) || $args == false ? array() : $args;
+    $hasOrderId = true;
 
     /* possible directives:  taxes, pricing, discounts, inventory checks, */
     switch (strtolower($directive)) {
       case '':
       default:
-        $processed = 'error';
+        $processed = 'Invalid or Missing Directive';
         break;
       case 'update_taxes':
         $processed = 'future';
@@ -412,6 +380,7 @@ class OneO_REST_DataController
         break;
       case 'import_product_from_url':
         $oORequest = false;
+        $hasOrderId = false;
         # Step 1: Create new Paseto for request.
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
 
@@ -424,179 +393,81 @@ class OneO_REST_DataController
           $productTemp = new WC_Product_Factory();
           $productType = $productTemp->get_product_type($productId);
           $product = $productTemp->get_product($productId);
+          $isDownloadable = $product->is_downloadable();
+          $canProcess = false;
           $retArr = array();
           if (!$product->get_status() == 'publish') {
-            // if product is not published, return error
             $args['product_to_import'] = 'not published';
-          } elseif ($productType == 'simple') { //get regular product data (no variants)
+            $processed = "Product must be set to Published to be imported.";
+          } elseif ($productType == 'simple' && !$isDownloadable) { //get regular product data (no variants)
+            $canProcess = true;
             $retArr["name"] = $product->get_slug(); //slug
             $retArr["title"] = $product->get_name(); //title
             $retArr["currency"] = get_woocommerce_currency();
-            $retArr["currency_sign"] = get_woocommerce_currency_symbol();
-            $retArr["price"] = ($product->get_sale_price('view') * 100);
-            $retArr["compare_at_price"] = ($product->get_regular_price('view') * 100);
+            $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
+            $retArr["price"] = round(($product->get_sale_price('view') * 100), 0, PHP_ROUND_HALF_UP);
+            $retArr["compare_at_price"] = round(($product->get_regular_price('view') * 100), 0, PHP_ROUND_HALF_UP);
             $prodDesc = $product->get_description();
-            //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc); //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
+            //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc); 
+            //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
             $retArr["summary_html"] = $prodDesc; // HTML description
             $retArr["external_id"] = (string) $productId; //product ID
             $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
-            $prdImg = $product->get_image_id('view');
-            if ($prdImg) {
-              $mainImg = wp_get_attachment_image_url($prdImg);
-            }
             $retArr["images"] = OneO_REST_DataController::get_product_images($product);
-            $retArr["option_names"] = OneO_REST_DataController::get_product_options($product);
+            //$retArr['sku'] = $product->get_sku();
+            //TODO: SKU needs to be adde on 1o end still.
+            $options = OneO_REST_DataController::get_product_options($product);
+            $retArr["option_names"] = $options['group'];
             $retArr["variant"] = false; //bool
             $retArr["variants"] = array(); //empty array (no variants)
             $returnObj = (object) $retArr;
             $args['product_to_import'] = $returnObj;
-          } elseif ($productType == 'variable') {
+          } elseif ($productType == 'variable' && !$isDownloadable) { //get variable product data (with variants)
+            $canProcess = true;
             $retArr["name"] = $product->get_slug(); //slug
             $retArr["title"] = $product->get_name(); //title
             $retArr["currency"] = get_woocommerce_currency();
-            $retArr["currency_sign"] = get_woocommerce_currency_symbol();
+            $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
             $retArr["price"] = ($product->get_sale_price('view') * 100);
             $retArr["compare_at_price"] = ($product->get_regular_price('view') * 100);
             $prodDesc = $product->get_description();
-            //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);//Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
+            //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
+            //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
             $retArr["summary_html"] = $prodDesc;
             $retArr["external_id"] = (string) $productId;
             $retArr["shop_url"] = $prodURL;
-            $prdImg = $product->get_image_id('view');
-            if ($prdImg) {
-              $mainImg = wp_get_attachment_image_url($prdImg);
-            }
             $retArr["images"] = OneO_REST_DataController::get_product_images($product);
-            $retArr["option_names"] = OneO_REST_DataController::get_product_options($product);
+            //$retArr['sku'] = $product->get_sku(); 
+            //TODO: SKU needs to be adde on 1o end still.
+            $options = OneO_REST_DataController::get_product_options($product);
+            $retArr["option_names"] = $options['group'];
             $retArr["variant"] = false; //bool
             $variants = $product->get_available_variations();
             $processedVariants = array();
-            //if (is_array($variants) && isset($variants['variants']) && $variants['variants']) {
-            if (is_array($variants)) {
-              $processedVariants = OneO_REST_DataController::process_variants($variants, $retArr["currency"], $retArr["currency_sign"]);
+            if (is_array($variants) && !empty($variants)) {
+              $processedVariants = OneO_REST_DataController::process_variants($variants, $options['names'], $retArr["title"], $retArr["currency"], $retArr["currency_sign"]);
             }
             $retArr["variants"] = $processedVariants;
             $returnObj = (object) $retArr;
             $args['product_to_import'] = $returnObj;
-          } elseif ($productType == 'downloadable') {
-            //$product = new WC_Product_Variable($productId);
-            //will need to loop through variants
+          } elseif ($productType == 'downloadable' || $isDownloadable) {
+            $processed = 'Product type "Downloadable" not accepted.';
           } else {
-            //return wrong type error.
+            $processed = 'Product type "' . $productType . '" not accepted.';
           }
-          /**
-           * Other types:
-           *  simple
-           * grouped
-           *  variable
-           * virtual
-           *  downloadable
-           * external/affiliate
-           * 
-           * There could also be these types if using a plugin:
-           * subscription
-           * bookable
-           * mempership
-           * bundled
-           * auction
-           *  */
+          // Acceptable Types: Simple, Variable;
+          // Other types: grouped, virtual, downloadable, external/affiliate
+          // There could also be these types if using a plugin: subscription, bookable, mempership, bundled, auction
 
-          //exit for now during testing/setup.
-          //exit;
-          // nothing function below - (just used for hiding data in editor).  
-          if (isset($test)) {
-            /**
-             * Available data from Product obj
-             */
-            // Get Product General Info
-            /*
-              $product->get_type();
-                $product->get_name();
-                $product->get_slug();
-              $product->get_date_created();
-              $product->get_date_modified();
-                $product->get_status();
-              $product->get_featured();
-              $product->get_catalog_visibility();
-                $product->get_description();
-                $product->get_short_description();
-                $product->get_sku();
-              $product->get_menu_order();
-              $product->get_virtual();
-
-              // Get Product Prices
-                $product->get_price();
-                $product->get_regular_price();
-                $product->get_sale_price();
-              $product->get_date_on_sale_from();
-              $product->get_date_on_sale_to();
-              $product->get_total_sales();
-
-              // Get Product Tax, Shipping & Stock
-              $product->get_tax_status();
-              $product->get_tax_class();
-              $product->get_manage_stock();
-              $product->get_stock_quantity();
-              $product->get_stock_status();
-              $product->get_backorders();
-              $product->get_sold_individually();
-              $product->get_purchase_note();
-              $product->get_shipping_class_id();
-
-              // Get Product Dimensions
-              $product->get_weight();
-              $product->get_length();
-              $product->get_width();
-              $product->get_height();
-              $product->get_dimensions();
-
-              // Get Linked Products
-              $product->get_upsell_ids();
-              $product->get_cross_sell_ids();
-              $product->get_parent_id();
-
-              // Get Product Variations and Attributes
-              $product->get_children(); // get variations
-                $product->get_attributes();
-                $product->get_default_attributes();
-                $product->get_attribute('attributeid'); //get specific attribute value
-
-              // Get Product Taxonomies
-              $product->get_categories();
-              $product->get_category_ids();
-              $product->get_tag_ids();
-
-              // Get Product Downloads
-              $product->get_downloads();
-              $product->get_download_expiry();
-              $product->get_downloadable();
-              $product->get_download_limit();
-
-              // Get Product Images
-              $product->get_image_id();
-              $product->get_image();
-              $product->get_gallery_image_ids();
-
-              // Get Product Reviews
-              $product->get_reviews_allowed();
-              $product->get_rating_counts();
-              $product->get_average_rating();
-              $product->get_review_count();
-              */
-          }
         }
-        echo print_r($args, true);
-        exit;
-
-        $oORequest = new Oo_graphQLRequest('import_product', $args['product_url'], $newPaseto, $args);
-        $resp = $oORequest->get_request();
-        OneO_REST_DataController::set_controller_log('process_directive: import_product_from_url', print_r($oORequest, true));
-
-        //echo print_r($$oORequest, true);
-        //echo print_r($resp, true);
-        if ($oORequest !== false) {
+        if ($canProcess) {
+          $oORequest = new Oo_graphQLRequest('import_product', $args['product_url'], $newPaseto, $args);
+          $resp = $oORequest->get_request();
+          OneO_REST_DataController::set_controller_log('process_directive: import_product_from_url', print_r($oORequest, true));
+        }
+        if ($oORequest !== false && is_null($processed)) {
           $processed = 'ok';
-        } else {
+        } elseif (is_null($processed)) {
           $processed = 'error';
         }
         break;
@@ -733,7 +604,8 @@ class OneO_REST_DataController
         break;
     }
     $retArr['status'] = $processed;
-    $retArr['order_id'] = $order_id;
+    if ($hasOrderId)
+      $retArr['order_id'] = $order_id;
     return (object) $retArr;
   }
 
