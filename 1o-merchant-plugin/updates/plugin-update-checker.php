@@ -252,7 +252,7 @@ if (!class_exists('FCMPluginUpdateChecker_1_7')) :
 			} else {
 				//This can happen if the filename points to something that is not a plugin.
 				if ($this->debugMode) {
-					trigger_error(sprintf("Can't to read the Version header for %s. The filename is incorrect or is not a plugin.", $this->pluginFile), E_USER_WARNING);
+					trigger_error(sprintf("Can't read the Version header for %s. The filename is incorrect or it is not a plugin.", $this->pluginFile), E_USER_WARNING);
 				}
 				return null;
 			}

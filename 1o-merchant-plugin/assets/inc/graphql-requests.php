@@ -8,23 +8,34 @@ class Oo_graphQLRequest
    */
   public function __construct($requestType, $orderId, $authCode, $args)
   {
+    if (OOMP_GRAPHQL_URL == '') {
+      // no endpoint set for requests - cannot continue.
+      /* Error response for 1o */
+      $error = new WP_Error('Error-409', 'Cannot Process Directive - User needs to set proper GraphQL Endpoint.', 'API Error');
+      wp_send_json_error($error, 500);
+    }
+
     $allowedRequests = array(
+      'complete_order',
+      'health_check',
+      'import_product',
       'line_items',
       'order_data',
       'update_ship_rates',
-      'complete_order',
-      'import_product',
     );
+
     if (!isset($requestType) || $requestType == '' || !in_array($requestType, $allowedRequests)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-402', 'Cannot Process Directive - improper request type.', 'API Error');
-      wp_send_json_error($error, 403);
+      wp_send_json_error($error, 500);
     }
-    if ($orderId == '') {
+
+    if ($orderId == '' && $requestType != 'health_check') {
       /* Error response for 1o */
       $error = new WP_Error('Error-401', 'Cannot Process Directive - Order Id is blank.', 'API Error');
-      wp_send_json_error($error, 403);
+      wp_send_json_error($error, 500);
     }
+
     $fulfillStatus = isset($args['fulfilled-status']) ? $args['fulfilled-status'] : 'unknown';
     $externalData = isset($args['external-data']) ? $args['external-data'] : '';
     $shippingRates = isset($args['shipping-rates']) ? $args['shipping-rates'] : '';
@@ -33,7 +44,8 @@ class Oo_graphQLRequest
 
     /* Set up Query Array */
     $queryArray = array();
-    $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressSubdivision shippingAddressSubdivisionCode shippingAddressCountry shippingAddressCountryCode shippingAddressZip lineItems { quantity price tax total currency productExternalId variantExternalId}}}';
+    $queryArray['health_check'] = 'query {healthCheck}';
+    $queryArray['line_items'] = 'query Q {order(id: "' . $orderId . '") {shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressSubdivision shippingAddressSubdivisionCode shippingAddressCountry shippingAddressCountryCode shippingAddressZip lineItems { quantity price tax currency productExternalId variantExternalId}}}';
     $queryArray['order_data'] = 'query Q {order( id: "' . $orderId . '" ) {externalData billingName billingPhone billingEmail billingAddressCity billingAddressSubdivision billingAddressSubdivisionCode billingAddressLine_1 billingAddressLine_2 billingAddressCountry billingAddressCountryCode billingAddressZip chosenShippingRateHandle currency customerName customerEmail customerPhone fulfillmentStatus lineItems{quantity price tax total currency productExternalId variantExternalId} merchantName paymentStatus shippingName shippingPhone shippingEmail shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressSubdivision shippingAddressSubdivisionCode shippingAddressCountry shippingAddressCountryCode shippingAddressZip total totalPrice totalShipping totalTax transactions{id name}}}';
     $queryArray['update_ship_rates'] = 'mutation M($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id shippingRates{handle amount title}}}';
     $queryArray['complete_order'] = 'mutation CompleteOrder($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id fulfillmentStatus externalData}}';
@@ -42,7 +54,7 @@ class Oo_graphQLRequest
     if ($requestType == '' || !isset($queryArray[$requestType])) {
       /* Error response for 1o */
       $error = new WP_Error('Error-403', 'Cannot Process Directive - Blank or not in allowed list.', 'API Error');
-      wp_send_json_error($error, 403);
+      wp_send_json_error($error, 500);
     }
 
     $data = $queryArray[$requestType];

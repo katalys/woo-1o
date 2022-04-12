@@ -26,6 +26,17 @@ class oneO_Settings
         add_action('admin_init', array($this, 'oneO_settings_page_init'));
     }
 
+    public static function get_oneO_settings_options($option_name = '')
+    {
+        $options = get_option('oneO_settings_option_name', array());
+        if ($option_name == '') {
+            // return all if no one option is asked for.
+            return $options;
+        } else {
+            return (isset($options[$option_name]) ? $options[$option_name] : '');
+        }
+    }
+
     public function oneO_settings_add_plugin_page()
     {
         if ('stand-alone' === $this->menu_type) {
@@ -51,8 +62,7 @@ class oneO_Settings
 
     public function oneO_settings_create_admin_page()
     {
-        $this->oneO_settings_options = get_option('oneO_settings_option_name', array());
-?>
+        $this->oneO_settings_options = get_option('oneO_settings_option_name', array()); ?>
         <style>
             .settings_unset .api_endpoint {
                 display: none;
@@ -181,7 +191,8 @@ class oneO_Settings
                 $pKey = isset($this->oneO_settings_options['public_key']) && $this->oneO_settings_options['public_key'] != '' ? true : false;
                 $ssKey = isset($this->oneO_settings_options['secret_key']) && $this->oneO_settings_options['secret_key'] != '' ? true : false;
                 $intId = isset($this->oneO_settings_options['integration_id']) && $this->oneO_settings_options['integration_id'] != '' ? true : false;
-                $setting_class = $pKey && $ssKey && $intId ? ' settings_set' : ' settings_unset';
+                $graphql = isset($this->oneO_settings_options['graphql_endpoint']) && $this->oneO_settings_options['graphql_endpoint'] != '' ? true : false;
+                $setting_class = $pKey && $ssKey && $intId && $graphql ? ' settings_set' : ' settings_unset';
             ?>
                 <p>Enter your <strong>Integration ID</strong>, <strong>API Key</strong> and <strong>Shared Secret</strong> in the fields below. Log in to your 1o Admin console > Settings > Apps & Integrations, select Platforms tab, click WooCommerce and follow the instructions.</p>
                 <form method="post" action="options.php" class="settings-form-1o<?php echo $setting_class; ?>">
@@ -254,6 +265,14 @@ class oneO_Settings
         );
 
         add_settings_field(
+            'graphql_endpoint', // id
+            '1o GraphQL Endpoint', // title
+            array($this, 'graphql_callback'), // callback
+            'oneO-settings-admin', // page
+            'oneO_settings_setting_section' // section
+        );
+
+        add_settings_field(
             'api_endpoint', // id
             'Store API Endpoint', // title
             array($this, 'api_endpoint_callback'), // callback
@@ -274,6 +293,9 @@ class oneO_Settings
         }
         if (isset($input['api_endpoint'])) {
             $sanitary_values['api_endpoint'] = sanitize_text_field($input['api_endpoint']);
+        }
+        if (isset($input['graphql_endpoint'])) {
+            $sanitary_values['graphql_endpoint'] = sanitize_text_field($input['graphql_endpoint']);
         }
         if (isset($input['secret_key'])) {
             $sanitary_values['secret_key'] = sanitize_text_field($input['secret_key']);
@@ -330,6 +352,14 @@ class oneO_Settings
         printf(
             '<input class="regular-text medium-text-input" type="text" autocomplete="1o-integration-id" name="oneO_settings_option_name[integration_id]" id="integration_id" value="%s">',
             isset($this->oneO_settings_options['integration_id']) ? esc_attr($this->oneO_settings_options['integration_id']) : ''
+        );
+    }
+
+    public function graphql_callback()
+    {
+        printf(
+            '<input class="regular-text medium-text-input" type="text" autocomplete="1o-graphql-endpoint" name="oneO_settings_option_name[graphql_endpoint]" id="graphql_endpoint" value="%s">',
+            isset($this->oneO_settings_options['graphql_endpoint']) ? esc_attr($this->oneO_settings_options['graphql_endpoint']) : ''
         );
     }
 

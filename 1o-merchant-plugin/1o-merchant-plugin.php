@@ -3,7 +3,7 @@
 Plugin Name: 1o Merchant Plugin
 URI: https://fischercreativemedia.com
 Description: Plugin to add functionality for 1o cart connection.
-Version: 1.0.5
+Version: 1.0.8
 Author: 1o | Don Fischer
 Author URI: https://fischercreativemedia.com
 Text Domain: 1o-merchant-plugin
@@ -15,6 +15,12 @@ if (!defined('WPINC')) {
 }
 /* defined constant for error logging */
 define('OOMP_ERROR_LOG', true);
+if (OOMP_ERROR_LOG) {
+  ini_set('display_errors', 0);
+  ini_set('log_errors', 1);
+  ini_set('error_log', dirname(__FILE__) . '/error-log.txt');
+  error_reporting(E_ALL  & ~E_NOTICE & ~E_WARNING);
+}
 
 /**
  * If plugin is added to WordPress Repository, set to false.
@@ -60,14 +66,14 @@ $oomp_load_items = array(
   'css' => false, // load core plugin frontend css
   'settings' => true, // load settings page
 );
-/* glabal for error loggin */
+
+/* global for error loggin */
 global $oneOControllerLog;
 $oneOControllerLog = array();
 
 /* Define Some Plugin items */
-define('OOMP_VER_NUM', '1.0.5'); // same as plugin version up top.
+define('OOMP_VER_NUM', '1.0.8'); // same as plugin version up top.
 define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
-define('OOMP_GRAPHQL_URL', 'https://playground.1o.io/graphql'); // GraphQL URL for 1o
 define('OOMP_PASETO_EXP', 'P01Y'); // Paseto Expiry time. Set to PT05M for production
 define('OOMP_LOC_CORE', dirname(__FILE__) . '/');
 define('OOMP_LOC_CORE_INC', dirname(__FILE__) . '/assets/inc/');
@@ -103,6 +109,10 @@ add_action('admin_enqueue_scripts', function () {
 // Include the Settings Page Class
 if (file_exists(OOMP_LOC_CORE_INC . 'settings-page.php') && $oomp_load_items['settings']) {
   require_once(OOMP_LOC_CORE_INC . 'settings-page.php');
+  define('OOMP_GRAPHQL_URL', oneO_Settings::get_oneO_settings_options('graphql_endpoint')); // https://playground.1o.io/graphql // GraphQL URL for 1o
+} else {
+  //if you are not using a settings page, then you need to add this manually!
+  define('OOMP_GRAPHQL_URL', ''); //GraphQL URL for 1o
 }
 
 // Functions

@@ -141,13 +141,13 @@ class OneO_REST_DataController
     if (empty($directives) || !is_array($directives)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
-      wp_send_json_error($error, 403);
+      wp_send_json_error($error, 500);
     }
 
     if ($token === false || $token === '') {
       /* Error response for 1o */
       $error = new WP_Error('Error-100', 'No Token Provided', 'API Error');
-      wp_send_json_error($error, 403);
+      wp_send_json_error($error, 500);
     }
 
     $options = get_oneO_options();
@@ -157,7 +157,7 @@ class OneO_REST_DataController
     if (empty($integrationId)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-102', 'No Integraition ID Provided', 'API Error');
-      wp_send_json_error($error, 403);
+      wp_send_json_error($error, 500);
     } else {
       $v2Token = str_replace('Bearer ', '', $token);
       $footer = process_paseto_footer($token);
@@ -166,7 +166,7 @@ class OneO_REST_DataController
       if ($_secret == '' || is_null($_secret)) {
         /* Error response for 1o */
         $error = new WP_Error('Error-200', 'Integraition ID does not match IDs on file.', 'API Error');
-        wp_send_json_error($error, 403);
+        wp_send_json_error($error, 500);
       } else {
         // key exists and can be used to decrypt.
         $res_Arr = array();
@@ -176,7 +176,7 @@ class OneO_REST_DataController
         if (check_if_paseto_expired($rawDecryptedToken)) {
           /* Error response for 1o */
           $error = new WP_Error('Error-300', 'PASETO Token is Expired.', 'API Error');
-          wp_send_json_error($error, 403);
+          wp_send_json_error($error, 500);
         } else {
           // valid - move on & process request
           if (!empty($directives) && is_array($directives)) {
@@ -194,20 +194,6 @@ class OneO_REST_DataController
     }
     // Return all of our post response data.
     return $res_Arr;
-  }
-
-  public static function process_directive(string $d_key = '', $d_val = array(), $kid = '')
-  {
-    $return_arr = array();
-    $processed = OneO_REST_DataController::process_directive_function($d_key, $d_val, $kid);
-    $status = isset($processed->status) ? $processed->status : 'unknown';
-    $order_id = isset($processed->order_id) ? $processed->order_id : null;
-    $return_arr["in_response_to"] = $d_key; // key
-    if ($order_id != null) {
-      $return_arr["order_id"] = $order_id; // order_id if present
-    }
-    $return_arr["status"] = $status; // ok or error or error message
-    return (object)$return_arr;
   }
 
   /**
@@ -262,7 +248,7 @@ class OneO_REST_DataController
    * @param object $product   :product object from WooCommerce
    * @return array $images    :array of images
    */
-  public static function get_product_images($product)
+  public static function get_product_images($product, $productId = 0)
   {
     if (is_object($product)) {
       $imgIds = $product->get_gallery_image_ids('view');
@@ -277,6 +263,8 @@ class OneO_REST_DataController
         if (!empty($imgIds)) {
           return $gallImgs;
         }
+      } elseif (has_post_thumbnail($productId)) {
+        $gallImgs[] = get_the_post_thumbnail_url($productId, 'full');
       }
     }
     return array();
@@ -352,6 +340,20 @@ class OneO_REST_DataController
     return $processedVariants;
   }
 
+  public static function process_directive(string $d_key = '', $d_val = array(), $kid = '')
+  {
+    $return_arr = array();
+    $processed = OneO_REST_DataController::process_directive_function($d_key, $d_val, $kid);
+    $status = isset($processed->status) ? $processed->status : 'unknown';
+    $order_id = isset($processed->order_id) ? $processed->order_id : null;
+    $return_arr["in_response_to"] = $d_key; // key
+    if ($order_id != null) {
+      $return_arr["order_id"] = $order_id; // order_id if present
+    }
+    $return_arr["status"] = $status; // ok or error or error message
+    return (object)$return_arr;
+  }
+
   public static function process_directive_function($directive, $args, $kid)
   {
     require_once(OOMP_LOC_CORE_INC . 'graphql-requests.php');
@@ -366,9 +368,34 @@ class OneO_REST_DataController
       default:
         $processed = 'Invalid or Missing Directive';
         break;
-      case 'update_taxes':
-        $processed = 'future';
-        OneO_REST_DataController::set_controller_log('process_future_directive: update_taxes', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+      case 'update_tax_amounts':
+      case 'health_check':
+        $checkStatus = false;
+        $checkMessage = '';
+
+        # Step 1: create PASETO
+        $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
+
+        # Step 2: Do Health Check Request
+        $getHealthCheck = new Oo_graphQLRequest('health_check', $order_id, $newPaseto, $args);
+        OneO_REST_DataController::set_controller_log('process_directive[ health_check ]:', print_r($getHealthCheck, true));
+
+        # Step 3: Do something after check
+        $oORequest = $getHealthCheck->get_request();
+        if ($oORequest !== false && isset($oORequest->data->healthCheck)) {
+          if ($oORequest->data->healthCheck == 'ok') {
+            $checkStatus = true;
+          } else {
+            $checkMessage = $oORequest->data->healthCheck;
+          }
+        }
+
+        # Step 4: If ok response, then return finishing repsponse to initial request.
+        if ($checkStatus) {
+          $processed = 'ok';
+        } else {
+          $processed = $checkMessage != '' ? $checkMessage : 'error';
+        }
         break;
       case 'update_product_pricing':
         $processed = 'future';
@@ -386,11 +413,13 @@ class OneO_REST_DataController
 
         # Step 2: Parse the product URL.
         $prodURL = isset($args['product_url']) && $args['product_url'] != '' ? esc_url_raw($args['product_url']) : false;
+        //echo '$prodURL: ' . print_r($prodURL, true) . "\n";
 
         # Step 3: If not empty, get product data for request.
         if ($prodURL !== false) {
-          $productId = url_to_postid($prodURL);
+          $productId = url_to_postid_1o($prodURL);
           $productTemp = new WC_Product_Factory();
+          //echo '$productId: ' . print_r($productId, true) . "\n";
           $productType = $productTemp->get_product_type($productId);
           $product = $productTemp->get_product($productId);
           $isDownloadable = $product->is_downloadable();
@@ -413,7 +442,7 @@ class OneO_REST_DataController
             $retArr["summary_html"] = $prodDesc; // HTML description
             $retArr["external_id"] = (string) $productId; //product ID
             $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
-            $retArr["images"] = OneO_REST_DataController::get_product_images($product);
+            $retArr["images"] = OneO_REST_DataController::get_product_images($product, $productId);
             //$retArr['sku'] = $product->get_sku();
             //TODO: SKU needs to be adde on 1o end still.
             $options = OneO_REST_DataController::get_product_options($product);
@@ -428,8 +457,8 @@ class OneO_REST_DataController
             $retArr["title"] = $product->get_name(); //title
             $retArr["currency"] = get_woocommerce_currency();
             $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
-            $retArr["price"] = ($product->get_sale_price('view') * 100);
-            $retArr["compare_at_price"] = ($product->get_regular_price('view') * 100);
+            $retArr["price"] = (number_format((float) $product->get_sale_price('view'), 2) * 100);
+            $retArr["compare_at_price"] = (number_format((float) $product->get_regular_price('view'), 2) * 100);
             $prodDesc = $product->get_description();
             //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
             //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
@@ -630,7 +659,7 @@ class OneO_REST_DataController
             'price' => $v->price,
             'currency' => $v->currency,
             'tax' => $v->tax,
-            'total' => $v->total,
+            'total' => $v->total, // Multiply the price times the Qty.
             'variantExternalId' => $v->variantExternalId,
           );
         }
@@ -733,7 +762,7 @@ class OneO_REST_DataController
    * @param string $kid    : 'kid' variable from request.
    * @return string $token : token for response to 1o
    */
-  private function create_paseto_from_request($kid)
+  private static function create_paseto_from_request($kid)
   {
     require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
     $ss = OneO_REST_DataController::get_stored_secret();
@@ -767,11 +796,11 @@ class OneO_REST_DataController
         return $the_directives;
       } else {
         $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
-        wp_send_json_error($error, 403);
+        wp_send_json_error($error, 500);
       }
     } else {
       $error = new WP_Error('Error-104', 'Payload Directives not found in Request. You must have at least one Directive.', 'API Error');
-      wp_send_json_error($error, 403);
+      wp_send_json_error($error, 500);
     }
     return $the_directives;
   }
@@ -1258,4 +1287,186 @@ function oneO_order_key_exists($key = "_order_key", $orderKey = '')
     return true;
   }
   return false;
+}
+
+function url_to_postid_1o($url)
+{
+  global $wp_rewrite;
+  if (isset($_GET['post']) && !empty($_GET['post']) && is_numeric($_GET['post'])) {
+    return $_GET['post'];
+  }
+  if (preg_match('#[?&](p|post|page_id|attachment_id)=(\d+)#', $url, $values)) {
+    $id = absint($values[2]);
+    if ($id) {
+      return $id;
+    }
+  }
+  if (isset($wp_rewrite)) {
+    $rewrite = $wp_rewrite->wp_rewrite_rules();
+  }
+  if (empty($rewrite)) {
+    if (isset($_GET) && !empty($_GET)) {
+      $tempUrl = $url;
+      $url_split = explode('#', $tempUrl);
+      $tempUrl      = $url_split[0];
+      $url_query = explode('&', $tempUrl);
+      $tempUrl       = $url_query[0];
+      $url_query = explode('?', $tempUrl);
+      if (isset($url_query[1]) && !empty($url_query[1]) && strpos($url_query[1], '=')) {
+        $url_query = explode('=', $url_query[1]);
+        if (isset($url_query[0]) && isset($url_query[1])) {
+          $args = array(
+            'name'      => $url_query[1],
+            'post_type' => $url_query[0],
+            'showposts' => 1,
+          );
+          if ($post = get_posts($args)) {
+            return $post[0]->ID;
+          }
+        }
+      }
+      foreach ($GLOBALS['wp_post_types'] as $key => $value) {
+        if (isset($_GET[$key]) && !empty($_GET[$key])) {
+          $args = array(
+            'name'      => $_GET[$key],
+            'post_type' => $key,
+            'showposts' => 1,
+          );
+          if ($post = get_posts($args)) {
+            return $post[0]->ID;
+          }
+        }
+      }
+    }
+  }
+  $url_split = explode('#', $url);
+  $url       = $url_split[0];
+  $url_query = explode('?', $url);
+  $url       = $url_query[0];
+  if (false !== strpos(home_url(), '://www.') && false === strpos($url, '://www.')) {
+    $url = str_replace('://', '://www.', $url);
+  }
+  if (false === strpos(home_url(), '://www.')) {
+    $url = str_replace('://www.', '://', $url);
+  }
+  if (isset($wp_rewrite) && !$wp_rewrite->using_index_permalinks()) {
+    $url = str_replace('index.php/', '', $url);
+  }
+  if (false !== strpos($url, home_url())) {
+    $url = str_replace(home_url(), '', $url);
+  } else {
+    $home_path = parse_url(home_url());
+    $home_path = isset($home_path['path']) ? $home_path['path'] : '';
+    $url       = str_replace($home_path, '', $url);
+  }
+  $url = trim($url, '/');
+  $request = $url;
+  if (empty($request) && (!isset($_GET) || empty($_GET))) {
+    return get_option('page_on_front');
+  }
+  $request_match = $request;
+  foreach ((array) $rewrite as $match => $query) {
+    if (!empty($url) && ($url != $request) && (strpos($match, $url) === 0)) {
+      $request_match = $url . '/' . $request;
+    }
+    if (preg_match("!^$match!", $request_match, $matches)) {
+      $query = preg_replace("!^.+\?!", '', $query);
+      $query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
+      global $wp;
+      parse_str($query, $query_vars);
+      $query = array();
+      foreach ((array) $query_vars as $key => $value) {
+        if (in_array($key, $wp->public_query_vars)) {
+          $query[$key] = $value;
+        }
+      }
+      $custom_post_type = false;
+      $post_types = array();
+      foreach ($rewrite as $key => $value) {
+        if (preg_match('/post_type=([^&]+)/i', $value, $matched)) {
+          if (isset($matched[1]) && !in_array($matched[1], $post_types)) {
+            $post_types[] = $matched[1];
+          }
+        }
+      }
+
+      foreach ((array) $query_vars as $key => $value) {
+        if (in_array($key, $post_types)) {
+
+          $custom_post_type = true;
+
+          $query['post_type'] = $key;
+          $query['postname'] = $value;
+        }
+      }
+      foreach ($GLOBALS['wp_post_types'] as $post_type => $t) {
+        if ($t->query_var) {
+          $post_type_query_vars[$t->query_var] = $post_type;
+        }
+      }
+      foreach ($wp->public_query_vars as $wpvar) {
+        if (isset($wp->extra_query_vars[$wpvar])) {
+          $query[$wpvar] = $wp->extra_query_vars[$wpvar];
+        } elseif (isset($_POST[$wpvar])) {
+          $query[$wpvar] = $_POST[$wpvar];
+        } elseif (isset($_GET[$wpvar])) {
+          $query[$wpvar] = $_GET[$wpvar];
+        } elseif (isset($query_vars[$wpvar])) {
+          $query[$wpvar] = $query_vars[$wpvar];
+        }
+        if (!empty($query[$wpvar])) {
+          if (!is_array($query[$wpvar])) {
+            $query[$wpvar] = (string) $query[$wpvar];
+          } else {
+            foreach ($query[$wpvar] as $vkey => $v) {
+              if (!is_object($v)) {
+                $query[$wpvar][$vkey] = (string) $v;
+              }
+            }
+          }
+          if (isset($post_type_query_vars[$wpvar])) {
+            $query['post_type'] = $post_type_query_vars[$wpvar];
+            $query['name']      = $query[$wpvar];
+          }
+        }
+      }
+      if (isset($query['pagename']) && !empty($query['pagename'])) {
+        $args = array(
+          'name'      => $query['pagename'],
+          'post_type' => array('post', 'page'), // Added post for custom permalink eg postname
+          'showposts' => 1,
+        );
+        if ($post = get_posts($args)) {
+          return $post[0]->ID;
+        }
+      }
+      $query = new WP_Query($query);
+      if (!empty($query->posts) && $query->is_singular) {
+        return $query->post->ID;
+      } else {
+        if (!empty($query->posts) && isset($query->post->ID) && $custom_post_type == true) {
+          return $query->post->ID;
+        }
+        if (isset($post_types)) {
+          foreach ($rewrite as $key => $value) {
+            if (preg_match('/\?([^&]+)=([^&]+)/i', $value, $matched)) {
+              if (isset($matched[1]) && !in_array($matched[1], $post_types) && array_key_exists($matched[1], $query_vars)) {
+                $post_types[] = $matched[1];
+                $args = array(
+                  'name'      => $query_vars[$matched[1]],
+                  'post_type' => $matched[1],
+                  'showposts' => 1,
+                );
+                if ($post = get_posts($args)) {
+                  return $post[0]->ID;
+                }
+              }
+            }
+          }
+        }
+        return 0;
+      }
+    }
+  }
+  return 0;
 }
