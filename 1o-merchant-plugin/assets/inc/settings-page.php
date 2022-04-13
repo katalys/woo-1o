@@ -249,6 +249,14 @@ class oneO_Settings
         );
 
         add_settings_field(
+            'graphql_endpoint', // id
+            '1o GraphQL Endpoint', // title
+            array($this, 'graphql_callback'), // callback
+            'oneO-settings-admin', // page
+            'oneO_settings_setting_section' // section
+        );
+
+        add_settings_field(
             'public_key', // id
             'API Key', // title
             array($this, 'public_key_callback'), // callback
@@ -260,14 +268,6 @@ class oneO_Settings
             'secret_key', // id
             'Shared Secret', // title
             array($this, 'secret_key_callback'), // callback
-            'oneO-settings-admin', // page
-            'oneO_settings_setting_section' // section
-        );
-
-        add_settings_field(
-            'graphql_endpoint', // id
-            '1o GraphQL Endpoint', // title
-            array($this, 'graphql_callback'), // callback
             'oneO-settings-admin', // page
             'oneO_settings_setting_section' // section
         );
