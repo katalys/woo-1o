@@ -250,9 +250,9 @@ class OneO_REST_DataController
    */
   public static function get_product_images($product, $productId = 0)
   {
+    $gallImgs = array();
     if (is_object($product)) {
       $imgIds = $product->get_gallery_image_ids('view');
-      $gallImgs = array();
       if (!empty($imgIds) && is_array($imgIds)) {
         foreach ($imgIds as $ikey => $ival) {
           $tempUrl = wp_get_attachment_image_url($ival, 'full');
@@ -260,14 +260,14 @@ class OneO_REST_DataController
             $gallImgs[] = $tempUrl;
           }
         }
-        if (!empty($imgIds)) {
-          return $gallImgs;
+      } else {
+        $imgId = $product->get_image_id('view');
+        if ($imgId != '') {
+          $gallImgs[] = wp_get_attachment_image_url($imgId, 'full');
         }
-      } elseif (has_post_thumbnail($productId)) {
-        $gallImgs[] = get_the_post_thumbnail_url($productId, 'full');
       }
     }
-    return array();
+    return $gallImgs;
   }
 
   /**
