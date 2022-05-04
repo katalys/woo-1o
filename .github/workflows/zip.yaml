@@ -12,8 +12,9 @@ jobs:
       - uses: papeloto/action-zip@v1
         with:
           files: 1o-merchant-plugin
+          recursive: false
           dest: 1o-merchant-plugin.zip
       - uses: actions/upload-artifact@v1
         with:
-          name: 1o-merchant-plugin.zip
+          name: 1o-merchant-plugin
           path: ${{ github.workspace }}/1o-merchant-plugin.zip
