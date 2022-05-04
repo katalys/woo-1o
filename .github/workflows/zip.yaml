@@ -13,3 +13,7 @@ jobs:
         with:
           files: 1o-merchant-plugin
           dest: 1o-merchant-plugin.zip
+      - uses: actions/upload-artifact@v1
+        with:
+          name: 1o-merchant-plugin.zip
+          path: ${{ github.workspace }}/1o-merchant-plugin.zip
