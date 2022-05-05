@@ -15,6 +15,7 @@ if (!defined('WPINC')) {
 }
 /* defined constant for error logging */
 define('OOMP_ERROR_LOG', true);
+
 if (OOMP_ERROR_LOG) {
   ini_set('display_errors', 0);
   ini_set('log_errors', 1);
@@ -70,6 +71,8 @@ $oomp_load_items = array(
 /* global for error loggin */
 global $oneOControllerLog;
 $oneOControllerLog = array();
+global $oneOTaxAmt;
+$oneOTaxAmt = 0;
 
 /* Define Some Plugin items */
 define('OOMP_VER_NUM', '1.0.8'); // same as plugin version up top.

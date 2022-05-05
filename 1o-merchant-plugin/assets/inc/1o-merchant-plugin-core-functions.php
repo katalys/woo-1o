@@ -1,5 +1,4 @@
 <?php
-
 class OneO_REST_DataController
 {
 
@@ -29,6 +28,23 @@ class OneO_REST_DataController
   {
     global $oneOControllerLog;
     return $oneOControllerLog;
+  }
+
+  public static function set_tax_amt($amt = 0, $id = '')
+  {
+    set_transient($id . '_taxamt', $amt, 60);
+  }
+
+  public static function get_tax_amt($id = '')
+  {
+    if ($id == '') {
+      return false;
+    }
+    $transTax = get_transient($id . '_taxamt');
+    if ($transTax === false || $transTax == '') {
+      return false;
+    }
+    return $transTax;
   }
 
   public function process_controller_log()
@@ -138,6 +154,7 @@ class OneO_REST_DataController
     $directives = OneO_REST_DataController::get_directives($requestBody);
     OneO_REST_DataController::set_controller_log('Headers from 1o', print_r($headers, true));
     OneO_REST_DataController::set_controller_log('Body from 1o', print_r($request->get_json_params(), true));
+    //echo '$directives:' . print_r($directives, true) . "\n";
     if (empty($directives) || !is_array($directives)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
@@ -180,7 +197,9 @@ class OneO_REST_DataController
         } else {
           // valid - move on & process request
           if (!empty($directives) && is_array($directives)) {
+
             foreach ($directives as $d_key => $d_val) {
+              OneO_REST_DataController::set_controller_log('=======' . $d_key . '======', print_r($d_key, true));
               $res_Arr[] = OneO_REST_DataController::process_directive($d_key, $d_val, $footer);
             }
           }
@@ -188,7 +207,7 @@ class OneO_REST_DataController
       }
       $out = array("results" => $res_Arr, 'integration_id' => OneO_REST_DataController::get_stored_intid(), 'endpoint' => OneO_REST_DataController::get_stored_endpoint());
       $results = (object)$out;
-      OneO_REST_DataController::set_controller_log('$results from request to 1o]', print_r($results, true));
+      OneO_REST_DataController::set_controller_log('$results from request to 1o', print_r($results, true));
       self::process_controller_log();
       wp_send_json_success($results, 200);
     }
@@ -362,13 +381,31 @@ class OneO_REST_DataController
     $args = !is_array($args) || $args == false ? array() : $args;
     $hasOrderId = true;
 
-    /* possible directives:  taxes, pricing, discounts, inventory checks, */
+    /* other possible directives:  pricing, discounts, inventory checks, */
     switch (strtolower($directive)) {
       case '':
       default:
         $processed = 'Invalid or Missing Directive';
         break;
       case 'update_tax_amounts':
+        $taxAmt = OneO_REST_DataController::get_tax_amt($order_id);
+        if ($taxAmt === false) {
+          // calculate 
+          $args = OneO_REST_DataController::create_a_cart($order_id, $kid, 'tax_amt', $args);
+        } else {
+          $args['tax_amt'] = $taxAmt;
+        }
+        //echo '============-0==ddddd=======:[[' . $taxAmt . "]]\n";
+        $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
+        $updateTax = new Oo_graphQLRequest('update_tax_amount', $order_id, $newPaseto, $args);
+        OneO_REST_DataController::set_controller_log('$updateTax:---------------', print_r($updateTax, true));
+
+        # Step 5: If ok response, then return finishing repsponse to initial request.
+        if ($updateTax !== false) {
+          $processed = 'ok';
+        } else {
+          $processed = 'error';
+        }
       case 'health_check':
         $checkStatus = false;
         $checkMessage = '';
@@ -413,13 +450,11 @@ class OneO_REST_DataController
 
         # Step 2: Parse the product URL.
         $prodURL = isset($args['product_url']) && $args['product_url'] != '' ? esc_url_raw($args['product_url']) : false;
-        //echo '$prodURL: ' . print_r($prodURL, true) . "\n";
 
         # Step 3: If not empty, get product data for request.
         if ($prodURL !== false) {
           $productId = url_to_postid_1o($prodURL);
           $productTemp = new WC_Product_Factory();
-          //echo '$productId: ' . print_r($productId, true) . "\n";
           $productType = $productTemp->get_product_type($productId);
           $product = $productTemp->get_product($productId);
           $isDownloadable = $product->is_downloadable();
@@ -467,7 +502,7 @@ class OneO_REST_DataController
             $retArr["shop_url"] = $prodURL;
             $retArr["images"] = OneO_REST_DataController::get_product_images($product);
             //$retArr['sku'] = $product->get_sku(); 
-            //TODO: SKU needs to be adde on 1o end still.
+            //TODO: SKU needs to be added on 1o end still.
             $options = OneO_REST_DataController::get_product_options($product);
             $retArr["option_names"] = $options['group'];
             $retArr["variant"] = false; //bool
@@ -502,98 +537,19 @@ class OneO_REST_DataController
         break;
       case 'update_available_shipping_rates':
         OneO_REST_DataController::set_controller_log('process_directive: update_available_shipping_rates', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
-        # Step 1: Create new Paseto for request.
-        $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
-
-        # Step 2: Do request to graphql to get line items.
-        $getLineItems = new Oo_graphQLRequest('line_items', $order_id, $newPaseto, $args);
-        OneO_REST_DataController::set_controller_log('process_directive: $getLineItems', print_r($getLineItems, true));
-
-        // Do Something here to process line items??
-        $linesRaw = $getLineItems->get_request();
-        $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : array();
-
-        # Step 3: Get shipping rates from Woo.
-        /** 
-         * Real Shipping Totals
-         * Set up new cart to get real shipping total 
-         * */
-        $args['shipping-rates'] = array();
-
-        if (!isset(WC()->cart)) {
-          // initiallize the cart of not yet done.
-          WC()->initialize_cart();
-          if (!function_exists('wc_get_cart_item_data_hash')) {
-            include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
-          }
-        }
-        if (isset(WC()->customer)) {
-          $countryArr = array(
-            "United States" => 'US',
-            "Canada" => 'CA',
-          );
-          $sCountry = isset($linesRaw->data->order->shippingAddressCountry) ? $linesRaw->data->order->shippingAddressCountry : null;
-          $sCountryC = isset($linesRaw->data->order->shippingAddressCountryCode) ? $linesRaw->data->order->shippingAddressCountryCode : null;
-          $sCity = isset($linesRaw->data->order->shippingAddressCity) ? $linesRaw->data->order->shippingAddressCity : null;
-          $sState = isset($linesRaw->data->order->shippingAddressSubdivision) ? $linesRaw->data->order->shippingAddressSubdivision : null;
-          $sStateC = isset($linesRaw->data->order->shippingAddressSubdivisionCode) ? $linesRaw->data->order->shippingAddressSubdivisionCode : null;
-          $sZip = isset($linesRaw->data->order->shippingAddressZip) ? $linesRaw->data->order->shippingAddressZip : null;
-          $sAddress1 = isset($linesRaw->data->order->shippingAddressLine_1) ? $linesRaw->data->order->shippingAddressLine_1 : null;
-          $sAddress2 = isset($linesRaw->data->order->shippingAddressLine_2) ? $linesRaw->data->order->shippingAddressLine_2 : null;
-          $sCountry = is_null($sCountryC) || strlen($sCountryC) > 2 ? $countryArr[$sCountry] : $sCountryC;
-          WC()->customer->set_shipping_country($sCountry);
-          WC()->customer->set_shipping_state($sState);
-          WC()->customer->set_shipping_postcode($sZip);
-          WC()->customer->set_shipping_city($sCity);
-          WC()->customer->set_shipping_address($sAddress1);
-          WC()->customer->set_shipping_address_1($sAddress1);
-          WC()->customer->set_shipping_address_2($sAddress2);
-        }
-        if (!empty($lines)) {
-          foreach ($lines as $lk => $lv) {
-            $product_id = $lv->productExternalId;
-            $quantity = $lv->quantity;
-            WC()->cart->add_to_cart($product_id, $quantity);
-          }
-          WC()->cart->maybe_set_cart_cookies();
-          WC()->cart->calculate_totals();
-          WC()->cart->calculate_shipping();
-          $countCart = WC()->cart->get_cart_contents_count();
-
-          foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
-            // Check if a shipping for the current package exist
-            if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
-              // Loop through shipping rates for the current package
-              foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
-                $rate_id     = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
-                $method_id   = $shipping_rate->get_method_id(); // The shipping method slug
-                $instance_id = $shipping_rate->get_instance_id(); // The instance ID
-                $label_name  = $shipping_rate->get_label(); // The label name of the method
-                $cost        = $shipping_rate->get_cost(); // The cost without tax
-                $tax_cost    = $shipping_rate->get_shipping_tax(); // The tax cost
-                $taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
-                $itemPriceEx = number_format($cost, 2, '.', '');
-                $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
-                //set up rates array for 1o
-                $args['shipping-rates'][] = (object) array(
-                  "handle" => $method_id . '-' . $instance_id . '|' . (isset($itemPriceEx) ? ($itemPriceEx * 100) : '0') . '|' . str_replace(" ", "-", $label_name),
-                  "title" => $label_name,
-                  "amount" => $itemPriceEx * 100,
-                );
-              }
-            }
-          }
-          //clear the cart.
-          WC()->cart->empty_cart();
-        }
+        $args = OneO_REST_DataController::create_a_cart($order_id, $kid, '', $args);
 
         # Step 4: Update shipping rates on GraphQL.
         $newPaseto2 = OneO_REST_DataController::create_paseto_from_request($kid);
         $updateShipping = new Oo_graphQLRequest('update_ship_rates', $order_id, $newPaseto2, $args);
-        OneO_REST_DataController::set_controller_log('$updateShipping', print_r($updateShipping, true));
+        OneO_REST_DataController::set_controller_log('update_ship_rates', print_r($updateShipping, true));
 
         # Step 5: If ok response, then return finishing repsponse to initial request.
-        $processed = 'ok';
+        if ($updateShipping) {
+          $processed = 'ok';
+        } else {
+          $processed = 'error';
+        }
         break;
       case 'complete_order':
         # Step 1: create PASETO
@@ -638,6 +594,106 @@ class OneO_REST_DataController
     return (object) $retArr;
   }
 
+  public static function create_a_cart($order_id, $kid, $type = '', $args)
+  {
+    # Step 1: Create new Paseto for request.
+    $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
+
+    # Step 2: Do request to graphql to get line items.
+    $getLineItems = new Oo_graphQLRequest('line_items', $order_id, $newPaseto, $args);
+    OneO_REST_DataController::set_controller_log('process_request: line_items', print_r($getLineItems, true));
+
+    // Do Something here to process line items??
+    $linesRaw = $getLineItems->get_request();
+    $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : array();
+
+    # Step 3: Get shipping rates from Woo.
+    /** 
+     * Real Shipping Totals
+     * Set up new cart to get real shipping total 
+     * */
+    $args['shipping-rates'] = array();
+
+    if (!isset(WC()->cart)) {
+      // initiallize the cart of not yet done.
+      WC()->initialize_cart();
+      if (!function_exists('wc_get_cart_item_data_hash')) {
+        include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
+      }
+    }
+    if (isset(WC()->customer)) {
+      $countryArr = array(
+        "United States" => 'US',
+        "Canada" => 'CA',
+      );
+      $sCountry = isset($linesRaw->data->order->shippingAddressCountry) ? $linesRaw->data->order->shippingAddressCountry : null;
+      $sCountryC = isset($linesRaw->data->order->shippingAddressCountryCode) ? $linesRaw->data->order->shippingAddressCountryCode : null;
+      $sCity = isset($linesRaw->data->order->shippingAddressCity) ? $linesRaw->data->order->shippingAddressCity : null;
+      $sState = isset($linesRaw->data->order->shippingAddressSubdivision) ? $linesRaw->data->order->shippingAddressSubdivision : null;
+      $sStateC = isset($linesRaw->data->order->shippingAddressSubdivisionCode) ? $linesRaw->data->order->shippingAddressSubdivisionCode : null;
+      $sZip = isset($linesRaw->data->order->shippingAddressZip) ? $linesRaw->data->order->shippingAddressZip : null;
+      $sAddress1 = isset($linesRaw->data->order->shippingAddressLine_1) ? $linesRaw->data->order->shippingAddressLine_1 : null;
+      $sAddress2 = isset($linesRaw->data->order->shippingAddressLine_2) ? $linesRaw->data->order->shippingAddressLine_2 : null;
+      $sCountry = is_null($sCountryC) || strlen($sCountryC) > 2 ? $countryArr[$sCountry] : $sCountryC;
+      WC()->customer->set_shipping_country($sCountry);
+      WC()->customer->set_shipping_state($sState);
+      WC()->customer->set_shipping_postcode($sZip);
+      WC()->customer->set_shipping_city($sCity);
+      WC()->customer->set_shipping_address($sAddress1);
+      WC()->customer->set_shipping_address_1($sAddress1);
+      WC()->customer->set_shipping_address_2($sAddress2);
+    }
+    if (!empty($lines)) {
+      foreach ($lines as $lk => $lv) {
+        $product_id = $lv->productExternalId;
+        $quantity = $lv->quantity;
+        WC()->cart->add_to_cart($product_id, $quantity);
+      }
+      WC()->cart->maybe_set_cart_cookies();
+      WC()->cart->calculate_shipping();
+      WC()->cart->calculate_totals();
+      $countCart = WC()->cart->get_cart_contents_count();
+      foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
+        // Check if a shipping for the current package exist
+        if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
+          // Loop through shipping rates for the current package
+          foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
+            $rate_id     = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
+            $method_id   = $shipping_rate->get_method_id(); // The shipping method slug
+            $instance_id = $shipping_rate->get_instance_id(); // The instance ID
+            $label_name  = $shipping_rate->get_label(); // The label name of the method
+            $cost        = $shipping_rate->get_cost(); // The cost without tax
+            $tax_cost    = $shipping_rate->get_shipping_tax(); // The tax cost
+            //$taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
+            $itemPriceEx = number_format($cost, 2, '.', '');
+            $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
+            //set up rates array for 1o
+            $args['shipping-rates'][] = (object) array(
+              "handle" => $method_id . '-' . $instance_id . '|' . (isset($itemPriceEx) ? ($itemPriceEx * 100) : '0') . '|' . str_replace(" ", "-", $label_name),
+              "title" => $label_name,
+              "amount" => $itemPriceEx * 100,
+            );
+          }
+        }
+      }
+      $taxesArray = WC()->cart->get_taxes();
+      $taxTotal = 0;
+      if (is_array($taxesArray) && !empty($taxesArray)) {
+        foreach ($taxesArray as $taxCode => $taxAmt) {
+          $taxTotal = $taxTotal + $taxAmt;
+        }
+      }
+      OneO_REST_DataController::set_tax_amt($taxTotal, $order_id);
+      $args['tax_amt'] = $taxTotal;
+      WC()->cart->empty_cart();
+      if ($type == 'tax_amt') {
+        return $args['tax_amt'];
+      } elseif ($type == 'shipping_rates') {
+        return $args['shipping-rates'];
+      }
+      return $args;
+    }
+  }
   /**
    * Process 1o order data for insert into easy array for insert into WC
    * 
@@ -659,7 +715,7 @@ class OneO_REST_DataController
             'price' => $v->price,
             'currency' => $v->currency,
             'tax' => $v->tax,
-            'total' => $v->total, // Multiply the price times the Qty.
+            'total' => ($v->price * $v->quantity),
             'variantExternalId' => $v->variantExternalId,
           );
         }
@@ -786,7 +842,7 @@ class OneO_REST_DataController
       $the_directives = array();
       if ($directives !== false && !empty($directives)) {
         foreach ($directives as $dkey => $directive) {
-          $do_directives[$directive['directive']] = $directive['args'];
+          $do_directives[$directive['directive']] = (isset($directive['args']) ? $directive['args'] : '');
         }
         if (is_array($do_directives) && !empty($do_directives)) {
           foreach ($do_directives as $k => $v) {
@@ -1143,7 +1199,6 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_shipping_postcode($sZip);
   $order->set_shipping_country($sCountry);
   $order->set_shipping_phone($sPhone);
-
   /**
    * 
    * OTHER DATA IN $OrderData NOT USED :
@@ -1152,6 +1207,7 @@ function oneO_addWooOrder($orderData, $orderid)
    */
   $orderTotal = $orderData['order']['total'];
   $taxPaid = $orderData['order']['totalTax'];
+
   $currency = $orderData['order']['currency'];
   $transID = $orderData['transactions']['id']; // ?? might not be needed ??
   $transName = $orderData['transactions']['name'];
