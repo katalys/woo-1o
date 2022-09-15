@@ -551,6 +551,24 @@ class OneO_REST_DataController
           $processed = 'error';
         }
         break;
+      case 'update_availability':
+        OneO_REST_DataController::set_controller_log('process_directive: update_availability', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
+        $args = OneO_REST_DataController::create_a_cart($order_id, $kid, 'items_avail', $args);
+
+        # Update Availability on GraphQL.
+        $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
+        $updateAvail = new Oo_graphQLRequest('update_availability', $order_id, $newPaseto, $args);
+        OneO_REST_DataController::set_controller_log('update_availability', print_r($updateAvail, true));
+
+        # If ok response, then return finishing response to initial request.
+        if ($updateShipping) {
+          $processed = 'ok';
+        } else {
+          $processed = 'error';
+        }
+
+
+        break;
       case 'complete_order':
         # Step 1: create PASETO
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
@@ -607,12 +625,13 @@ class OneO_REST_DataController
     $linesRaw = $getLineItems->get_request();
     $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : array();
 
-    # Step 3: Get shipping rates from Woo.
+    # Step 3: Get shipping rates & availability from Woo.
     /** 
      * Real Shipping Totals
      * Set up new cart to get real shipping total 
      * */
     $args['shipping-rates'] = array();
+    $args['items_avail'] = array();
 
     if (!isset(WC()->cart)) {
       // initiallize the cart of not yet done.
@@ -648,6 +667,30 @@ class OneO_REST_DataController
         $product_id = $lv->productExternalId;
         $quantity = $lv->quantity;
         WC()->cart->add_to_cart($product_id, $quantity);
+
+
+        $availability = true;
+        // First, check if the store is Managing Stock on this product, Default is False
+        if ($lv->manage_stock == true)
+          {
+            // Check Stock Status and Count to make sure we can sell product * quantity,
+            // OR if this Product can be back-ordered
+            if ((($lv->stock_status != 'outofstock') && ($lv->stock_quantity >= $lv->quantity)) || $lk->backorders_allowed) {
+              $availability = true;
+            }
+            // Since Default WC behavior doesn't use Stock, be extra-explicit
+            else {
+              $availability = false;
+            }
+          }
+        else {
+          // When Stock is not in Use, this boolean at the Product Level tells us whether or not it can be sold
+          $availability = $lv->purchaseable;
+        }
+        $args['items_avail'][] = (object) array(
+          "id" => $lv->$product_id,
+          "availability" => $availability,
+        );
       }
       WC()->cart->maybe_set_cart_cookies();
       WC()->cart->calculate_shipping();
@@ -688,8 +731,12 @@ class OneO_REST_DataController
       WC()->cart->empty_cart();
       if ($type == 'tax_amt') {
         return $args['tax_amt'];
-      } elseif ($type == 'shipping_rates') {
+      } 
+      elseif ($type == 'shipping_rates') {
         return $args['shipping-rates'];
+      }
+      elseif ($type == 'items_avail') {
+        return $args['items_avail'];
       }
       return $args;
     }
