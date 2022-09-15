@@ -674,7 +674,7 @@ class OneO_REST_DataController
         $availability = $product->is_in_stock();
           $args['items_avail'][] = (object) array(
             "id" => $product_id,
-            "availability" => $availability,
+            "availabile" => $availability,
           );
         }
       }
