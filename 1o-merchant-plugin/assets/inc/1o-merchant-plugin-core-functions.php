@@ -669,10 +669,10 @@ class OneO_REST_DataController
         WC()->cart->add_to_cart($product_id, $quantity);
 
 
-        $availability = true;
-        // First, check if the store is Managing Stock on this product, Default is False
-        if ($lv->manage_stock == true)
-          {
+        if ($type == 'items_avail') {
+          $availability = true;
+          // First, check if the store is Managing Stock on this product, Default is False
+          if ($lv->manage_stock == true) {
             // Check Stock Status and Count to make sure we can sell product * quantity,
             // OR if this Product can be back-ordered
             if ((($lv->stock_status != 'outofstock') && ($lv->stock_quantity >= $lv->quantity)) || $lk->backorders_allowed) {
@@ -682,16 +682,22 @@ class OneO_REST_DataController
             else {
               $availability = false;
             }
+          } else {
+            // When Stock is not in Use, this boolean at the Product Level tells us whether or not it can be sold
+            $availability = $lv->purchaseable;
           }
-        else {
-          // When Stock is not in Use, this boolean at the Product Level tells us whether or not it can be sold
-          $availability = $lv->purchaseable;
+          $args['items_avail'][] = (object) array(
+            "id" => $lv->$product_id,
+            "availability" => $availability,
+          );
         }
-        $args['items_avail'][] = (object) array(
-          "id" => $lv->$product_id,
-          "availability" => $availability,
-        );
       }
+
+      if ($type == 'items_avail') {
+        return $args['items_avail'];
+      }
+
+
       WC()->cart->maybe_set_cart_cookies();
       WC()->cart->calculate_shipping();
       WC()->cart->calculate_totals();
@@ -731,12 +737,8 @@ class OneO_REST_DataController
       WC()->cart->empty_cart();
       if ($type == 'tax_amt') {
         return $args['tax_amt'];
-      } 
-      elseif ($type == 'shipping_rates') {
+      } elseif ($type == 'shipping_rates') {
         return $args['shipping-rates'];
-      }
-      elseif ($type == 'items_avail') {
-        return $args['items_avail'];
       }
       return $args;
     }
