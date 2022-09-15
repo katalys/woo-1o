@@ -365,7 +365,6 @@ class OneO_REST_DataController
     $processed = OneO_REST_DataController::process_directive_function($d_key, $d_val, $kid);
     $status = isset($processed->status) ? $processed->status : 'unknown';
     $order_id = isset($processed->order_id) ? $processed->order_id : null;
-    $return_arr["in_response_to"] = $d_key; // key
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present
     }
@@ -484,6 +483,7 @@ class OneO_REST_DataController
             $retArr["option_names"] = $options['group'];
             $retArr["variant"] = false; //bool
             $retArr["variants"] = array(); //empty array (no variants)
+            $retArr["available"] = $product->is_in_stock();
             $returnObj = (object) $retArr;
             $args['product_to_import'] = $returnObj;
           } elseif ($productType == 'variable' && !$isDownloadable) { //get variable product data (with variants)
@@ -512,6 +512,7 @@ class OneO_REST_DataController
               $processedVariants = OneO_REST_DataController::process_variants($variants, $options['names'], $retArr["title"], $retArr["currency"], $retArr["currency_sign"]);
             }
             $retArr["variants"] = $processedVariants;
+            $retArr["available"] = $product->is_in_stock();
             $returnObj = (object) $retArr;
             $args['product_to_import'] = $returnObj;
           } elseif ($productType == 'downloadable' || $isDownloadable) {
@@ -668,26 +669,11 @@ class OneO_REST_DataController
         $quantity = $lv->quantity;
         WC()->cart->add_to_cart($product_id, $quantity);
 
-
-        if ($type == 'items_avail') {
-          $availability = true;
-          // First, check if the store is Managing Stock on this product, Default is False
-          if ($lv->manage_stock == true) {
-            // Check Stock Status and Count to make sure we can sell product * quantity,
-            // OR if this Product can be back-ordered
-            if ((($lv->stock_status != 'outofstock') && ($lv->stock_quantity >= $lv->quantity)) || $lk->backorders_allowed) {
-              $availability = true;
-            }
-            // Since Default WC behavior doesn't use Stock, be extra-explicit
-            else {
-              $availability = false;
-            }
-          } else {
-            // When Stock is not in Use, this boolean at the Product Level tells us whether or not it can be sold
-            $availability = $lv->purchaseable;
-          }
+        $productTemp = new WC_Product_Factory();
+        $product = $productTemp->get_product($product_id);
+        $availability = $product->is_in_stock();
           $args['items_avail'][] = (object) array(
-            "id" => $lv->$product_id,
+            "id" => $product_id,
             "availability" => $availability,
           );
         }
