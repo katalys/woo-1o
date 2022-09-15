@@ -87,6 +87,12 @@ class Oo_graphQLRequest
         $variables = ((object) array("id" => $orderId, "input" => (object) array("shippingRates" => $shippingRates, "totalTax" => $totalTax)));
         $contentType = 'application/json';
         break;
+      case 'update_availability':
+        $data = 'mutation UpdateAvailability($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id lineItems{id available}}}';
+        $lineItems = isset($args['items_avail']) ? $args['items_avail'] : '';
+        $variables = ((object) array("id" => $orderId, "input" => (object) array("lineitems" => $lineItems)));
+        $contentType = 'application/json';
+        break;
       case 'complete_order':
         $data = 'mutation CompleteOrder($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id fulfillmentStatus externalData}}';
         $fulfillStatus = isset($args['fulfilled-status']) ? $args['fulfilled-status'] : 'unknown';
