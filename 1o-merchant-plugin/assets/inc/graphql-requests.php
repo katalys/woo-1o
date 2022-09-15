@@ -16,6 +16,7 @@ class Oo_graphQLRequest
       'order_data',
       'update_ship_rates',
       'update_tax_amount',
+      'update_availability',
     );
 
     /**
