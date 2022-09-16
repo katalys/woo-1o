@@ -1174,6 +1174,9 @@ function oneO_addWooOrder($orderData, $orderid)
       if ($prod->get_price() != ($product['price'] / 100)) {
         $args['subtotal'] = ($product['price'] / 100);
         $args['total'] = ($product['total'] / 100);
+        $discount = ($product['price'] / 100) - $prod->get_price();
+        $discount_string = "katalys.com discount";
+        $order->add_coupon($discount_string, $discount, 0);
       }
       $order->add_product($prod, $product['qty'], $args);
     }
@@ -1276,7 +1279,7 @@ function oneO_addWooOrder($orderData, $orderid)
 
   // Set totals in order
   $order->set_shipping_total($shippingCost / 100);
-  $order->set_discount_total(0);
+  $order->set_discount_total($discount);
   $order->set_discount_tax(0);
   $order->set_cart_tax($taxPaid / 100);
   //$order->set_shipping_tax(0);
