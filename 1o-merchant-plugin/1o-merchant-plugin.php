@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: 1o Merchant Plugin (OOMP)
+Plugin Name: 1o Merchant Plugin
 URI: https://fischercreativemedia.com
 Description: Plugin to add functionality for 1o cart connection.
 Version: 1.0.9
