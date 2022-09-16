@@ -153,8 +153,7 @@ class OneO_REST_DataController
     $requestBody = $request->get_json_params();
     $directives = OneO_REST_DataController::get_directives($requestBody);
     OneO_REST_DataController::set_controller_log('Headers from 1o', print_r($headers, true));
-    OneO_REST_DataController::set_controller_log('Body from 1o', print_r($request->get_json_params(), true));
-    //echo '$directives:' . print_r($directives, true) . "\n";
+    OneO_REST_DataController::set_controller_log('Body from 1o', print_r($requestBody, true));
     if (empty($directives) || !is_array($directives)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
@@ -368,6 +367,8 @@ class OneO_REST_DataController
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present
     }
+    $return_arr["source_id"] = $d_val; // directive id
+    $return_arr["source_directive"] = $d_key; // directive name
     $return_arr["status"] = $status; // ok or error or error message
     return (object)$return_arr;
   }
@@ -672,62 +673,61 @@ class OneO_REST_DataController
         $productTemp = new WC_Product_Factory();
         $product = $productTemp->get_product($product_id);
         $availability = $product->is_in_stock();
-          $args['items_avail'][] = (object) array(
-            "id" => $product_id,
-            "availabile" => $availability,
+        $args['items_avail'][] = (object) array(
+          "id" => $product_id,
+          "availabile" => $availability,
+        );
+      }
+    }
+
+    if ($type == 'items_avail') {
+      return $args['items_avail'];
+    }
+
+
+    WC()->cart->maybe_set_cart_cookies();
+    WC()->cart->calculate_shipping();
+    WC()->cart->calculate_totals();
+    $countCart = WC()->cart->get_cart_contents_count();
+    foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
+      // Check if a shipping for the current package exist
+      if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
+        // Loop through shipping rates for the current package
+        foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
+          $rate_id     = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
+          $method_id   = $shipping_rate->get_method_id(); // The shipping method slug
+          $instance_id = $shipping_rate->get_instance_id(); // The instance ID
+          $label_name  = $shipping_rate->get_label(); // The label name of the method
+          $cost        = $shipping_rate->get_cost(); // The cost without tax
+          $tax_cost    = $shipping_rate->get_shipping_tax(); // The tax cost
+          //$taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
+          $itemPriceEx = number_format($cost, 2, '.', '');
+          $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
+          //set up rates array for 1o
+          $args['shipping-rates'][] = (object) array(
+            "handle" => $method_id . '-' . $instance_id . '|' . (isset($itemPriceEx) ? ($itemPriceEx * 100) : '0') . '|' . str_replace(" ", "-", $label_name),
+            "title" => $label_name,
+            "amount" => $itemPriceEx * 100,
           );
         }
       }
-
-      if ($type == 'items_avail') {
-        return $args['items_avail'];
-      }
-
-
-      WC()->cart->maybe_set_cart_cookies();
-      WC()->cart->calculate_shipping();
-      WC()->cart->calculate_totals();
-      $countCart = WC()->cart->get_cart_contents_count();
-      foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
-        // Check if a shipping for the current package exist
-        if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
-          // Loop through shipping rates for the current package
-          foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
-            $rate_id     = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
-            $method_id   = $shipping_rate->get_method_id(); // The shipping method slug
-            $instance_id = $shipping_rate->get_instance_id(); // The instance ID
-            $label_name  = $shipping_rate->get_label(); // The label name of the method
-            $cost        = $shipping_rate->get_cost(); // The cost without tax
-            $tax_cost    = $shipping_rate->get_shipping_tax(); // The tax cost
-            //$taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
-            $itemPriceEx = number_format($cost, 2, '.', '');
-            $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
-            //set up rates array for 1o
-            $args['shipping-rates'][] = (object) array(
-              "handle" => $method_id . '-' . $instance_id . '|' . (isset($itemPriceEx) ? ($itemPriceEx * 100) : '0') . '|' . str_replace(" ", "-", $label_name),
-              "title" => $label_name,
-              "amount" => $itemPriceEx * 100,
-            );
-          }
-        }
-      }
-      $taxesArray = WC()->cart->get_taxes();
-      $taxTotal = 0;
-      if (is_array($taxesArray) && !empty($taxesArray)) {
-        foreach ($taxesArray as $taxCode => $taxAmt) {
-          $taxTotal = $taxTotal + $taxAmt;
-        }
-      }
-      OneO_REST_DataController::set_tax_amt($taxTotal, $order_id);
-      $args['tax_amt'] = $taxTotal;
-      WC()->cart->empty_cart();
-      if ($type == 'tax_amt') {
-        return $args['tax_amt'];
-      } elseif ($type == 'shipping_rates') {
-        return $args['shipping-rates'];
-      }
-      return $args;
     }
+    $taxesArray = WC()->cart->get_taxes();
+    $taxTotal = 0;
+    if (is_array($taxesArray) && !empty($taxesArray)) {
+      foreach ($taxesArray as $taxCode => $taxAmt) {
+        $taxTotal = $taxTotal + $taxAmt;
+      }
+    }
+    OneO_REST_DataController::set_tax_amt($taxTotal, $order_id);
+    $args['tax_amt'] = $taxTotal;
+    WC()->cart->empty_cart();
+    if ($type == 'tax_amt') {
+      return $args['tax_amt'];
+    } elseif ($type == 'shipping_rates') {
+      return $args['shipping-rates'];
+    }
+    return $args;
   }
   /**
    * Process 1o order data for insert into easy array for insert into WC
@@ -876,8 +876,9 @@ class OneO_REST_DataController
       $do_directives = array();
       $the_directives = array();
       if ($directives !== false && !empty($directives)) {
-        foreach ($directives as $dkey => $directive) {
+        foreach ($directives as $directive) {
           $do_directives[$directive['directive']] = (isset($directive['args']) ? $directive['args'] : '');
+          $do_directives[$directive['directive']] = (isset($directive['id']) ? $directive['id'] : '');
         }
         if (is_array($do_directives) && !empty($do_directives)) {
           foreach ($do_directives as $k => $v) {
