@@ -401,7 +401,7 @@ class OneO_REST_DataController
         $taxAmt = OneO_REST_DataController::get_tax_amt($order_id);
         if ($taxAmt === false) {
           // calculate 
-          $args = OneO_REST_DataController::create_a_cart($order_id, $kid, 'tax_amt', $args);
+          $args = OneO_REST_DataController::create_a_cart($order_id, $kid, $args, 'tax_amt');
         } else {
           $args['tax_amt'] = $taxAmt;
         }
@@ -549,7 +549,7 @@ class OneO_REST_DataController
         break;
       case 'update_available_shipping_rates':
         OneO_REST_DataController::set_controller_log('process_directive: update_available_shipping_rates', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
-        $args = OneO_REST_DataController::create_a_cart($order_id, $kid, '', $args);
+        $args = OneO_REST_DataController::create_a_cart($order_id, $kid, $args, '');
 
         # Step 4: Update shipping rates on GraphQL.
         $newPaseto2 = OneO_REST_DataController::create_paseto_from_request($kid);
@@ -565,7 +565,7 @@ class OneO_REST_DataController
         break;
       case 'update_availability':
         OneO_REST_DataController::set_controller_log('process_directive: update_availability', '[$kid]:' . $kid . ' | [order_id]:' . $order_id);
-        $args = OneO_REST_DataController::create_a_cart($order_id, $kid, 'items_avail', $args);
+        $args = OneO_REST_DataController::create_a_cart($order_id, $kid, $args, 'items_avail');
 
         # Update Availability on GraphQL.
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
@@ -624,7 +624,7 @@ class OneO_REST_DataController
     return (object) $retArr;
   }
 
-  public static function create_a_cart($order_id, $kid, $type = '', $args)
+  public static function create_a_cart($order_id, $kid, $args, $type = '')
   {
     # Step 1: Create new Paseto for request.
     $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
