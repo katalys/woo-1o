@@ -5,6 +5,7 @@ URI: https://www.katalys.com/
 Description: Plugin to add functionality for Katalys Shop cart connection.
 Version: 1.1.0
 Author: Katalys
+Author URI: https://www.katalys.com/
 Text Domain: 1o-merchant-plugin
 */
 
