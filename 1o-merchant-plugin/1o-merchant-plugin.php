@@ -1,11 +1,10 @@
 <?php
 /*
-Plugin Name: 1o Merchant Plugin
-URI: https://fischercreativemedia.com
-Description: Plugin to add functionality for 1o cart connection.
-Version: 1.0.9
-Author: 1o | Don Fischer
-Author URI: https://fischercreativemedia.com
+Plugin Name: Katalys Merchant Plugin
+URI: https://www.katalys.com/
+Description: Plugin to add functionality for Katalys Shop cart connection.
+Version: 1.1.0
+Author: Katalys
 Text Domain: 1o-merchant-plugin
 */
 
