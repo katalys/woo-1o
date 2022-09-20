@@ -157,13 +157,13 @@ class OneO_REST_DataController
     if (empty($directives) || !is_array($directives)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
-      wp_send_json_error($error, 500);
+      wp_send_json($error);
     }
 
     if ($token === false || $token === '') {
       /* Error response for 1o */
       $error = new WP_Error('Error-100', 'No Token Provided', 'API Error');
-      wp_send_json_error($error, 500);
+      wp_send_json($error);
     }
 
     $options = get_oneO_options();
@@ -173,7 +173,7 @@ class OneO_REST_DataController
     if (empty($integrationId)) {
       /* Error response for 1o */
       $error = new WP_Error('Error-102', 'No Integraition ID Provided', 'API Error');
-      wp_send_json_error($error, 500);
+      wp_send_json($error);
     } else {
       $v2Token = str_replace('Bearer ', '', $token);
       $footer = process_paseto_footer($token);
@@ -182,7 +182,7 @@ class OneO_REST_DataController
       if ($_secret == '' || is_null($_secret)) {
         /* Error response for 1o */
         $error = new WP_Error('Error-200', 'Integraition ID does not match IDs on file.', 'API Error');
-        wp_send_json_error($error, 500);
+        wp_send_json($error);
       } else {
         // key exists and can be used to decrypt.
         $res_Arr = array();
@@ -192,7 +192,7 @@ class OneO_REST_DataController
         if (check_if_paseto_expired($rawDecryptedToken)) {
           /* Error response for 1o */
           $error = new WP_Error('Error-300', 'PASETO Token is Expired.', 'API Error');
-          wp_send_json_error($error, 500);
+          wp_send_json($error);
         } else {
           // valid - move on & process request
           if (!empty($directives) && is_array($directives)) {
@@ -204,11 +204,11 @@ class OneO_REST_DataController
           }
         }
       }
-      $out = array("results" => $res_Arr, 'integration_id' => OneO_REST_DataController::get_stored_intid(), 'endpoint' => OneO_REST_DataController::get_stored_endpoint());
-      $results = (object)$out;
+      $out = array("results" => $res_Arr);
+      $results = $out;
       OneO_REST_DataController::set_controller_log('$results from request to 1o', print_r($results, true));
       self::process_controller_log();
-      wp_send_json_success($results, 200);
+      wp_send_json($results);
     }
     // Return all of our post response data.
     return $res_Arr;
@@ -361,11 +361,21 @@ class OneO_REST_DataController
   public static function process_directive(string $d_key = '', $d_val = array(), $kid = '')
   {
     $return_arr = array();
+    $return_arr["integration_id"] = OneO_REST_DataController::get_stored_intid(); 
+    $return_arr["endpoint"] = OneO_REST_DataController::get_stored_endpoint();
     $processed = OneO_REST_DataController::process_directive_function($d_key, $d_val, $kid);
     $status = isset($processed->status) ? $processed->status : 'unknown';
     $order_id = isset($processed->order_id) ? $processed->order_id : null;
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present
+    }
+    $return_arr["data"] = (object) array(
+      'healthy' => true,
+      'internal_error' => null,
+      'public_error' => null,
+    );
+    if ($status == "error") {
+      $return_arr["data"]["internal_error"] = "error";
     }
     $return_arr["source_id"] = $d_val; // directive id
     $return_arr["source_directive"] = $d_key; // directive name
@@ -888,11 +898,11 @@ class OneO_REST_DataController
         return $the_directives;
       } else {
         $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
-        wp_send_json_error($error, 500);
+        wp_send_json($error);
       }
     } else {
       $error = new WP_Error('Error-104', 'Payload Directives not found in Request. You must have at least one Directive.', 'API Error');
-      wp_send_json_error($error, 500);
+      wp_send_json($error);
     }
     return $the_directives;
   }
