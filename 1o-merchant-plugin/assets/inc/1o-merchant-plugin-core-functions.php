@@ -197,9 +197,9 @@ class OneO_REST_DataController
           // valid - move on & process request
           if (!empty($directives) && is_array($directives)) {
 
-            foreach ($directives as $d_key => $d_val) {
-              OneO_REST_DataController::set_controller_log('=======' . $d_key . '======', print_r($d_key, true));
-              $res_Arr[] = OneO_REST_DataController::process_directive($d_key, $d_val, $footer);
+            foreach ($directives as $directive) {
+              OneO_REST_DataController::set_controller_log('=======' . $directive . '======', print_r($directive, true));
+              $res_Arr[] = OneO_REST_DataController::process_directive($directive, $footer);
             }
           }
         }
@@ -358,27 +358,28 @@ class OneO_REST_DataController
     return $processedVariants;
   }
 
-  public static function process_directive(string $d_key = '', $d_val = array(), $kid = '')
+  public static function process_directive($directive = array(), $kid = '')
   {
     $return_arr = array();
-    $return_arr["integration_id"] = OneO_REST_DataController::get_stored_intid(); 
+    $return_arr["integration_id"] = OneO_REST_DataController::get_stored_intid();
     $return_arr["endpoint"] = OneO_REST_DataController::get_stored_endpoint();
-    $processed = OneO_REST_DataController::process_directive_function($d_key, $d_val, $kid);
+    $processed = OneO_REST_DataController::process_directive_function($directive['directive'], $directive['args'], $kid);
     $status = isset($processed->status) ? $processed->status : 'unknown';
     $order_id = isset($processed->order_id) ? $processed->order_id : null;
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present
     }
-    $return_arr["data"] = (object) array(
+    $return_arr["data"] = array(
       'healthy' => true,
       'internal_error' => null,
       'public_error' => null,
     );
     if ($status == "error") {
-      $return_arr["data"]["internal_error"] = "error";
+      $return_arr["data"]["healthy"] = false;
+      $return_arr["data"]["internal_error"] = "internal_error";
     }
-    $return_arr["source_id"] = $d_val; // directive id
-    $return_arr["source_directive"] = $d_key; // directive name
+    $return_arr["source_id"] = $directive['id']; // directive id
+    $return_arr["source_directive"] = $directive['directive']; // directive name
     $return_arr["status"] = $status; // ok or error or error message
     return (object)$return_arr;
   }
@@ -387,8 +388,8 @@ class OneO_REST_DataController
   {
     require_once(OOMP_LOC_CORE_INC . 'graphql-requests.php');
     $processed = null;
+    $args = isset($args) ? $args : array();
     $order_id = isset($args['order_id']) ? esc_attr($args['order_id']) : null;
-    $args = !is_array($args) || $args == false ? array() : $args;
     $hasOrderId = true;
 
     /* other possible directives:  pricing, discounts, inventory checks, */
@@ -405,7 +406,6 @@ class OneO_REST_DataController
         } else {
           $args['tax_amt'] = $taxAmt;
         }
-        //echo '============-0==ddddd=======:[[' . $taxAmt . "]]\n";
         $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
         $updateTax = new Oo_graphQLRequest('update_tax_amount', $order_id, $newPaseto, $args);
         OneO_REST_DataController::set_controller_log('$updateTax:---------------', print_r($updateTax, true));
@@ -460,7 +460,6 @@ class OneO_REST_DataController
 
         # Step 2: Parse the product URL.
         $prodURL = isset($args['product_url']) && $args['product_url'] != '' ? esc_url_raw($args['product_url']) : false;
-
         # Step 3: If not empty, get product data for request.
         if ($prodURL !== false) {
           $productId = url_to_postid_1o($prodURL);
@@ -470,7 +469,7 @@ class OneO_REST_DataController
           $isDownloadable = $product->is_downloadable();
           $canProcess = false;
           $retArr = array();
-          if (!$product->get_status() == 'publish') {
+          if ($product->get_status() != 'publish') {
             $args['product_to_import'] = 'not published';
             $processed = "Product must be set to Published to be imported.";
           } elseif ($productType == 'simple' && !$isDownloadable) { //get regular product data (no variants)
@@ -883,19 +882,9 @@ class OneO_REST_DataController
   {
     if (is_array($requestBody) && !empty($requestBody)) {
       $directives = isset($requestBody['directives']) ? $requestBody['directives'] : false;
-      $do_directives = array();
-      $the_directives = array();
+      OneO_REST_DataController::set_controller_log('directives in get_directives()', print_r($directives, true));
       if ($directives !== false && !empty($directives)) {
-        foreach ($directives as $directive) {
-          $do_directives[$directive['directive']] = (isset($directive['args']) ? $directive['args'] : '');
-          $do_directives[$directive['directive']] = (isset($directive['id']) ? $directive['id'] : '');
-        }
-        if (is_array($do_directives) && !empty($do_directives)) {
-          foreach ($do_directives as $k => $v) {
-            $the_directives[$k] = $v;
-          }
-        }
-        return $the_directives;
+        return $directives;
       } else {
         $error = new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', 'API Error');
         wp_send_json($error);
@@ -904,7 +893,7 @@ class OneO_REST_DataController
       $error = new WP_Error('Error-104', 'Payload Directives not found in Request. You must have at least one Directive.', 'API Error');
       wp_send_json($error);
     }
-    return $the_directives;
+    return $directives;
   }
 
   /**
