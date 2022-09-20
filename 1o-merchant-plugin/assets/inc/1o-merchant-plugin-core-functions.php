@@ -366,17 +366,14 @@ class OneO_REST_DataController
     $processed = OneO_REST_DataController::process_directive_function($directive['directive'], $directive['args'], $kid);
     $status = isset($processed->status) ? $processed->status : 'unknown';
     $order_id = isset($processed->order_id) ? $processed->order_id : null;
+    $data = isset($processed->data) ? $processed->data : null;
+    OneO_REST_DataController::set_controller_log('$processed:', print_r($processed, true));
+    OneO_REST_DataController::set_controller_log('$data', print_r($data, true));
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present
     }
-    $return_arr["data"] = array(
-      'healthy' => true,
-      'internal_error' => null,
-      'public_error' => null,
-    );
-    if ($status == "error") {
-      $return_arr["data"]["healthy"] = false;
-      $return_arr["data"]["internal_error"] = "internal_error";
+    if ($data != null) {
+      $return_arr["data"] = $data;
     }
     $return_arr["source_id"] = $directive['id']; // directive id
     $return_arr["source_directive"] = $directive['directive']; // directive name
@@ -440,6 +437,11 @@ class OneO_REST_DataController
         # Step 4: If ok response, then return finishing repsponse to initial request.
         if ($checkStatus) {
           $processed = 'ok';
+          $retArr['data'] = (object) array(
+            'healthy' => true,
+            'internal_error' => null,
+            'public_error' => null,
+          );
         } else {
           $processed = $checkMessage != '' ? $checkMessage : 'error';
         }
@@ -488,12 +490,13 @@ class OneO_REST_DataController
             $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
             $retArr["images"] = OneO_REST_DataController::get_product_images($product, $productId);
             //$retArr['sku'] = $product->get_sku();
-            //TODO: SKU needs to be adde on 1o end still.
+            //TODO: SKU needs to be added on 1o end still.
             $options = OneO_REST_DataController::get_product_options($product);
             $retArr["option_names"] = $options['group'];
             $retArr["variant"] = false; //bool
             $retArr["variants"] = array(); //empty array (no variants)
-            $retArr["available"] = $product->is_in_stock();
+            //$retArr["available"] = $product->is_in_stock();
+            //TODO: Product Availability Boolean needs to be added on 1o end still.
             $returnObj = (object) $retArr;
             $args['product_to_import'] = $returnObj;
           } elseif ($productType == 'variable' && !$isDownloadable) { //get variable product data (with variants)
@@ -522,7 +525,8 @@ class OneO_REST_DataController
               $processedVariants = OneO_REST_DataController::process_variants($variants, $options['names'], $retArr["title"], $retArr["currency"], $retArr["currency_sign"]);
             }
             $retArr["variants"] = $processedVariants;
-            $retArr["available"] = $product->is_in_stock();
+            //$retArr["available"] = $product->is_in_stock();
+            //TODO: Product Availability Boolean needs to be added on 1o end still.
             $returnObj = (object) $retArr;
             $args['product_to_import'] = $returnObj;
           } elseif ($productType == 'downloadable' || $isDownloadable) {
