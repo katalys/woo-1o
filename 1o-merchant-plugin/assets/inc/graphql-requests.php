@@ -76,7 +76,7 @@ class Oo_graphQLRequest
         $data = 'query {healthCheck}';
         break;
       case 'line_items':
-        $data = 'query Q {order(id: "' . $orderId . '") {shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressSubdivision shippingAddressSubdivisionCode shippingAddressCountry shippingAddressCountryCode shippingAddressZip lineItems { quantity price tax currency productExternalId variantExternalId}}}';
+        $data = 'query Q {order(id: "' . $orderId . '") {shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressSubdivision shippingAddressSubdivisionCode shippingAddressCountry shippingAddressCountryCode shippingAddressZip lineItems { id quantity price tax currency productExternalId variantExternalId}}}';
         break;
       case 'order_data':
         $data = 'query Q {order( id: "' . $orderId . '" ) {externalData billingName billingPhone billingEmail billingAddressCity billingAddressSubdivision billingAddressSubdivisionCode billingAddressLine_1 billingAddressLine_2 billingAddressCountry billingAddressCountryCode billingAddressZip chosenShippingRateHandle currency customerName customerEmail customerPhone fulfillmentStatus lineItems{quantity price tax currency productExternalId variantExternalId} merchantName paymentStatus shippingName shippingPhone shippingEmail shippingAddressLine_1 shippingAddressLine_2 shippingAddressCity shippingAddressSubdivision shippingAddressSubdivisionCode shippingAddressCountry shippingAddressCountryCode shippingAddressZip totalPrice totalShipping total totalTax transactions{id name}}}';
@@ -91,7 +91,7 @@ class Oo_graphQLRequest
       case 'update_availability':
         $data = 'mutation UpdateAvailability($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id lineItems{id available}}}';
         $lineItems = isset($args['items_avail']) ? $args['items_avail'] : '';
-        $variables = ((object) array("id" => $orderId, "input" => (object) array("lineitems" => $lineItems)));
+        $variables = ((object) array("id" => $orderId, "input" => (object) array("lineItems" => $lineItems)));
         $contentType = 'application/json';
         break;
       case 'complete_order':
@@ -111,12 +111,9 @@ class Oo_graphQLRequest
         break;
       case 'update_tax_amount':
         $totalTax = (int) (isset($args['tax_amt']) ? str_replace('.', '', $args['tax_amt']) : '0');
-        OneO_REST_DataController::set_controller_log('TEST:$totalTax', print_r($totalTax, true));
         $lineTax = isset($args['tax_amt_lines']) ? $args['tax_amt_lines'] : false;
         $data = 'mutation UpdateTaxAmounts($id: ID!, $input: OrderInput!) {updateOrder(id: $id, input: $input) {totalTax}}';
-        OneO_REST_DataController::set_controller_log('TEST:$data', print_r($data, true));
         $variables = ((object) array("id" => $orderId, "input" => (object) array("totalTax" => $totalTax)));
-        OneO_REST_DataController::set_controller_log('TEST:$variables', print_r($variables, true));
         $contentType = 'application/json';
         break;
     }

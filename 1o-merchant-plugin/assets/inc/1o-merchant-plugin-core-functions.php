@@ -367,8 +367,6 @@ class OneO_REST_DataController
     $status = isset($processed->status) ? $processed->status : 'unknown';
     $order_id = isset($processed->order_id) ? $processed->order_id : null;
     $data = isset($processed->data) ? $processed->data : null;
-    OneO_REST_DataController::set_controller_log('$processed:', print_r($processed, true));
-    OneO_REST_DataController::set_controller_log('$data', print_r($data, true));
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present
     }
@@ -678,25 +676,20 @@ class OneO_REST_DataController
       WC()->customer->set_shipping_address_2($sAddress2);
     }
     if (!empty($lines)) {
-      foreach ($lines as $lk => $lv) {
-        $product_id = $lv->productExternalId;
-        $quantity = $lv->quantity;
+      foreach ($lines as $line) {
+        $product_id = $line->productExternalId;
+        $quantity = $line->quantity;
         WC()->cart->add_to_cart($product_id, $quantity);
 
         $productTemp = new WC_Product_Factory();
         $product = $productTemp->get_product($product_id);
         $availability = $product->is_in_stock();
         $args['items_avail'][] = (object) array(
-          "id" => $product_id,
-          "availabile" => $availability,
+          "id" => $line->id,
+          "available" => $availability,
         );
       }
     }
-
-    if ($type == 'items_avail') {
-      return $args['items_avail'];
-    }
-
 
     WC()->cart->maybe_set_cart_cookies();
     WC()->cart->calculate_shipping();
