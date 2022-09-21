@@ -76,7 +76,7 @@ global $oneOTaxAmt;
 $oneOTaxAmt = 0;
 
 /* Define Some Plugin items */
-define('OOMP_VER_NUM', '1.0.8'); // same as plugin version up top.
+define('OOMP_VER_NUM', '1.1.0'); // same as plugin version up top.
 define('OOMP_NAMESPACE', '/1o-to-store-api'); // namespace for endpoint.
 define('OOMP_PASETO_EXP', 'P01Y'); // Paseto Expiry time. Set to PT05M for production
 define('OOMP_LOC_CORE', dirname(__FILE__) . '/');
