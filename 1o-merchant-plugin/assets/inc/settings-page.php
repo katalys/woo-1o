@@ -47,7 +47,7 @@ class oneO_Settings
                 'manage_options',
                 '1o-settings',
                 array($this, 'oneO_settings_create_admin_page'),
-                OOMP_LOC_CORE_URL . 'img/1o-docs-logo.svg',
+                OOMP_LOC_URL . '/img/1o-docs-logo.svg',
                 80 // position
             );
         } else {

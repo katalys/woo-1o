@@ -358,7 +358,7 @@ class OneO_REST_DataController
 
   public static function process_directive_function($directive, $args, $kid)
   {
-    require_once OOMP_LOC_CORE . '/inc/graphql-requests.php';
+    require_once OOMP_LOC_PATH . '/graphql-requests.php';
     $processed = null;
     $args = isset($args) ? $args : array();
     $order_id = isset($args['order_id']) ? esc_attr($args['order_id']) : null;
@@ -796,7 +796,7 @@ class OneO_REST_DataController
   public static function create_paseto()
   {
     // Note - need base 64 decode shared secret.
-    require_once OOMP_LOC_CORE . '/inc/create-paseto.php';
+    require_once OOMP_LOC_PATH . '/create-paseto.php';
     $ss = OneO_REST_DataController::get_stored_secret();
     $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
     $expTime = OOMP_PASETO_EXP;
@@ -815,7 +815,7 @@ class OneO_REST_DataController
    */
   public function create_paseto_request($echo = true)
   {
-    require_once OOMP_LOC_CORE . '/inc/create-paseto.php';
+    require_once OOMP_LOC_PATH . '/create-paseto.php';
     $ss = OneO_REST_DataController::get_stored_secret();
     $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
     $expTime = OOMP_PASETO_EXP;
@@ -838,7 +838,7 @@ class OneO_REST_DataController
    */
   private static function create_paseto_from_request($kid)
   {
-    require_once OOMP_LOC_CORE . '/inc/create-paseto.php';
+    require_once OOMP_LOC_PATH . '/create-paseto.php';
     $ss = OneO_REST_DataController::get_stored_secret();
     $expTime = OOMP_PASETO_EXP;
     $newPaseto = new Oo_create_paseto_token($ss, $kid, $expTime);
