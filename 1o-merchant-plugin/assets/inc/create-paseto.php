@@ -1,4 +1,5 @@
 <?php
+namespace KatalysMerchantPlugin;
 
 use ParagonIE\Paseto\Builder;
 use ParagonIE\Paseto\Purpose;

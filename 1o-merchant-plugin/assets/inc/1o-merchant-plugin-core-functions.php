@@ -1,33 +1,26 @@
 <?php
+namespace KatalysMerchantPlugin;
+
 class OneO_REST_DataController
 {
-
-  /**
-   * Initiallize namespace variable and resourse name.
-   */
-  public function __construct()
-  {
-    $this->namespace = OOMP_NAMESPACE;
-  }
+  private static $log = [];
 
   /**
    * Controller log function - if turned on
    */
   public static function set_controller_log($name = '', $logged = null)
   {
-    global $oneOControllerLog;
-    if ($logged !== null && OOMP_ERROR_LOG) {
-      $oneOControllerLog[$name] = $logged;
+    if ($logged != null) {
+      self::$log[$name] = $logged;
     }
   }
 
-  /**
-   * Gets controller log
-   */
-  public function get_controller_log()
+  public function process_controller_log()
   {
-    global $oneOControllerLog;
-    return $oneOControllerLog;
+    if (!empty(self::$log)) {
+      error_log('controller log:' . "\n" . print_r(self::$log, true));
+      self::$log = [];
+    }
   }
 
   public static function set_tax_amt($amt = 0, $id = '')
@@ -47,28 +40,12 @@ class OneO_REST_DataController
     return $transTax;
   }
 
-  public function process_controller_log()
-  {
-    global $oneOControllerLog;
-    if (OOMP_ERROR_LOG && is_array($oneOControllerLog) && !empty($oneOControllerLog)) {
-      error_log('controller log:' . "\n" . print_r($oneOControllerLog, true));
-    }
-  }
-
-  /**
-   * Returns current namespace used for 1o plugin.
-   */
-  public function get_namespace()
-  {
-    return $this->namespace;
-  }
-
   /**
    * Register namespace Routes with WordPress for 1o Plugin to use.
    */
-  public function register_routes()
+  public function register_routes($namespace = OOMP_NAMESPACE)
   {
-    register_rest_route($this->namespace, '/(?P<integrationId>[A-Za-z0-9\-]+)', array(
+    register_rest_route($namespace, '/(?P<integrationId>[A-Za-z0-9\-]+)', array(
       array(
         'methods' => array('GET', 'POST'),
         'callback' => array($this, 'get_request'),
@@ -77,7 +54,7 @@ class OneO_REST_DataController
       'schema' => array($this, 'get_request_schema'),
     ));
     /* temp - to create PASETOs on demand */
-    register_rest_route($this->namespace . '-create', '/create-paseto', array(
+    register_rest_route($namespace . '-create', '/create-paseto', array(
       array(
         'methods' => array('GET'),
         'callback' => array($this, 'create_paseto_request'),
@@ -105,7 +82,7 @@ class OneO_REST_DataController
 
   /**
    * Get all Headers from request.
-   * 
+   *
    * @return array $headers   :Array of all headers
    */
   public static function get_all_headers()
@@ -125,7 +102,7 @@ class OneO_REST_DataController
 
   /**
    * Get Authorization Header from headers for verifying Paseto token.
-   * 
+   *
    * @param array $headers    :Array of all headers to process.
    * @return string $token    :'Authorization', '1o-bearer-token' or 'bearer' header value or false.
    */
@@ -135,7 +112,7 @@ class OneO_REST_DataController
     if (is_array($headers) && !empty($headers)) {
       foreach ($headers as $name => $val) {
         if (in_array(strtolower($name), array('authorization', '1o-bearer-token', 'bearer'))) {
-          $token = $val; #$token holds PASETO token to be parsed 
+          $token = $val; #$token holds PASETO token to be parsed
         }
       }
     }
@@ -216,7 +193,7 @@ class OneO_REST_DataController
 
   /**
    * Get array of options from a product.
-   * 
+   *
    * @param object $product   :product object from WooCommerce
    * @return array $optGroup  :array of product options
    */
@@ -262,7 +239,7 @@ class OneO_REST_DataController
 
   /**
    * Get array of images from a product.
-   * 
+   *
    * @param object $product   :product object from WooCommerce
    * @return array $images    :array of images
    */
@@ -288,23 +265,23 @@ class OneO_REST_DataController
     return $gallImgs;
   }
 
-  /**
-   * Convert string HTML into Markdown format
-   * 
-   * @param string $desc        :regular HTML markup
-   * @return string $parsedHTML :converted HTML or empty string.
-   */
-  public static function concert_desc_to_markdown($desc = '')
-  {
-    require_once(OOMP_LOC_VENDOR_PATH . 'markdown-converter/Converter.php');
-    $converter = new Markdownify\Converter;
-    $parsedHTML = $converter->parseString($desc);
-    if ($parsedHTML != '') {
-      return $parsedHTML;
-    } else {
-      return '';
-    }
-  }
+//  /**
+//   * Convert string HTML into Markdown format
+//   *
+//   * @param string $desc        :regular HTML markup
+//   * @return string $parsedHTML :converted HTML or empty string.
+//   */
+//  public static function concert_desc_to_markdown($desc = '')
+//  {
+//    require_once(OOMP_LOC_VENDOR_PATH . 'markdown-converter/Converter.php');
+//    $converter = new Markdownify\Converter;
+//    $parsedHTML = $converter->parseString($desc);
+//    if ($parsedHTML != '') {
+//      return $parsedHTML;
+//    } else {
+//      return '';
+//    }
+//  }
 
   public static function process_variants($variants = array(), $optionNames = array(), $productTitle = '', $currency = '', $currencySign = '')
   {
@@ -332,7 +309,7 @@ class OneO_REST_DataController
             "external_id" => (string) $variant['variation_id'],
             "shop_url" => get_permalink($variant['variation_id']),
             "variant" => true,
-            //'sku' => $variant['sku'], 
+            //'sku' => $variant['sku'],
             //TODO: Add SKU to at 1o level.
             "images" => array(
               $variant['image']['url']
@@ -381,7 +358,7 @@ class OneO_REST_DataController
 
   public static function process_directive_function($directive, $args, $kid)
   {
-    require_once(OOMP_LOC_CORE_INC . 'graphql-requests.php');
+    require_once OOMP_LOC_CORE . '/inc/graphql-requests.php';
     $processed = null;
     $args = isset($args) ? $args : array();
     $order_id = isset($args['order_id']) ? esc_attr($args['order_id']) : null;
@@ -396,7 +373,7 @@ class OneO_REST_DataController
       case 'update_tax_amounts':
         $taxAmt = OneO_REST_DataController::get_tax_amt($order_id);
         if ($taxAmt === false) {
-          // calculate 
+          // calculate
           $args = OneO_REST_DataController::create_a_cart($order_id, $kid, $args, 'tax_amt');
         } else {
           $args['tax_amt'] = $taxAmt;
@@ -481,7 +458,7 @@ class OneO_REST_DataController
             $retArr["price"] = round(($product->get_sale_price('view') * 100), 0, PHP_ROUND_HALF_UP);
             $retArr["compare_at_price"] = round(($product->get_regular_price('view') * 100), 0, PHP_ROUND_HALF_UP);
             $prodDesc = $product->get_description();
-            //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc); 
+            //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
             //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
             $retArr["summary_html"] = $prodDesc; // HTML description
             $retArr["external_id"] = (string) $productId; //product ID
@@ -512,7 +489,7 @@ class OneO_REST_DataController
             $retArr["external_id"] = (string) $productId;
             $retArr["shop_url"] = $prodURL;
             $retArr["images"] = OneO_REST_DataController::get_product_images($product);
-            //$retArr['sku'] = $product->get_sku(); 
+            //$retArr['sku'] = $product->get_sku();
             //TODO: SKU needs to be added on 1o end still.
             $options = OneO_REST_DataController::get_product_options($product);
             $retArr["option_names"] = $options['group'];
@@ -593,7 +570,7 @@ class OneO_REST_DataController
         # Step 3: prepare order data for Woo import
         if ($getOrderData) {
           $orderData = OneO_REST_DataController::process_order_data($getOrderData->get_request());
-          // insert into Woo & grab Woo order ID 
+          // insert into Woo & grab Woo order ID
           $newOrderID = oneO_addWooOrder($orderData, $order_id);
           if ($newOrderID === false) {
             return  $processed = 'exists';
@@ -602,7 +579,7 @@ class OneO_REST_DataController
           $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
 
           # Step 3b: Do request to graphql to complete order.
-          // Pass Woo order ID in external data 
+          // Pass Woo order ID in external data
           $args['external-data'] = array('WooID' => $newOrderID);
           if ($newOrderID != '' && $newOrderID !== false) {
             $args['fulfilled-status'] = 'FULFILLED';
@@ -639,9 +616,9 @@ class OneO_REST_DataController
     $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : array();
 
     # Step 3: Get shipping rates & availability from Woo.
-    /** 
+    /**
      * Real Shipping Totals
-     * Set up new cart to get real shipping total 
+     * Set up new cart to get real shipping total
      * */
     $args['shipping-rates'] = array();
     $args['items_avail'] = array();
@@ -737,7 +714,7 @@ class OneO_REST_DataController
   }
   /**
    * Process 1o order data for insert into easy array for insert into WC
-   * 
+   *
    * @param array $orderData    :Array of order data from 1o
    * @return array $returnArr   :Array of processed order data or false if none.
    */
@@ -819,7 +796,7 @@ class OneO_REST_DataController
   public static function create_paseto()
   {
     // Note - need base 64 decode shared secret.
-    require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
+    require_once OOMP_LOC_CORE . '/inc/create-paseto.php';
     $ss = OneO_REST_DataController::get_stored_secret();
     $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
     $expTime = OOMP_PASETO_EXP;
@@ -832,13 +809,13 @@ class OneO_REST_DataController
   /**
    * Creates PASETO Token for requests to GraphQL
    * Can be created with an external call
-   * 
+   *
    * @param $echo (bool)
    * @return $token or echo $token & die
    */
   public function create_paseto_request($echo = true)
   {
-    require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
+    require_once OOMP_LOC_CORE . '/inc/create-paseto.php';
     $ss = OneO_REST_DataController::get_stored_secret();
     $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
     $expTime = OOMP_PASETO_EXP;
@@ -855,13 +832,13 @@ class OneO_REST_DataController
   /**
    * Creates PASETO Token FROM requests from 1o for return response.
    * Internal call only.
-   * 
+   *
    * @param string $kid    : 'kid' variable from request.
    * @return string $token : token for response to 1o
    */
   private static function create_paseto_from_request($kid)
   {
-    require_once(OOMP_LOC_CORE_INC . 'create-paseto.php');
+    require_once OOMP_LOC_CORE . '/inc/create-paseto.php';
     $ss = OneO_REST_DataController::get_stored_secret();
     $expTime = OOMP_PASETO_EXP;
     $newPaseto = new Oo_create_paseto_token($ss, $kid, $expTime);
@@ -895,7 +872,7 @@ class OneO_REST_DataController
 
   /**
    * Gets stored secret from settings DB.
-   * 
+   *
    * @return string     : stored secret key
    */
   public static function get_stored_secret()
@@ -907,7 +884,7 @@ class OneO_REST_DataController
 
   /**
    * Gets stored integration id from settings DB.
-   * 
+   *
    * @return string     : stored integration ID
    */
   public static function get_stored_intid()
@@ -919,7 +896,7 @@ class OneO_REST_DataController
 
   /**
    * Gets stored public key from steeings DB.
-   * 
+   *
    * @return string     : stored public key
    */
   public static function get_stored_public()
@@ -932,7 +909,7 @@ class OneO_REST_DataController
   /**
    * Gets generated 1o endpoint for the store
    * to be used in requests from 1o GraphQL.
-   * 
+   *
    * @return string     : stored store endpoint
    */
   public static function get_stored_endpoint()
@@ -981,20 +958,8 @@ class OneO_REST_DataController
 }
 
 /**
- * Hook to register our new routes from the controller with WordPress.
- */
-function prefix_register_my_rest_routes()
-{
-  global $oneO_controller;
-  $oneO_controller = new OneO_REST_DataController();
-  $oneO_controller->register_routes();
-}
-
-add_action('rest_api_init', 'prefix_register_my_rest_routes');
-
-/**
  * Helper function to validate exp date of token
- * 
+ *
  * @param string $rawDecryptedToken   : raw string from decrypted token.
  * @return bool true (default)        : true if expired or not valid signature.
  *                                    : false if not expired and valid signature.
@@ -1018,7 +983,7 @@ function check_if_paseto_expired($rawDecryptedToken)
 
 /**
  * Helper Functions for Processing Token Footer
- * 
+ *
  * @param string $token   : Bearer token from authorization header (PASETO)
  * @return bool false     : false on empty, failure or wrong size
  * @return string $token  : token for processing
@@ -1041,7 +1006,7 @@ function process_paseto_footer($token)
 
 /**
  * Helper Functions to get Token Footer
- * 
+ *
  * @param string $footer : footer string from paseto token
  * @return bool false    : False on empty or invalid footer
  * @return string $kid   : KID from footer if present
@@ -1062,38 +1027,6 @@ function get_paseto_footer_string($footer)
 }
 
 /**
- * Helper function to get stored shared secret key for store.
- */
-function oneO_get_stored_secret()
-{
-  return OneO_REST_DataController::get_stored_secret();
-}
-
-/**
- * Helper function to get stored integration ID for store.
- */
-function oneO_get_stored_intid()
-{
-  return OneO_REST_DataController::get_stored_intid();
-}
-
-/**
- * Helper function to get store public key for store.
- */
-function oneO_get_stored_public()
-{
-  return OneO_REST_DataController::get_stored_public();
-}
-
-/**
- * Helper function to get endpoint for store.
- */
-function oneO_get_stored_endpoint()
-{
-  return OneO_REST_DataController::get_stored_endpoint();
-}
-
-/**
  * Get the 1o Options and parse for use.
  */
 function get_oneO_options()
@@ -1111,13 +1044,9 @@ function get_oneO_options()
   return $tempDB_IntegrationID_Call;
 }
 
-/* Initialize the settings page object */
-if (is_admin())
-  $oneO_settings = new oneO_Settings();
-
 /**
  * Set order data and add it to WooCommerce
- * 
+ *
  * @param array $orderData  :Array of order data to process.
  * @param int $orderid      :Order ID from 1o.
  * @return int $orderKey    :Order Key ID after insert into WC orders.
@@ -1133,8 +1062,8 @@ function oneO_addWooOrder($orderData, $orderid)
     // if order key exists, order has already been porcessed.
     if ($checkKey) {
       /**
-       * ?? FUTURE ??: Maybe we need to add a way to update an order? 
-       * If so this is where it should go. 
+       * ?? FUTURE ??: Maybe we need to add a way to update an order?
+       * If so this is where it should go.
        * */
       return false;
     }
@@ -1235,7 +1164,7 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->set_shipping_country($sCountry);
   $order->set_shipping_phone($sPhone);
   /**
-   * 
+   *
    * OTHER DATA IN $OrderData NOT USED :
    * [order][status] => FULFILLED // 1o status
    * [order][totalPrice] => 2200 // (calculated on order after other items are added.)
@@ -1260,14 +1189,14 @@ function oneO_addWooOrder($orderData, $orderid)
   $order->shipping_method_title = $shipSlug;
 
   /**
-   * Items that might be used in the future. 
+   * Items that might be used in the future.
    *
    * $shipping_taxes = WC_Tax::calc_shipping_tax('10', WC_Tax::get_shipping_tax_rates());
    * $rate = new WC_Shipping_Rate('flat_rate_shipping', 'Flat rate shipping', '10', $shipping_taxes, 'flat_rate');
    * $item = new WC_Order_Item_Shipping();
    * $item->set_props(array('method_title' => $rate->label, 'method_id' => $rate->id, 'total' => wc_format_decimal($rate->cost), 'taxes' => $rate->taxes, 'meta_data' => $rate->get_meta_data() ));
    * $order->add_item($item);
-   * 
+   *
    * ** Set payment gateway **
    * $payment_gateways = WC()->payment_gateways->payment_gateways();
    * $order->set_payment_method($payment_gateways['bacs']);
@@ -1291,7 +1220,7 @@ function oneO_addWooOrder($orderData, $orderid)
 
 /**
  * Splits single name string into salutation, first, last, suffix
- * 
+ *
  * @param string $name  :String to split into pieces.
  * @return array        :Array of split pieces.
  */
@@ -1329,9 +1258,9 @@ function oneO_doSplitName($name)
 
 /**
  * Add 1o Order Column to order list page.
- * 
+ *
  * @param array $columns  Array of culumns (from WP hook)
- * @return array $columns 
+ * @return array $columns
  */
 add_filter('manage_edit-shop_order_columns', function ($columns) {
   $columns['oneo_order_type'] = '1o Order';
@@ -1340,7 +1269,7 @@ add_filter('manage_edit-shop_order_columns', function ($columns) {
 
 /**
  * Add data to 1o Order Column on order list page.
- * 
+ *
  * @param string $column  Name of current column processing (from WP hook)
  * @echo string column data
  */
@@ -1360,7 +1289,7 @@ add_action('manage_shop_order_posts_custom_column', function ($column) {
 
 /**
  * Check if order key exists in database
- * 
+ *
  * @param string $key
  * @param string $orderKey
  * @return bool

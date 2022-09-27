@@ -1,4 +1,6 @@
 <?php
+namespace KatalysMerchantPlugin;
+
 /* Plugin Class for Graph QL requests */
 class Oo_graphQLRequest
 {
@@ -48,7 +50,7 @@ class Oo_graphQLRequest
     }
 
     /**
-     * End Missing Data / Error Checks 
+     * End Missing Data / Error Checks
      */
 
     /* $queryURL is dynamic based on store keys */
@@ -163,7 +165,7 @@ class Oo_graphQLRequest
   }
 
   /**
-   * Get the request. This is the best way to do this and maintain the 
+   * Get the request. This is the best way to do this and maintain the
    * data integrity across different functions.
    */
   public function get_request()
