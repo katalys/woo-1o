@@ -1,7 +1,5 @@
 <?php
-
 declare(strict_types=1);
-
 namespace ParagonIE\Paseto\Protocol;
 
 use ParagonIE\ConstantTime\{
@@ -45,9 +43,7 @@ class Version2 implements ProtocolInterface
      * Must be constructable with no arguments so an instance may be passed
      * around in a type safe way.
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * A unique header string with which the protocol can be identified.
@@ -162,14 +158,12 @@ class Version2 implements ProtocolInterface
         } else {
             $data = Util::validateAndRemoveFooter($data, $footer);
         }
-
         $message = self::aeadDecrypt(
             $data,
             self::HEADER . '.local.',
             $key,
             (string) $footer
         );
-
         if (!\is_string($message)) {
             throw new PasetoException('Invalid message decryption');
         }

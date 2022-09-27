@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit4a7526db071e827d62ac0e69096cb9bd
+class ComposerStaticIniteca8f797107e85a5dfa430131681da26
 {
     public static $files = array (
         '3109cb1a231dcd04bee1f9f620d46975' => __DIR__ . '/..' . '/paragonie/sodium_compat/autoload.php',
@@ -21,14 +21,6 @@ class ComposerStaticInit4a7526db071e827d62ac0e69096cb9bd
             'ParagonIE\\Paseto\\' => 17,
             'ParagonIE\\ConstantTime\\' => 23,
         ),
-        'G' => 
-        array (
-            'GraphQL\\' => 8,
-        ),
-        'C' => 
-        array (
-            'Composer\\Installers\\' => 20,
-        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -44,27 +36,18 @@ class ComposerStaticInit4a7526db071e827d62ac0e69096cb9bd
         array (
             0 => __DIR__ . '/..' . '/paragonie/constant_time_encoding/src',
         ),
-        'GraphQL\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/webonyx/graphql-php/src',
-        ),
-        'Composer\\Installers\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers',
-        ),
     );
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
-        'TDP\\OptionsKit' => __DIR__ . '/..' . '/wp-user-manager/wp-optionskit/wp-optionskit.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit4a7526db071e827d62ac0e69096cb9bd::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit4a7526db071e827d62ac0e69096cb9bd::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit4a7526db071e827d62ac0e69096cb9bd::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticIniteca8f797107e85a5dfa430131681da26::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticIniteca8f797107e85a5dfa430131681da26::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticIniteca8f797107e85a5dfa430131681da26::$classMap;
 
         }, null, ClassLoader::class);
     }
