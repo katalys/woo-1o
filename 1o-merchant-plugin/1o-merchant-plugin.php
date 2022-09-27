@@ -10,12 +10,11 @@ Text Domain: 1o-merchant-plugin
 */
 namespace KatalysMerchantPlugin;
 
-/* Define Some Plugin items */
-const OOMP_VER_NUM = '1.1.0'; // same as plugin version up top.
-const OOMP_NAMESPACE = '/1o-to-store-api'; // namespace for endpoint.
-const OOMP_PASETO_EXP = 'P01Y'; // Paseto Expiry time. Set to PT05M for production
-const OOMP_LOC_PATH = __DIR__ . '/assets/inc';
-define('OOMP_LOC_URL', plugins_url('assets', __FILE__));
+const OOMP_VER_NUM = '1.1.0'; // same as plugin version up top
+const OOMP_NAMESPACE = '/1o-to-store-api'; // namespace for API endpoint
+const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time. Use 'PT05M' for production, 'P01Y' for dev
+define('OOMP_LOC_PATH', __DIR__ . '/assets/inc'); // absolute file path for PHP files
+define('OOMP_LOC_URL', plugins_url('assets', __FILE__)); // absolute URL path
 
 // If this file is called directly, abort
 if (!defined('WPINC')) {
@@ -32,12 +31,11 @@ require_once OOMP_LOC_PATH . '/1o-merchant-plugin-core-functions.php';
 // Ajax
 require_once OOMP_LOC_PATH . '/1o-merchant-plugin-ajax-request.php';
 
-// Include the PASETO & GRAPHQL Libraries
+// use Composer for PASETO library
 include_once __DIR__ . '/vendor/autoload.php';
 
 // Setup admin page
 if (is_admin()) {
-
     // Admin Scripts
     add_action('admin_enqueue_scripts', function () {
         // admin_css
@@ -55,12 +53,12 @@ if (is_admin()) {
 
 } else {
     // Front End Scripts
-//    add_action('wp_enqueue_scripts', function () {
+    //add_action('wp_enqueue_scripts', function () {
         // load admin CSS
         //wp_enqueue_style('1o-merchant-plugin-core-css', OOMP_LOC_URL . '/css/1o-merchant-plugin-core.css', null, time(), 'all');
         // load admin JS
         //wp_enqueue_script('1o-merchant-plugin-core-js', OOMP_LOC_URL . '/js/1o-merchant-plugin-core.js', ['jquery'], time(), true);
-//    });
+    //});
 }
 
 /**
