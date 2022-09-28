@@ -13,6 +13,8 @@ Provides automatic order fulfillment integration with Katalys Shop (formerly 1o.
 == Description ==
 Do you want more customers for your eCommerce brand? [RevOffers](https://www.revoffers.com/) is the performance-based advertising network for transformational health products and brands — and our plugin opens the door to high-converting in-market traffic from the RevOffers Advertiser Network.
 Our plugin enables technical integration in one, no-hassle step. It listens for order-related hooks within your WordPress / WooCommerce installation and reports to the RevOffers Attribution Engine when the order is complete. Our back-end system does the rest, analyzing and reporting on how much growth RevOffers is driving for you, month after month.
+In this version we also add fulfillment integration with the Katalys Shop. This means you can choose to take advantage of the Katalys Shop, which brings you a frictionless, fully responsive e-commerce technology that allows product discovery and product purchase to take place anywhere on the web. In this case the plugin makes sure products can be imported into Katalys Shops directly from your products in WooCommerce, as well as pushing orders into your flow automatically. This allows you to sell more, in more places, through extending products in your WooCommerce installation to any content on the web and beyond.
+
 
 ## Open Your Account Now
 Ready to drive more sales? It begins with qualified traffic. It’s easy to get started:
@@ -33,6 +35,7 @@ The RevOffers plugin for WordPress / WooCommerce enables you to easily and autom
 - Generating more sales, every day
 - Paying only for sales that really happen
 - Generating additional SEO-friendly links from publishers
+- Having product discovery and product purchase take place anywhere on the web
 
 *********
 
