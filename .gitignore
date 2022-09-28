@@ -1,7 +1,7 @@
-1o-merchant-plugin/vendor/**/*.md
-1o-merchant-plugin/vendor/**/appveyor.yml
-1o-merchant-plugin/vendor/**/phpunit*
-1o-merchant-plugin/vendor/**/psalm.xml
-1o-merchant-plugin/vendor/paragonie/paseto/docs/
-1o-merchant-plugin/vendor/paragonie/paseto/tests/
-1o-merchant-plugin/vendor/paragonie/paseto/.*
+katalys-shop/vendor/**/*.md
+katalys-shop/vendor/**/appveyor.yml
+katalys-shop/vendor/**/phpunit*
+katalys-shop/vendor/**/psalm.xml
+katalys-shop/vendor/paragonie/paseto/docs/
+katalys-shop/vendor/paragonie/paseto/tests/
+katalys-shop/vendor/paragonie/paseto/.*
