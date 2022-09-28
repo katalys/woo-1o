@@ -97,19 +97,19 @@ class ApiController
       return new WP_Error('Error-100', 'No Token Provided', ['status' => 403]);
     }
 
-    $requestBody = $request->get_json_params();
-    if (!$requestBody || !is_array($requestBody)) {
-      return new WP_Error('Error-104', 'Payload Directives not found in Request. You must have at least one Directive.', ['status' => 400]);
-    }
-    if (empty($requestBody['integrationId'])) {
+    $integrationId = $request->get_param('integrationId');
+    if (empty($integrationId)) {
       return new WP_Error('Error-102', 'No Integration ID Provided', ['status' => 400]);
     }
-    if (empty($requestBody['directives'])) {
-      return new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', ['status' => 400]);
-    }
 
+    $requestBody = $request->get_json_params();
+    if (!$requestBody || !is_array($requestBody)) {
+      return new WP_Error('Error-103', 'Payload Directives not found in Request. You must have at least one Directive.', ['status' => 400]);
+    }
+    if (empty($requestBody['directives'])) {
+      return new WP_Error('Error-104', 'Payload Directives empty. You must have at least one Directive.', ['status' => 400]);
+    }
     $directives = $requestBody['directives'];
-    $integrationId = $requestBody['integrationId'];
     log_debug('directives in get_directives()', $directives);
 
     $options = oneO_options();
