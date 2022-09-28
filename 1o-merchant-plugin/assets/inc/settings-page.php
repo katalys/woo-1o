@@ -9,8 +9,6 @@ namespace KatalysMerchantPlugin;
  */
 class oneO_Settings
 {
-    private $oneO_settings_options;
-
     /**
      * Tell the plugin to creat a stand alone menu or an options submenu.
      *
@@ -23,17 +21,6 @@ class oneO_Settings
     {
         add_action('admin_menu', array($this, 'oneO_settings_add_plugin_page'));
         add_action('admin_init', array($this, 'oneO_settings_page_init'));
-    }
-
-    public static function get_oneO_settings_options($option_name = '')
-    {
-        $options = get_option('oneO_settings_option_name', array());
-        if ($option_name == '') {
-            // return all if no one option is asked for.
-            return $options;
-        } else {
-            return (isset($options[$option_name]) ? $options[$option_name] : '');
-        }
     }
 
     public function oneO_settings_add_plugin_page()
@@ -61,7 +48,7 @@ class oneO_Settings
 
     public function oneO_settings_create_admin_page()
     {
-        $this->oneO_settings_options = get_option('oneO_settings_option_name', array()); ?>
+        ?>
         <style>
             .settings_unset .api_endpoint {
                 display: none;
@@ -186,14 +173,13 @@ class oneO_Settings
                 <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
             <?php
             } else {
-                $pKey = isset($this->oneO_settings_options['public_key']) && $this->oneO_settings_options['public_key'] != '';
-                $ssKey = isset($this->oneO_settings_options['secret_key']) && $this->oneO_settings_options['secret_key'] != '';
-                $intId = isset($this->oneO_settings_options['integration_id']) && $this->oneO_settings_options['integration_id'] != '';
-                $graphql = isset($this->oneO_settings_options['graphql_endpoint']) && $this->oneO_settings_options['graphql_endpoint'] != '';
-                $setting_class = $pKey && $ssKey && $intId && $graphql ? ' settings_set' : ' settings_unset';
+                $opt = get_oneO_options();
+                $setting_class = $opt->publicKey && $opt->secretKey && $opt->integrationId && $opt->graphqlEndpoint
+                    ? 'settings_set'
+                    : 'settings_unset';
             ?>
                 <p>Enter your <strong>Integration ID</strong>, <strong>API Key</strong> and <strong>Shared Secret</strong> in the fields below. Log in to your 1o Admin console > Settings > Apps & Integrations, select Platforms tab, click WooCommerce and follow the instructions.</p>
-                <form method="post" action="options.php" class="settings-form-1o<?php echo $setting_class; ?>">
+                <form method="post" action="options.php" class="settings-form-1o <?php echo $setting_class; ?>">
                     <?php settings_fields('oneO_settings_option_group'); ?>
                     <?php do_settings_sections('oneO-settings-admin'); ?>
                     <?php do_settings_sections('oneO-settings-admin-two'); ?>
@@ -314,7 +300,7 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="text" autocomplete="1o-public-key" name="oneO_settings_option_name[public_key]" id="public_key" value="%s">',
-            isset($this->oneO_settings_options['public_key']) ? esc_attr($this->oneO_settings_options['public_key']) : ''
+            esc_attr(get_oneO_options()->publicKey)
         );
     }
 
@@ -322,7 +308,7 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="password" autocomplete="1o-shared-secret" name="oneO_settings_option_name[secret_key]" id="secret_key" value="%s"><span id="secret_key-toggle" class="dashicons dashicons-visibility"></span>',
-            isset($this->oneO_settings_options['secret_key']) ? esc_attr($this->oneO_settings_options['secret_key']) : ''
+            esc_attr(get_oneO_options()->secretKey)
         );
     ?>
         <script>
@@ -349,7 +335,7 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="text" autocomplete="1o-integration-id" name="oneO_settings_option_name[integration_id]" id="integration_id" value="%s">',
-            isset($this->oneO_settings_options['integration_id']) ? esc_attr($this->oneO_settings_options['integration_id']) : ''
+            esc_attr(get_oneO_options()->integrationId)
         );
     }
 
@@ -357,32 +343,31 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="text" autocomplete="1o-graphql-endpoint" name="oneO_settings_option_name[graphql_endpoint]" id="graphql_endpoint" value="%s">',
-            isset($this->oneO_settings_options['graphql_endpoint']) ? esc_attr($this->oneO_settings_options['graphql_endpoint']) : ''
+            esc_attr(get_oneO_options()->graphqlEndpoint)
         );
     }
 
     public function api_endpoint_callback()
     {
-        $endpoint = isset($this->oneO_settings_options['api_endpoint']) ? esc_attr($this->oneO_settings_options['api_endpoint']) : '';
-        $endpoint = $endpoint != '' ? $endpoint : get_rest_url(null, OOMP_NAMESPACE);
-        $out = array();
-        $out[] = '<input class="regular-text medium-text-input" type="text" autocomplete="none" name="oneO_settings_option_name[api_endpoint]" id="api_endpoint" value="' . $endpoint . '" disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>';
-        $out[] = '<p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in your 1o Admin Console.</p>';
-        $out[] = '<script>';
-        $out[] = '  document.querySelector(\'#endpoint_copy\').addEventListener(\'click\', function(e){ ';
-        $out[] = '      var copyText = document.querySelector(\'#api_endpoint\');';
-        $out[] = '      var copyLink = document.querySelector(\'#endpoint_copy\');';
-        $out[] = '      copyText.disabled = false;';
-        $out[] = '      copyText.focus();';
-        $out[] = '      copyText.select();';
-        $out[] = '      document.execCommand(\'copy\');';
-        $out[] = '      copyText.blur();';
-        $out[] = '      copyText.disabled = true;';
-        $out[] = '      copyLink.innerHTML = \'Copied!\';';
-        $out[] = '      console.log(copyText.textContent);';
-        $out[] = '      e.preventDefault();';
-        $out[] = '  });';
-        $out[] = '</script>';
-        echo implode("\n", $out);
+        $endpoint = get_oneO_options()->endpoint;
+        ?>
+<input class="regular-text medium-text-input" type="text" autocomplete="none" name="oneO_settings_option_name[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr($endpoint) ?>" disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>
+<p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in your 1o Admin Console.</p>
+<script>
+    document.querySelector('#endpoint_copy').addEventListener('click', function(e){
+        var copyText = document.querySelector('#api_endpoint');
+        var copyLink = document.querySelector('#endpoint_copy');
+        copyText.disabled = false;
+        copyText.focus();
+        copyText.select();
+        document.execCommand('copy');
+        copyText.blur();
+        copyText.disabled = true;
+        copyLink.innerHTML = 'Copied!
+        console.log(copyText.textContent);
+        e.preventDefault();
+    });
+</script>
+<?php
     }
 }

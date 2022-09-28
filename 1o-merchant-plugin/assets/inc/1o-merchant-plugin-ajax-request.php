@@ -99,22 +99,25 @@ class OneO_REST_DataController
     }
 
     $options = get_oneO_options();
-    $apiEnd = isset($options['endpoint']) && $options['endpoint'] != '' ? $options['endpoint'] : false;
     $integrationId = $request['integrationId'];
 
     if (empty($integrationId)) {
-      /* Error response for 1o */
       return new WP_Error('Error-102', 'No Integration ID Provided', ['status' => 400]);
     }
 
     $v2Token = str_replace('Bearer ', '', $token);
     $footer = paseto_decode_footer($token);
     $footerString = paseto_footer_kid($footer);
-    $_secret = isset($options[$integrationId]->api_keys[$footerString]) ? $options[$integrationId]->api_keys[$footerString] : null;
-    if (empty($_secret)) {
-      /* Error response for 1o */
-      return new WP_Error('Error-200', 'Integraition ID does not match IDs on file.');
+    if ($options->publicKey != $footerString) {
+      return new WP_Error('Error-200', 'PublicKey does not match IDs on file.');
     }
+    if ($options->integrationId != $integrationId) {
+      return new WP_Error('Error-200', 'IntegrationID does not match IDs on file.');
+    }
+    if (!$options->secretKey) {
+      return new WP_Error('Error-200', 'SecretID is empty');
+    }
+    $_secret = $options->secretKey;
 
     // key exists and can be used to decrypt.
     $res_Arr = [];
@@ -302,8 +305,8 @@ class OneO_REST_DataController
   public static function process_directive($directive = [], $kid = '')
   {
     $return_arr = [];
-    $return_arr["integration_id"] = OneO_REST_DataController::get_stored_intid();
-    $return_arr["endpoint"] = get_rest_url(null, OOMP_NAMESPACE) . '/';
+    $return_arr["integration_id"] = get_oneO_options()->integrationId;
+    $return_arr["endpoint"] = get_oneO_options()->endpoint;
 
     try {
       $runner = new DirectiveRunner($kid);
@@ -525,7 +528,7 @@ class OneO_REST_DataController
   public function create_paseto_request($echo = true)
   {
     $ss = OneO_REST_DataController::get_stored_secret();
-    $pk = '{"kid":"' . OneO_REST_DataController::get_stored_public() . '"}';
+    $pk = json_encode(['kid' => get_oneO_options()->publicKey], JSON_UNESCAPED_SLASHES);
     $token = paseto_create_token($ss, $pk, OOMP_PASETO_EXP);
     if ($echo) {
       echo 'new token:' . $token . "\n";
@@ -558,37 +561,12 @@ class OneO_REST_DataController
   /**
    * Gets stored secret from settings DB.
    *
-   * @return string     : stored secret key
+   * @return string stored secret key
    */
   public static function get_stored_secret()
   {
-    $oneO_settings_options = get_option('oneO_settings_option_name', []); // Array of All Options
-    $secret_key = isset($oneO_settings_options['secret_key']) && $oneO_settings_options['secret_key'] != '' ? base64_decode($oneO_settings_options['secret_key']) : ''; // Secret Key
-    return $secret_key;
-  }
-
-  /**
-   * Gets stored integration id from settings DB.
-   *
-   * @return string     : stored integration ID
-   */
-  public static function get_stored_intid()
-  {
-    $oneO_settings_options = get_option('oneO_settings_option_name', []); // Array of All Options
-    $int_id = isset($oneO_settings_options['integration_id']) && $oneO_settings_options['integration_id'] != '' ? $oneO_settings_options['integration_id'] : ''; // Integration ID
-    return $int_id;
-  }
-
-  /**
-   * Gets stored public key from steeings DB.
-   *
-   * @return string     : stored public key
-   */
-  public static function get_stored_public()
-  {
-    $oneO_settings_options = get_option('oneO_settings_option_name', []); // Array of All Options
-    $public_key = isset($oneO_settings_options['public_key']) && $oneO_settings_options['public_key'] != '' ? $oneO_settings_options['public_key'] : ''; // Public Key
-    return $public_key;
+    $key = get_oneO_options()->secretKey;
+    return $key ? base64_decode($key) : '';
   }
 
   /**

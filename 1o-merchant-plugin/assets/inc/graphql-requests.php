@@ -26,7 +26,7 @@ class Oo_graphQLRequest
   public function rawGraphQl(array $request)
   {
     // https://playground.1o.io/graphql // GraphQL URL for 1o
-    $endpoint = oneO_Settings::get_oneO_settings_options('graphql_endpoint');
+    $endpoint = get_oneO_options()->graphqlEndpoint;
 
     if (!$endpoint) {
       throw new GraphQLException('Cannot Process Directive - Admin must set GraphQL Endpoint', 400);

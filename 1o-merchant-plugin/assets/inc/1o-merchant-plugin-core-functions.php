@@ -142,20 +142,34 @@ function log_debug($name, $logged = null)
  */
 function get_oneO_options()
 {
-  $oneO_settings_options = get_option('oneO_settings_option_name', []); // Array of All Options
-  $public_key = !empty($oneO_settings_options['public_key']) ? $oneO_settings_options['public_key'] : '';
-  $secret_key = !empty($oneO_settings_options['secret_key']) ? $oneO_settings_options['secret_key'] : '';
-  $int_id = !empty($oneO_settings_options['integration_id']) ? $oneO_settings_options['integration_id'] : '';
-  return (empty($public_key) || empty($secret_key) || empty($int_id))
-      ? []
-      : [
-          $int_id => (object)[
-              'api_keys' => [
-                  $public_key => $secret_key,
-              ],
-          ],
-          'endpoint' => get_rest_url(null, OOMP_NAMESPACE) . '/',
-      ];
+  static $cachedOptions;
+
+  if ($cachedOptions) {
+    $opts = get_option('oneO_settings_option_name', []);
+
+    $cachedOptions = new OneO_Options();
+    $cachedOptions->endpoint = !empty($opts['api_endpoint']) ? $opts['api_endpoint'] : get_rest_url(null, OOMP_NAMESPACE) . '/';
+    $cachedOptions->publicKey = !empty($opts['public_key']) ? $opts['public_key'] : '';
+    $cachedOptions->secretKey = !empty($opts['secret_key']) ? $opts['secret_key'] : '';
+    $cachedOptions->integrationId = !empty($opts['integration_id']) ? $opts['integration_id'] : '';
+    $cachedOptions->graphqlEndpoint = !empty($opts['graphql_endpoint']) ? $opts['graphql_endpoint'] : '';
+  }
+
+  return $cachedOptions;
+}
+
+class OneO_Options
+{
+  /** @var string Local URL for this website's API */
+  public $endpoint;
+  /** @var string URL for the 1o GraphQL API */
+  public $graphqlEndpoint;
+  /** @var string */
+  public $integrationId;
+  /** @var string */
+  public $publicKey;
+  /** @var string */
+  public $secretKey;
 }
 
 /**
