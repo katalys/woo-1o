@@ -1,5 +1,6 @@
 <?php
 namespace KatalysMerchantPlugin;
+use WP_Error;
 use ParagonIE\Paseto\Keys\SymmetricKey;
 use ParagonIE\Paseto\Protocol\Version2;
 
