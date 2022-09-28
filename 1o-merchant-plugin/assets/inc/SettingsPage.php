@@ -22,9 +22,9 @@ class SettingsPage
     // Admin Scripts
     add_action('admin_enqueue_scripts', function () {
       // admin_css
-      wp_enqueue_style('1o-merchant-plugin-admin-css', OOMP_LOC_URL . '/css/1o-merchant-plugin-admin.css', null, time(), 'all');
+      wp_enqueue_style(OOMP_TEXT_DOMAIN . '-admin-css', OOMP_LOC_URL . '/css/admin.css', null, time(), 'all');
       // admin_js
-      //wp_enqueue_script('1o-merchant-plugin-admin-js', OOMP_LOC_URL . '/js/1o-merchant-plugin-admin.js', ['jquery'], time(), true);
+      //wp_enqueue_script(OOMP_TEXT_DOMAIN . '-admin-js', OOMP_LOC_URL . '/js/admin.js', ['jquery'], time(), true);
     });
 
     add_action('admin_menu', [$this, 'oneO_settings_add_plugin_page']);

@@ -106,9 +106,9 @@ function paseto_footer_kid($footer)
 function log_debug($name, $logged = null)
 {
   if (error_reporting() === E_ALL) {
-    error_log("1o-merchant-plugin DEBUG: $name");
+    error_log(OOMP_TEXT_DOMAIN . " DEBUG: $name");
     if ($logged != null) {
-      error_log("1o-merchant-plugin DEBUG context: " . print_r($logged, true));
+      error_log(OOMP_TEXT_DOMAIN . " DEBUG context: " . print_r($logged, true));
     }
   }
 }

@@ -10,9 +10,10 @@ Text Domain: 1o-merchant-plugin
 */
 namespace KatalysMerchantPlugin;
 
-const OOMP_VER_NUM = '1.1.0'; // same as plugin version up top
+const OOMP_VER_NUM = '1.1.0'; // version, should match "Version:" above
+const OOMP_TEXT_DOMAIN = '1o-merchant-plugin'; // filename for the plugin, should match "Text Domain:" above
 const OOMP_NAMESPACE = '/1o-to-store-api'; // namespace for API endpoint
-const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time. Use 'PT05M' for production, 'P01Y' for dev
+const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time, use 'PT05M' for production, 'P01Y' for dev
 define('OOMP_LOC_URL', plugins_url('assets', __FILE__)); // absolute URL path
 
 // If this file is called directly, abort
@@ -24,7 +25,7 @@ if (!defined('WPINC')) {
 require_once __DIR__ . '/assets/inc/SettingsPage.php';
 
 // Functions
-require_once __DIR__ . '/assets/inc/1o-merchant-plugin-core-functions.php';
+require_once __DIR__ . '/assets/inc/functions.php';
 require_once __DIR__ . '/assets/inc/GraphQLRequest.php';
 
 // REST endpoint
