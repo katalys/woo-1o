@@ -40,10 +40,9 @@ class OneO_REST_DataController
    * Check permissions for the posts. Basic check for Bearer Token.
    * Called by REST router.
    *
-   * @param WP_REST_Request $request Current request
    * @return true|WP_Error
    */
-  public function handle_request_permissions_check($request)
+  public function handle_request_permissions_check()
   {
     $token = self::get_token_from_headers();
     if ($token) {
@@ -112,7 +111,7 @@ class OneO_REST_DataController
     $integrationId = $requestBody['integrationId'];
     log_debug('directives in get_directives()', $directives);
 
-    $options = get_oneO_options();
+    $options = oneO_options();
     $footer = paseto_decode_footer($token);
     $footerString = paseto_footer_kid($footer);
     if ($options->publicKey != $footerString) {
@@ -150,8 +149,8 @@ class OneO_REST_DataController
    */
   public function handle_paseto_request()
   {
-    $ss = base64_decode(get_oneO_options()->secretKey);
-    $pk = json_encode(['kid' => get_oneO_options()->publicKey], JSON_UNESCAPED_SLASHES);
+    $ss = base64_decode(oneO_options()->secretKey);
+    $pk = json_encode(['kid' => oneO_options()->publicKey], JSON_UNESCAPED_SLASHES);
     return [
         'token' => paseto_create_token($ss, $pk, OOMP_PASETO_EXP),
     ];
@@ -167,8 +166,8 @@ class OneO_REST_DataController
     $data = isset($processed->data) ? $processed->data : null;
 
     $return_arr = [
-        'integration_id' => get_oneO_options()->integrationId,
-        'endpoint' => get_oneO_options()->endpoint,
+        'integration_id' => oneO_options()->integrationId,
+        'endpoint' => oneO_options()->endpoint,
         'source_id' => $directive['id'], // directive id
         'source_directive' => $directive['directive'], // directive name
         'status' => $status, // ok or error or error message
@@ -425,7 +424,7 @@ class DirectiveRunner
    * @param object $product :product object from WooCommerce
    * @return array $optGroup  :array of product options
    */
-  public static function import__product_options($product)
+  private static function import__product_options($product)
   {
     if (!is_object($product) || !is_array($product)) {
       $options = $product->get_attributes('view');
@@ -471,7 +470,7 @@ class DirectiveRunner
    * @param object $product :product object from WooCommerce
    * @return array $images    :array of images
    */
-  public static function import__get_product_images($product, $productId = 0)
+  private static function import__get_product_images($product, $productId = 0)
   {
     $gallImgs = [];
     if (is_object($product)) {
@@ -511,7 +510,7 @@ class DirectiveRunner
 //    }
 //  }
 
-  public static function import__process_variants($variants = [], $optionNames = [], $productTitle = '', $currency = '', $currencySign = '')
+  private static function import__process_variants($variants = [], $optionNames = [], $productTitle = '', $currency = '', $currencySign = '')
   {
     $processedVariants = [];
     //TODO: check if is a variant ((bool)$variants['vatiants'], I think )

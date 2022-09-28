@@ -19,7 +19,7 @@ class Oo_graphQLRequest
    */
   static function fromKid($kid)
   {
-    $ss = base64_decode(get_oneO_options()->secretKey);
+    $ss = base64_decode(oneO_options()->secretKey);
     $token = paseto_create_token($ss, $kid, OOMP_PASETO_EXP);
     return new self($token);
   }
@@ -40,7 +40,7 @@ class Oo_graphQLRequest
   public function rawGraphQl(array $request)
   {
     // https://playground.1o.io/graphql // GraphQL URL for 1o
-    $endpoint = get_oneO_options()->graphqlEndpoint;
+    $endpoint = oneO_options()->graphqlEndpoint;
 
     if (!$endpoint) {
       throw new GraphQLException('Cannot Process Directive - Admin must set GraphQL Endpoint', 400);

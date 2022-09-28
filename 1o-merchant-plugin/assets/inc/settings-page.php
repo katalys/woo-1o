@@ -173,7 +173,7 @@ class oneO_Settings
                 <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
             <?php
             } else {
-                $opt = get_oneO_options();
+                $opt = oneO_options();
                 $setting_class = $opt->publicKey && $opt->secretKey && $opt->integrationId && $opt->graphqlEndpoint
                     ? 'settings_set'
                     : 'settings_unset';
@@ -300,7 +300,7 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="text" autocomplete="1o-public-key" name="oneO_settings_option_name[public_key]" id="public_key" value="%s">',
-            esc_attr(get_oneO_options()->publicKey)
+            esc_attr(oneO_options()->publicKey)
         );
     }
 
@@ -308,7 +308,7 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="password" autocomplete="1o-shared-secret" name="oneO_settings_option_name[secret_key]" id="secret_key" value="%s"><span id="secret_key-toggle" class="dashicons dashicons-visibility"></span>',
-            esc_attr(get_oneO_options()->secretKey)
+            esc_attr(oneO_options()->secretKey)
         );
     ?>
         <script>
@@ -335,7 +335,7 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="text" autocomplete="1o-integration-id" name="oneO_settings_option_name[integration_id]" id="integration_id" value="%s">',
-            esc_attr(get_oneO_options()->integrationId)
+            esc_attr(oneO_options()->integrationId)
         );
     }
 
@@ -343,13 +343,13 @@ class oneO_Settings
     {
         printf(
             '<input class="regular-text medium-text-input" type="text" autocomplete="1o-graphql-endpoint" name="oneO_settings_option_name[graphql_endpoint]" id="graphql_endpoint" value="%s">',
-            esc_attr(get_oneO_options()->graphqlEndpoint)
+            esc_attr(oneO_options()->graphqlEndpoint)
         );
     }
 
     public function api_endpoint_callback()
     {
-        $endpoint = get_oneO_options()->endpoint;
+        $endpoint = oneO_options()->endpoint;
         ?>
 <input class="regular-text medium-text-input" type="text" autocomplete="none" name="oneO_settings_option_name[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr($endpoint) ?>" disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>
 <p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in your 1o Admin Console.</p>

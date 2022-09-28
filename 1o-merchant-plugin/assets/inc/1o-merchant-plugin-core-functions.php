@@ -123,7 +123,10 @@ function paseto_footer_kid($footer)
 }
 
 /**
- * Controller log function - if turned on
+ * Debug function.
+ * To turn off logging, use ANY value for error_reporting() other than E_ALL.
+ * Suggestion: error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+ *
  * @param string $name
  * @param mixed $logged
  */
@@ -140,7 +143,7 @@ function log_debug($name, $logged = null)
 /**
  * Get the 1o Options and parse for use.
  */
-function get_oneO_options()
+function oneO_options()
 {
   static $cachedOptions;
 
@@ -158,6 +161,9 @@ function get_oneO_options()
   return $cachedOptions;
 }
 
+/**
+ * Class holding definitions and types for option-names.
+ */
 class OneO_Options
 {
   /** @var string Local URL for this website's API */
@@ -515,6 +521,7 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
 
 
 /**
+ * Convert a URL into a Post ID (for use during product-import).
  * @param string $url
  * @return int
  */
