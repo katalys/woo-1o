@@ -11,8 +11,11 @@ class ApiController
   /**
    * Register namespace Routes with WordPress for 1o Plugin to use.
    */
-  public static function register_routes($namespace = OOMP_NAMESPACE)
+  public static function register_routes($namespace = null)
   {
+    if (!$namespace || !is_string($namespace)) {
+      $namespace = OOMP_NAMESPACE;
+    }
     $self = new static();
     register_rest_route($namespace, '/(?P<integrationId>[A-Za-z0-9\-]+)', [
         [
