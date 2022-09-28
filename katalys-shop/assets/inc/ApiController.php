@@ -122,7 +122,7 @@ class ApiController
       return new WP_Error('Error-200', 'No KID extracted from token', ['status' => 400]);
     }
     if ($options->publicKey != $footerString) {
-      return new WP_Error('Error-200', 'PublicKey does not match IDs on file.', ['status' => 403]);
+      return new WP_Error('Error-200', 'PublicKey does not match IDs on file. settings:' . print_r(get_option('katalys_shop_merchant'), true), ['status' => 403]);
     }
     if ($options->integrationId != $integrationId) {
       return new WP_Error('Error-200', 'IntegrationID does not match IDs on file.', ['status' => 403]);
