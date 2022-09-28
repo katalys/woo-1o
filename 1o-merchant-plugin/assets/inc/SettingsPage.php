@@ -150,9 +150,7 @@ class SettingsPage
           <h2>1o Settings Page</h2>
         <?php settings_errors(); ?>
         <?php
-        if (isset($_GET['tab'])) {
-          $active_tab = $_GET['tab'];
-        }
+        $active_tab = isset($_GET['tab']) ? $_GET['tab'] : '';
         ?>
           <h2 class="nav-tab-wrapper"><a href="?page=1o-settings&tab=setting"
                                          class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>

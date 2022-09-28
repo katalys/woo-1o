@@ -181,6 +181,7 @@ function oneO_addWooOrder($orderData, $orderid)
   // ?? FUTURE ??: Maybe update user meta with name and phone and addresses if new user is created?
 
   $products = $orderData['products'];
+  $discount = null;
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
   $args = [
@@ -465,7 +466,7 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
         $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
         //set up rates array for 1o
         $args['shipping-rates'][] = (object)[
-            "handle" => $method_id . '-' . $instance_id . '|' . (isset($itemPriceEx) ? ($itemPriceEx * 100) : '0') . '|' . str_replace(" ", "-", $label_name),
+            "handle" => $method_id . '-' . $instance_id . '|' . ($itemPriceEx * 100) . '|' . str_replace(" ", "-", $label_name),
             "title" => $label_name,
             "amount" => $itemPriceEx * 100,
         ];
@@ -511,6 +512,7 @@ function url_to_postId($url)
       return $id;
     }
   }
+  $rewrite = [];
   if (isset($wp_rewrite)) {
     $rewrite = $wp_rewrite->wp_rewrite_rules();
   }
@@ -571,7 +573,7 @@ function url_to_postId($url)
   }
   $url = trim($url, '/');
   $request = $url;
-  if (empty($request) && (!isset($_GET) || empty($_GET))) {
+  if (empty($request) && empty($_GET)) {
     return get_option('page_on_front');
   }
   $request_match = $url;

@@ -141,10 +141,10 @@ class ApiDirectives
         $retArr["summary_html"] = $prodDesc; // HTML description
         $retArr["external_id"] = (string)$productId; //product ID
         $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
-        $retArr["images"] = ApiController::get_product_images($product, $productId);
+        $retArr["images"] = self::import__get_product_images($product);
         //$retArr['sku'] = $product->get_sku();
         //TODO: SKU needs to be added on 1o end still.
-        $options = ApiController::get_product_options($product);
+        $options = self::import__product_options($product);
         $retArr["option_names"] = $options['group'];
         $retArr["variant"] = false; //bool
         $retArr["variants"] = []; //empty array (no variants)
@@ -215,11 +215,12 @@ class ApiDirectives
    */
   private static function import__product_options($product)
   {
-    if (!is_object($product) || !is_array($product)) {
+    $optGroup = [];
+    $optList = [];
+    $optList2 = [];
+
+    if (is_object($product)) {
       $options = $product->get_attributes('view');
-      $optGroup = [];
-      $optList = [];
-      $optList2 = [];
       if (is_array($options) && !empty($options)) {
         foreach ($options as $opk => $opv) {
           $optArray = [];
@@ -250,7 +251,11 @@ class ApiDirectives
         }
       }
     }
-    return ['group' => $optGroup, 'list' => $optList, 'names' => $optList2];
+    return [
+        'group' => $optGroup,
+        'list' => $optList,
+        'names' => $optList2,
+    ];
   }
 
   /**
@@ -259,7 +264,7 @@ class ApiDirectives
    * @param object $product :product object from WooCommerce
    * @return array $images    :array of images
    */
-  private static function import__get_product_images($product, $productId = 0)
+  private static function import__get_product_images($product)
   {
     $gallImgs = [];
     if (is_object($product)) {
@@ -306,7 +311,7 @@ class ApiDirectives
     if (is_array($variants) && !empty($variants)) {
       $pv = 0;
       foreach ($variants as $variant) {
-        if (isset($variant['variation_is_active']) && (bool)$variant['variation_is_active'] && isset($variant['variation_is_visible']) && (bool)$variant['variation_is_visible']) {
+        if (isset($variant['variation_is_active']) && $variant['variation_is_active'] && isset($variant['variation_is_visible']) && $variant['variation_is_visible']) {
           $subtitleName = '';
           if (isset($variant['attributes']) && !empty($variant['attributes'])) {
             $tempSTN = [];
@@ -355,7 +360,7 @@ class ApiDirectives
   public function directive__update_available_shipping_rates()
   {
     log_debug('process_directive: update_available_shipping_rates', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
-    $args = oneO_create_cart($this->order_id, $this->kid, $this->args, '');
+    $args = oneO_create_cart($this->order_id, $this->kid, $this->args);
 
     # Step 4: Update shipping rates on GraphQL.
     $req = $this->_gqlRequest();
@@ -393,7 +398,7 @@ class ApiDirectives
     # Step 3b: Do request to graphql to complete order.
     // Pass Woo order ID in external data
     $args['external-data'] = ['WooID' => $newOrderID];
-    if ($newOrderID != '' && $newOrderID !== false) {
+    if ($newOrderID) {
       $args['fulfilled-status'] = 'FULFILLED';
     } else {
       $args['fulfilled-status'] = 'unknown-error';
@@ -474,8 +479,14 @@ class ApiDirectives
           'id' => $transactions->id,
           'name' => $transactions->name,
       ];
-      $retArr = ['products' => $products, 'order' => $order, 'customer' => $customer, 'billing' => $billing, 'shipping' => $shipping, 'transactions' => $transact];
-      return $retArr;
+      return [
+          'products' => $products,
+          'order' => $order,
+          'customer' => $customer,
+          'billing' => $billing,
+          'shipping' => $shipping,
+          'transactions' => $transact,
+      ];
     }
     return false;
   }
