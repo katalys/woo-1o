@@ -7,7 +7,7 @@ namespace KatalysMerchantPlugin;
  * Registers setting page fields and outputs tabbed pages for settings.
  *
  */
-class oneO_Settings
+class SettingsPage
 {
     /**
      * Tell the plugin to creat a stand alone menu or an options submenu.

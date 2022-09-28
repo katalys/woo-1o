@@ -7,9 +7,9 @@ use ParagonIE\Paseto\Protocol\Version2;
 /**
  * Hook to register our new routes from the controller with WordPress.
  */
-add_action('rest_api_init', [OneO_REST_DataController::class, 'register_routes']);
+add_action('rest_api_init', [REST_Controller::class, 'register_routes']);
 
-class OneO_REST_DataController
+class REST_Controller
 {
   /**
    * Register namespace Routes with WordPress for 1o Plugin to use.
@@ -231,11 +231,11 @@ class DirectiveRunner
 
   /**
    * Shortcut to create a GraphQL Request object.
-   * @return Oo_graphQLRequest
+   * @return GraphQLRequest
    */
   private function _gqlRequest()
   {
-    return Oo_graphQLRequest::fromKid($this->kid);
+    return GraphQLRequest::fromKid($this->kid);
   }
 
   /**
@@ -352,10 +352,10 @@ class DirectiveRunner
         $retArr["summary_html"] = $prodDesc; // HTML description
         $retArr["external_id"] = (string)$productId; //product ID
         $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
-        $retArr["images"] = OneO_REST_DataController::get_product_images($product, $productId);
+        $retArr["images"] = REST_Controller::get_product_images($product, $productId);
         //$retArr['sku'] = $product->get_sku();
         //TODO: SKU needs to be added on 1o end still.
-        $options = OneO_REST_DataController::get_product_options($product);
+        $options = REST_Controller::get_product_options($product);
         $retArr["option_names"] = $options['group'];
         $retArr["variant"] = false; //bool
         $retArr["variants"] = []; //empty array (no variants)

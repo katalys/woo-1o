@@ -21,11 +21,11 @@ if (!defined('WPINC')) {
 }
 
 // Include the Settings Page Class
-require_once __DIR__ . '/assets/inc/settings-page.php';
+require_once __DIR__ . '/assets/inc/SettingsPage.php';
 
 // Functions
 require_once __DIR__ . '/assets/inc/1o-merchant-plugin-core-functions.php';
-require_once __DIR__ . '/assets/inc/graphql-requests.php';
+require_once __DIR__ . '/assets/inc/GraphQLRequest.php';
 
 // Ajax
 require_once __DIR__ . '/assets/inc/1o-merchant-plugin-ajax-request.php';
@@ -48,7 +48,7 @@ if (is_admin()) {
     //}, 999);
 
     /* Initialize the settings page object */
-    new oneO_Settings();
+    new SettingsPage();
 
 } else {
     // Front End Scripts
@@ -59,6 +59,35 @@ if (is_admin()) {
         //wp_enqueue_script('1o-merchant-plugin-core-js', OOMP_LOC_URL . '/js/1o-merchant-plugin-core.js', ['jquery'], time(), true);
     //});
 }
+
+/**
+ * Add 1o Order Column to order list page.
+ *
+ * @param array $columns Array of columns (from WP hook)
+ * @return array $columns
+ */
+add_filter('manage_edit-shop_order_columns', function ($columns) {
+  $columns['oneo_order_type'] = '1o Order';
+  return $columns;
+});
+
+/**
+ * Add data to 1o Order Column on order list page.
+ *
+ * @param string $column Name of current column processing (from WP hook)
+ * @echo string column data
+ */
+add_action('manage_shop_order_posts_custom_column', function ($column) {
+  global $post;
+  if ('oneo_order_type' === $column) {
+    $order = wc_get_order($post->ID);
+    $isOneO = $order->get_meta('_is-1o-order', true, 'view');
+    if ($isOneO) {
+      $oneOID = esc_attr($order->get_meta('_1o-order-number', true, 'view'));
+      echo $oneOID;
+    }
+  }
+});
 
 /**
  * Custom Update Mechanism

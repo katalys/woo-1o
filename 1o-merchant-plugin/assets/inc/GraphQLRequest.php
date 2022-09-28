@@ -5,14 +5,14 @@ use Exception;
 /**
  * API proxy for GraphQL requests to the 1o system.
  */
-class Oo_graphQLRequest
+class GraphQLRequest
 {
   /** @var string */
   private $authCode;
 
   /**
    * @param $kid
-   * @return Oo_graphQLRequest
+   * @return GraphQLRequest
    * @throws \ParagonIE\Paseto\Exception\InvalidKeyException
    * @throws \ParagonIE\Paseto\Exception\InvalidPurposeException
    * @throws \ParagonIE\Paseto\Exception\PasetoException

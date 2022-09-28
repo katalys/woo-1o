@@ -1,6 +1,5 @@
 <?php
 namespace KatalysMerchantPlugin;
-
 use DateInterval;
 use DateTime;
 use ParagonIE\ConstantTime\Base64UrlSafe;
@@ -10,34 +9,7 @@ use ParagonIE\Paseto\Exception\InvalidPurposeException;
 use ParagonIE\Paseto\Exception\PasetoException;
 use ParagonIE\Paseto\Keys\SymmetricKey;
 
-/**
- * Add 1o Order Column to order list page.
- *
- * @param array $columns Array of columns (from WP hook)
- * @return array $columns
- */
-add_filter('manage_edit-shop_order_columns', function ($columns) {
-  $columns['oneo_order_type'] = '1o Order';
-  return $columns;
-});
-
-/**
- * Add data to 1o Order Column on order list page.
- *
- * @param string $column Name of current column processing (from WP hook)
- * @echo string column data
- */
-add_action('manage_shop_order_posts_custom_column', function ($column) {
-  global $post;
-  if ('oneo_order_type' === $column) {
-    $order = wc_get_order($post->ID);
-    $isOneO = $order->get_meta('_is-1o-order', true, 'view');
-    if ($isOneO) {
-      $oneOID = esc_attr($order->get_meta('_1o-order-number', true, 'view'));
-      echo $oneOID;
-    }
-  }
-});
+/////////////////// Static Function Declarations ONLY /////////////////////////
 
 /**
  * @param string $sharedKey
@@ -49,7 +21,8 @@ add_action('manage_shop_order_posts_custom_column', function ($column) {
  * @throws PasetoException
  * @throws \Exception
  */
-function paseto_create_token($sharedKey, $footer = '', $exp = 'P01D') {
+function paseto_create_token($sharedKey, $footer = '', $exp = 'P01D')
+{
   $sharedKey = new SymmetricKey($sharedKey);
   return Builder::getLocal($sharedKey)
       ->setIssuedAt()
@@ -389,6 +362,7 @@ function oneO_doSplitName($name)
   $results['last'] = trim($last);
   return $results;
 }
+
 /**
  * Check if order key exists in database
  *
@@ -411,7 +385,7 @@ function oneO_order_key_exists($orderKey, $key = "_order_key")
 function oneO_create_cart($orderId, $kid, $args, $type = '')
 {
   # Step 2: Do request to graphql to get line items.
-  $getLineItems = Oo_graphQLRequest::fromKid($kid);
+  $getLineItems = GraphQLRequest::fromKid($kid);
   $linesRaw = $getLineItems->api_line_items($orderId);
   log_debug('process_request: line_items', $getLineItems);
 
