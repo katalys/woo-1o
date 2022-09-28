@@ -40,15 +40,6 @@ if (is_admin()) {
   new SettingsPage();
 }
 
-// Front End Scripts
-//add_action('wp_enqueue_scripts', function () {
-// load admin CSS
-//wp_enqueue_style('1o-merchant-plugin-core-css', OOMP_LOC_URL . '/css/1o-merchant-plugin-core.css', null, time(), 'all');
-// load admin JS
-//wp_enqueue_script('1o-merchant-plugin-core-js', OOMP_LOC_URL . '/js/1o-merchant-plugin-core.js', ['jquery'], time(), true);
-//});
-
-
 /**
  * Add 1o Order Column to order list page.
  *
