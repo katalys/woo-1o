@@ -114,7 +114,13 @@ class ApiController
 
     $options = oneO_options();
     $footer = paseto_decode_footer($token);
+    if (!$footer) {
+      return new WP_Error('Error-200', 'Invalid token footer', ['status' => 400]);
+    }
     $footerString = paseto_footer_kid($footer);
+    if (!$footerString) {
+      return new WP_Error('Error-200', 'No KID extracted from token', ['status' => 400]);
+    }
     if ($options->publicKey != $footerString) {
       return new WP_Error('Error-200', 'PublicKey does not match IDs on file.', ['status' => 403]);
     }
