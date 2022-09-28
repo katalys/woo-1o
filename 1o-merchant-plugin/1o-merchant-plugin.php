@@ -23,7 +23,6 @@ if (!defined('WPINC')) {
 
 // Include the Settings Page Class
 require_once OOMP_LOC_PATH . '/settings-page.php';
-define('OOMP_GRAPHQL_URL', oneO_Settings::get_oneO_settings_options('graphql_endpoint')); // https://playground.1o.io/graphql // GraphQL URL for 1o
 
 // Functions
 require_once OOMP_LOC_PATH . '/1o-merchant-plugin-core-functions.php';

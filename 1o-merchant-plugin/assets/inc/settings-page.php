@@ -9,7 +9,6 @@ namespace KatalysMerchantPlugin;
  */
 class oneO_Settings
 {
-
     private $oneO_settings_options;
 
     /**
@@ -18,11 +17,10 @@ class oneO_Settings
      * @value 'stand-alone' - A separate settings menus in the Admin Menu.
      * @value 'options' - A submenu of "Settings" menu (default).
      */
-    private $menu_type = 'options';
+    private $menu_type = 'stand-alone';
 
     public function __construct()
     {
-        $this->menu_type = 'stand-alone';
         add_action('admin_menu', array($this, 'oneO_settings_add_plugin_page'));
         add_action('admin_init', array($this, 'oneO_settings_page_init'));
     }
@@ -188,10 +186,10 @@ class oneO_Settings
                 <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
             <?php
             } else {
-                $pKey = isset($this->oneO_settings_options['public_key']) && $this->oneO_settings_options['public_key'] != '' ? true : false;
-                $ssKey = isset($this->oneO_settings_options['secret_key']) && $this->oneO_settings_options['secret_key'] != '' ? true : false;
-                $intId = isset($this->oneO_settings_options['integration_id']) && $this->oneO_settings_options['integration_id'] != '' ? true : false;
-                $graphql = isset($this->oneO_settings_options['graphql_endpoint']) && $this->oneO_settings_options['graphql_endpoint'] != '' ? true : false;
+                $pKey = isset($this->oneO_settings_options['public_key']) && $this->oneO_settings_options['public_key'] != '';
+                $ssKey = isset($this->oneO_settings_options['secret_key']) && $this->oneO_settings_options['secret_key'] != '';
+                $intId = isset($this->oneO_settings_options['integration_id']) && $this->oneO_settings_options['integration_id'] != '';
+                $graphql = isset($this->oneO_settings_options['graphql_endpoint']) && $this->oneO_settings_options['graphql_endpoint'] != '';
                 $setting_class = $pKey && $ssKey && $intId && $graphql ? ' settings_set' : ' settings_unset';
             ?>
                 <p>Enter your <strong>Integration ID</strong>, <strong>API Key</strong> and <strong>Shared Secret</strong> in the fields below. Log in to your 1o Admin console > Settings > Apps & Integrations, select Platforms tab, click WooCommerce and follow the instructions.</p>

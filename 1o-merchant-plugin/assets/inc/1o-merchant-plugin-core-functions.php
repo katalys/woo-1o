@@ -1,48 +1,71 @@
 <?php
 namespace KatalysMerchantPlugin;
 
+use DateInterval;
 use DateTime;
 use ParagonIE\ConstantTime\Base64UrlSafe;
+use ParagonIE\Paseto\Builder;
+use ParagonIE\Paseto\Exception\InvalidKeyException;
+use ParagonIE\Paseto\Exception\InvalidPurposeException;
+use ParagonIE\Paseto\Exception\PasetoException;
+use ParagonIE\Paseto\Keys\SymmetricKey;
 
 /**
  * Add 1o Order Column to order list page.
  *
- * @param array $columns  Array of culumns (from WP hook)
+ * @param array $columns Array of columns (from WP hook)
  * @return array $columns
  */
 add_filter('manage_edit-shop_order_columns', function ($columns) {
-    $columns['oneo_order_type'] = '1o Order';
-    return $columns;
+  $columns['oneo_order_type'] = '1o Order';
+  return $columns;
 });
 
 /**
  * Add data to 1o Order Column on order list page.
  *
- * @param string $column  Name of current column processing (from WP hook)
+ * @param string $column Name of current column processing (from WP hook)
  * @echo string column data
  */
 add_action('manage_shop_order_posts_custom_column', function ($column) {
-    global $post;
-    if ('oneo_order_type' === $column) {
-        $order = wc_get_order($post->ID);
-        $isOneO = $order->get_meta('_is-1o-order', true, 'view') != '' ? (bool) $order->get_meta('_is-1o-order', true, 'view') : false;
-        if ($isOneO) {
-            $oneOID = $order->get_meta('_1o-order-number', true, 'view') != '' ? esc_attr($order->get_meta('_1o-order-number', true, 'view')) : '';
-            echo $oneOID;
-        } else {
-            echo '';
-        }
+  global $post;
+  if ('oneo_order_type' === $column) {
+    $order = wc_get_order($post->ID);
+    $isOneO = $order->get_meta('_is-1o-order', true, 'view');
+    if ($isOneO) {
+      $oneOID = esc_attr($order->get_meta('_1o-order-number', true, 'view'));
+      echo $oneOID;
     }
+  }
 });
+
+/**
+ * @param string $sharedKey
+ * @param string $footer
+ * @param string $exp
+ * @return string
+ * @throws InvalidKeyException
+ * @throws InvalidPurposeException
+ * @throws PasetoException
+ * @throws \Exception
+ */
+function paseto_create_token($sharedKey, $footer = '', $exp = 'P01D') {
+  $sharedKey = new SymmetricKey($sharedKey);
+  return Builder::getLocal($sharedKey)
+      ->setIssuedAt()
+      ->setNotBefore()
+      ->setExpiration((new DateTime())->add(new DateInterval($exp)))
+      ->setFooter($footer);
+}
 
 /**
  * Helper function to validate exp date of token
  *
- * @param string $rawDecryptedToken   : raw string from decrypted token.
+ * @param string $rawDecryptedToken : raw string from decrypted token.
  * @return bool true (default)        : true if expired or not valid signature.
  *                                    : false if not expired and valid signature.
  */
-function check_if_paseto_expired($rawDecryptedToken)
+function paseto_is_expired($rawDecryptedToken)
 {
   if (is_object($rawDecryptedToken) && isset($rawDecryptedToken->exp)) {
     $checkTime = new DateTime('NOW');
@@ -62,24 +85,20 @@ function check_if_paseto_expired($rawDecryptedToken)
 /**
  * Helper Functions for Processing Token Footer
  *
- * @param string $token   : Bearer token from authorization header (PASETO)
+ * @param string $token : Bearer token from authorization header (PASETO)
  * @return bool false     : false on empty, failure or wrong size
- * @return string $token  : token for processing
+ * @return string|false $token  : token for processing
  */
-function process_paseto_footer($token)
+function paseto_decode_footer($token)
 {
-  if ($token == '') {
-    return false;
-  }
-  if (strpos($token, 'Bearer ') !== false) {
-    $token = str_replace('Bearer ', '', $token);
+  $pos = stripos($token, "Bearer ");
+  if ($pos !== false) {
+    $token = substr($token, $pos + 7);
   }
   $pieces = explode('.', $token);
-  $count = count($pieces);
-  if ($count < 3 || $count > 4) {
-    return false;
-  }
-  return $count > 3 && $pieces[3] != '' ? Base64UrlSafe::decode($pieces[3]) : false;
+  return (count($pieces) === 4 && $pieces[3])
+      ? Base64UrlSafe::decode($pieces[3])
+      : false;
 }
 
 /**
@@ -87,18 +106,17 @@ function process_paseto_footer($token)
  *
  * @param string $footer : footer string from paseto token
  * @return bool false    : False on empty or invalid footer
- * @return string $kid   : KID from footer if present
+ * @return string|false $kid   : KID from footer if present
  */
-function get_paseto_footer_string($footer)
+function paseto_footer_kid($footer)
 {
-  if (!empty($footer)) {
+  if ($footer) {
     if (strpos($footer, '{') === false) {
       return $footer;
-    } else {
-      $jd_footer = json_decode($footer);
-      if (is_object($jd_footer) && isset($jd_footer->kid)) {
-        return $jd_footer->kid;
-      }
+    }
+    $jd_footer = json_decode($footer);
+    if (is_object($jd_footer) && isset($jd_footer->kid)) {
+      return $jd_footer->kid;
     }
   }
   return false;
@@ -109,27 +127,27 @@ function get_paseto_footer_string($footer)
  */
 function get_oneO_options()
 {
-  $oneO_settings_options = get_option('oneO_settings_option_name', array()); // Array of All Options
+  $oneO_settings_options = get_option('oneO_settings_option_name', []); // Array of All Options
   $public_key = !empty($oneO_settings_options['public_key']) ? $oneO_settings_options['public_key'] : '';
   $secret_key = !empty($oneO_settings_options['secret_key']) ? $oneO_settings_options['secret_key'] : '';
   $int_id = !empty($oneO_settings_options['integration_id']) ? $oneO_settings_options['integration_id'] : '';
   return (empty($public_key) || empty($secret_key) || empty($int_id))
       ? []
       : [
-          $int_id => (object) [
+          $int_id => (object)[
               'api_keys' => [
-                  $public_key => $secret_key
-              ]
+                  $public_key => $secret_key,
+              ],
           ],
-          'endpoint' => get_rest_url(null, OOMP_NAMESPACE) . '/'
+          'endpoint' => get_rest_url(null, OOMP_NAMESPACE) . '/',
       ];
 }
 
 /**
  * Set order data and add it to WooCommerce
  *
- * @param array $orderData  :Array of order data to process.
- * @param int $orderid      :Order ID from 1o.
+ * @param array $orderData :Array of order data to process.
+ * @param int $orderid :Order ID from 1o.
  * @return int $orderKey    :Order Key ID after insert into WC orders.
  */
 function oneO_addWooOrder($orderData, $orderid)
@@ -157,15 +175,15 @@ function oneO_addWooOrder($orderData, $orderid)
   $products = $orderData['products'];
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
-  $args = array(
-    'customer_id'   => $user->ID,
-    'customer_note' => 'Created via 1o Merchant Plugin',
-    'created_via'   => '1o API',
-  );
-  $order =   wc_create_order($args);
+  $args = [
+      'customer_id' => $user->ID,
+      'customer_note' => 'Created via 1o Merchant Plugin',
+      'created_via' => '1o API',
+  ];
+  $order = wc_create_order($args);
   if (!empty($products)) {
     foreach ($products as $product) {
-      $args = array();
+      $args = [];
       $prod = wc_get_product($product['id']);
       /* possible args to override:
           'name' => 'product name',
@@ -189,25 +207,25 @@ function oneO_addWooOrder($orderData, $orderid)
   }
 
   /* Billing Data */
-  $bName =  $orderData['billing']['billName'];
+  $bName = $orderData['billing']['billName'];
   $nameSplit = oneO_doSplitName($bName);
-  $bFName =  $nameSplit['first'];
+  $bFName = $nameSplit['first'];
   $bLName = $nameSplit['last'];
   $bEmail = $orderData['billing']['billEmail'];
-  $bPhone =  $orderData['billing']['billPhone'];
+  $bPhone = $orderData['billing']['billPhone'];
   $bAddress_1 = $orderData['billing']['billAddress1'];
   $bAddress_2 = $orderData['billing']['billAddress2'];
-  $bCity =  $orderData['billing']['billCity'];
-  $bZip =  $orderData['billing']['billZip'];
-  $bCountry =  $orderData['billing']['billCountry'];
-  $bCountryC =  $orderData['billing']['billCountryCode'];
-  $bState =  $orderData['billing']['billState'];
-  $bStateC =  $orderData['billing']['billStateCode'];
+  $bCity = $orderData['billing']['billCity'];
+  $bZip = $orderData['billing']['billZip'];
+  $bCountry = $orderData['billing']['billCountry'];
+  $bCountryC = $orderData['billing']['billCountryCode'];
+  $bState = $orderData['billing']['billState'];
+  $bStateC = $orderData['billing']['billStateCode'];
 
   /* Shipping Data */
   $sName = $orderData['shipping']['shipName'];
   $nameSplit = oneO_doSplitName($sName);
-  $sFName =  $nameSplit['first'];
+  $sFName = $nameSplit['first'];
   $sLName = $nameSplit['last'];
   $sEmail = $orderData['shipping']['shipEmail'];
   $sPhone = $orderData['shipping']['shipPhone'];
@@ -260,12 +278,12 @@ function oneO_addWooOrder($orderData, $orderid)
   $chosenShipping = $orderData['order']['chosenShipping'];
   $shippingCostArr = explode("|", $chosenShipping);
   $shipName = isset($shippingCostArr[2]) ? str_replace('-', " ", $shippingCostArr[2]) : '';
-  $shipSlug = isset($shippingCostArr[0]) ?  $shippingCostArr[0] : '';
+  $shipSlug = isset($shippingCostArr[0]) ? $shippingCostArr[0] : '';
 
   $order->set_currency($currency);
   $order->set_payment_method($transName);
   $newOrderID = $order->get_id();
-  $order_item_id = wc_add_order_item($newOrderID, array('order_item_name' => $shipName, 'order_item_type' => 'shipping'));
+  $order_item_id = wc_add_order_item($newOrderID, ['order_item_name' => $shipName, 'order_item_type' => 'shipping']);
   wc_add_order_item_meta($order_item_id, 'cost', $shippingCost, true);
   $order->shipping_method_title = $shipSlug;
 
@@ -302,12 +320,12 @@ function oneO_addWooOrder($orderData, $orderid)
 /**
  * Splits single name string into salutation, first, last, suffix
  *
- * @param string $name  :String to split into pieces.
+ * @param string $name :String to split into pieces.
  * @return array        :Array of split pieces.
  */
 function oneO_doSplitName($name)
 {
-  $results = array();
+  $results = [];
   $r = explode(' ', $name);
   $size = count($r);
   //check first for period, assume salutation if so
@@ -350,7 +368,7 @@ function oneO_order_key_exists($key = "_order_key", $orderKey = '')
     return false;
   }
   global $wpdb;
-  $orderQuery = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->postmeta WHERE `meta_key` = '%s' AND `meta_value` = '%s' LIMIT 1;", array($key, $orderKey)));
+  $orderQuery = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->postmeta WHERE `meta_key` = '%s' AND `meta_value` = '%s' LIMIT 1;", [$key, $orderKey]));
   OneO_REST_DataController::set_controller_log('orderQuery', print_r($orderQuery, true));
 
   return isset($orderQuery[0]);
@@ -375,18 +393,18 @@ function url_to_postid_1o($url)
     if (isset($_GET) && !empty($_GET)) {
       $tempUrl = $url;
       $url_split = explode('#', $tempUrl);
-      $tempUrl      = $url_split[0];
+      $tempUrl = $url_split[0];
       $url_query = explode('&', $tempUrl);
-      $tempUrl       = $url_query[0];
+      $tempUrl = $url_query[0];
       $url_query = explode('?', $tempUrl);
       if (isset($url_query[1]) && !empty($url_query[1]) && strpos($url_query[1], '=')) {
         $url_query = explode('=', $url_query[1]);
         if (isset($url_query[0]) && isset($url_query[1])) {
-          $args = array(
-            'name'      => $url_query[1],
-            'post_type' => $url_query[0],
-            'showposts' => 1,
-          );
+          $args = [
+              'name' => $url_query[1],
+              'post_type' => $url_query[0],
+              'showposts' => 1,
+          ];
           if ($post = get_posts($args)) {
             return $post[0]->ID;
           }
@@ -394,11 +412,11 @@ function url_to_postid_1o($url)
       }
       foreach ($GLOBALS['wp_post_types'] as $key => $value) {
         if (isset($_GET[$key]) && !empty($_GET[$key])) {
-          $args = array(
-            'name'      => $_GET[$key],
-            'post_type' => $key,
-            'showposts' => 1,
-          );
+          $args = [
+              'name' => $_GET[$key],
+              'post_type' => $key,
+              'showposts' => 1,
+          ];
           if ($post = get_posts($args)) {
             return $post[0]->ID;
           }
@@ -407,9 +425,9 @@ function url_to_postid_1o($url)
     }
   }
   $url_split = explode('#', $url);
-  $url       = $url_split[0];
+  $url = $url_split[0];
   $url_query = explode('?', $url);
-  $url       = $url_query[0];
+  $url = $url_query[0];
   if (false !== strpos(home_url(), '://www.') && false === strpos($url, '://www.')) {
     $url = str_replace('://', '://www.', $url);
   }
@@ -424,31 +442,31 @@ function url_to_postid_1o($url)
   } else {
     $home_path = parse_url(home_url());
     $home_path = isset($home_path['path']) ? $home_path['path'] : '';
-    $url       = str_replace($home_path, '', $url);
+    $url = str_replace($home_path, '', $url);
   }
   $url = trim($url, '/');
   $request = $url;
   if (empty($request) && (!isset($_GET) || empty($_GET))) {
     return get_option('page_on_front');
   }
-  $request_match = $request;
-  foreach ((array) $rewrite as $match => $query) {
-    if (!empty($url) && ($url != $request) && (strpos($match, $url) === 0)) {
-      $request_match = $url . '/' . $request;
-    }
+  $request_match = $url;
+  foreach ((array)$rewrite as $match => $query) {
+//    if (!empty($url) && ($url != $request) && (strpos($match, $url) === 0)) {
+//      $request_match = $url . '/' . $request;
+//    }
     if (preg_match("!^$match!", $request_match, $matches)) {
       $query = preg_replace("!^.+\?!", '', $query);
       $query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
       global $wp;
       parse_str($query, $query_vars);
-      $query = array();
-      foreach ((array) $query_vars as $key => $value) {
+      $query = [];
+      foreach ((array)$query_vars as $key => $value) {
         if (in_array($key, $wp->public_query_vars)) {
           $query[$key] = $value;
         }
       }
       $custom_post_type = false;
-      $post_types = array();
+      $post_types = [];
       foreach ($rewrite as $key => $value) {
         if (preg_match('/post_type=([^&]+)/i', $value, $matched)) {
           if (isset($matched[1]) && !in_array($matched[1], $post_types)) {
@@ -457,7 +475,7 @@ function url_to_postid_1o($url)
         }
       }
 
-      foreach ((array) $query_vars as $key => $value) {
+      foreach ((array)$query_vars as $key => $value) {
         if (in_array($key, $post_types)) {
 
           $custom_post_type = true;
@@ -483,26 +501,26 @@ function url_to_postid_1o($url)
         }
         if (!empty($query[$wpvar])) {
           if (!is_array($query[$wpvar])) {
-            $query[$wpvar] = (string) $query[$wpvar];
+            $query[$wpvar] = (string)$query[$wpvar];
           } else {
             foreach ($query[$wpvar] as $vkey => $v) {
               if (!is_object($v)) {
-                $query[$wpvar][$vkey] = (string) $v;
+                $query[$wpvar][$vkey] = (string)$v;
               }
             }
           }
           if (isset($post_type_query_vars[$wpvar])) {
             $query['post_type'] = $post_type_query_vars[$wpvar];
-            $query['name']      = $query[$wpvar];
+            $query['name'] = $query[$wpvar];
           }
         }
       }
       if (isset($query['pagename']) && !empty($query['pagename'])) {
-        $args = array(
-          'name'      => $query['pagename'],
-          'post_type' => array('post', 'page'), // Added post for custom permalink eg postname
-          'showposts' => 1,
-        );
+        $args = [
+            'name' => $query['pagename'],
+            'post_type' => ['post', 'page'], // Added post for custom permalink eg postname
+            'showposts' => 1,
+        ];
         if ($post = get_posts($args)) {
           return $post[0]->ID;
         }
@@ -519,11 +537,11 @@ function url_to_postid_1o($url)
             if (preg_match('/\?([^&]+)=([^&]+)/i', $value, $matched)) {
               if (isset($matched[1]) && !in_array($matched[1], $post_types) && array_key_exists($matched[1], $query_vars)) {
                 $post_types[] = $matched[1];
-                $args = array(
-                  'name'      => $query_vars[$matched[1]],
-                  'post_type' => $matched[1],
-                  'showposts' => 1,
-                );
+                $args = [
+                    'name' => $query_vars[$matched[1]],
+                    'post_type' => $matched[1],
+                    'showposts' => 1,
+                ];
                 if ($post = get_posts($args)) {
                   return $post[0]->ID;
                 }

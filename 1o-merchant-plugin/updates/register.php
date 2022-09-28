@@ -1,6 +1,6 @@
 <?php
 //Required for plugin update
-require_once(__DIR__ . '/updates/plugin-update-checker.php');
+require_once __DIR__ . '/plugin-update-checker.php';
 new FCMPluginUpdateChecker_1_7('https://graphiccaffeine.com/wp-admin/admin-ajax.php', __FILE__);
 
 // Auto update variables fpr plugin
