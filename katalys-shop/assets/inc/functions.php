@@ -120,7 +120,7 @@ function oneO_options()
 {
   static $cachedOptions;
 
-  if ($cachedOptions) {
+  if (!$cachedOptions) {
     $opts = get_option('katalys_shop_merchant') ?: [];
 
     $cachedOptions = new OneO_Options();
