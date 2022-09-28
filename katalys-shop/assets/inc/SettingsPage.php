@@ -390,7 +390,7 @@ class SettingsPage
               document.execCommand('copy');
               copyText.blur();
               copyText.disabled = true;
-              copyLink.innerHTML = 'Copied!
+              copyLink.innerHTML = 'Copied!';
               console.log(copyText.textContent);
               e.preventDefault();
           });
