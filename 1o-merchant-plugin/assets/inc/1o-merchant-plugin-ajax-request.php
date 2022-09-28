@@ -7,67 +7,32 @@ use ParagonIE\Paseto\Protocol\Version2;
 /**
  * Hook to register our new routes from the controller with WordPress.
  */
-add_action('rest_api_init', function () {
-  $oneO_controller = new OneO_REST_DataController();
-  $oneO_controller->register_routes();
-});
+add_action('rest_api_init', [OneO_REST_DataController::class, 'register_routes']);
 
 class OneO_REST_DataController
 {
-  private static $log = [];
-
-  /**
-   * Controller log function - if turned on
-   */
-  public static function set_controller_log($name = '', $logged = null)
-  {
-    if ($logged != null) {
-      self::$log[$name] = $logged;
-    }
-  }
-
-  public function process_controller_log()
-  {
-    if (!empty(self::$log)) {
-      error_log('controller log:' . "\n" . print_r(self::$log, true));
-      self::$log = [];
-    }
-  }
-
-  public static function set_tax_amt($amt = 0, $id = '')
-  {
-    set_transient($id . '_taxamt', $amt, 60);
-  }
-
-  public static function get_tax_amt($id = '')
-  {
-    if (!$id) {
-      return false;
-    }
-    return get_transient($id . '_taxamt') ?: false;
-  }
-
   /**
    * Register namespace Routes with WordPress for 1o Plugin to use.
    */
-  public function register_routes($namespace = OOMP_NAMESPACE)
+  public static function register_routes($namespace = OOMP_NAMESPACE)
   {
+    $self = new static();
     register_rest_route($namespace, '/(?P<integrationId>[A-Za-z0-9\-]+)', [
         [
             'methods' => ['GET', 'POST'],
-            'callback' => [$this, 'get_request'],
-            'permission_callback' => [$this, 'get_request_permissions_check'],
+            'callback' => [$self, 'get_request'],
+            'permission_callback' => [$self, 'get_request_permissions_check'],
         ],
-        'schema' => [$this, 'get_request_schema'],
+        'schema' => [$self, 'get_request_schema'],
     ]);
     /* temp - to create PASETOs on demand */
     register_rest_route($namespace . '-create', '/create-paseto', [
         [
             'methods' => ['GET'],
-            'callback' => [$this, 'create_paseto_request'],
-            'permission_callback' => [$this, 'get_request_permissions_check'],
+            'callback' => [$self, 'create_paseto_request'],
+            'permission_callback' => [$self, 'get_request_permissions_check'],
         ],
-        'schema' => [$this, 'get_request_schema'],
+        'schema' => [$self, 'get_request_schema'],
     ]);
   }
 
@@ -79,72 +44,56 @@ class OneO_REST_DataController
    */
   public function get_request_permissions_check($request)
   {
-    $headers = OneO_REST_DataController::get_all_headers();
-    if ((!empty($headers['bearer']) || !empty($headers['Bearer']))) {
+    $token = self::get_token_from_headers();
+    if ($token) {
       return true;
     }
-    return new WP_Error('Error-000', 'Not Allowed. No Bearer token found.', 'API Error');
-  }
-
-  /**
-   * Get all Headers from request.
-   *
-   * @return array $headers   :Array of all headers
-   */
-  public static function get_all_headers()
-  {
-    if (function_exists('getallheaders')) {
-      return getallheaders();
-    } else {
-      $headers = [];
-      foreach ($_SERVER as $name => $value) {
-        if (substr($name, 0, 5) == 'HTTP_') {
-          $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
-        }
-      }
-      return $headers;
-    }
+    return new WP_Error('Error-000', 'Not Allowed. No Bearer token found.', ['status' => 403]);
   }
 
   /**
    * Get Authorization Header from headers for verifying Paseto token.
    *
-   * @param array $headers :Array of all headers to process.
-   * @return string $token    :'Authorization', '1o-bearer-token' or 'bearer' header value or false.
+   * @return string $token
    */
-  public static function get_token_from_headers($headers)
+  public static function get_token_from_headers()
   {
     $token = '';
-    if (is_array($headers) && !empty($headers)) {
-      foreach ($headers as $name => $val) {
-        if (in_array(strtolower($name), ['authorization', '1o-bearer-token', 'bearer'])) {
-          $token = $val; #$token holds PASETO token to be parsed
-        }
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+      $token = trim($_SERVER["HTTP_AUTHORIZATION"]);
+    } elseif (isset($_SERVER['Authorization'])) {
+      $token = trim($_SERVER["Authorization"]);
+    } elseif (function_exists('apache_request_headers')) {
+      $requestHeaders = apache_request_headers();
+      $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
+
+      if (isset($requestHeaders['Authorization'])) {
+        $token = trim($requestHeaders['Authorization']);
       }
-    }
-    if ($token != '') {
-      return $token;
     } else {
-      return false;
+      //todo look for '1o-bearer-token', 'bearer' headers?
     }
+
+    if (stripos($token, 'bearer ') === 0) {
+      $token = substr($token, 7);
+    }
+    return $token;
   }
 
   public function get_request($request)
   {
-    $headers = OneO_REST_DataController::get_all_headers();
-    $token = OneO_REST_DataController::get_token_from_headers($headers);
+    $token = OneO_REST_DataController::get_token_from_headers();
     $requestBody = $request->get_json_params();
     $directives = OneO_REST_DataController::get_directives($requestBody);
 
-    OneO_REST_DataController::set_controller_log('Headers from 1o', print_r($headers, true));
-    OneO_REST_DataController::set_controller_log('Body from 1o', print_r($requestBody, true));
+    log_debug('Body from 1o', $requestBody);
 
     if (empty($directives) || !is_array($directives)) {
       /* Error response for 1o */
       return new WP_Error('Error-103', 'Payload Directives empty. You must have at least one Directive.', ['status' => 400]);
     }
 
-    if ($token === false || $token === '') {
+    if (!$token) {
       /* Error response for 1o */
       return new WP_Error('Error-100', 'No Token Provided', ['status' => 400]);
     }
@@ -181,16 +130,29 @@ class OneO_REST_DataController
       if (!empty($directives) && is_array($directives)) {
 
         foreach ($directives as $directive) {
-          OneO_REST_DataController::set_controller_log('=======' . $directive . '======', print_r($directive, true));
+          log_debug('=======' . $directive . '======', $directive);
           $res_Arr[] = OneO_REST_DataController::process_directive($directive, $footer);
         }
       }
     }
 
     $results = ["results" => $res_Arr];
-    OneO_REST_DataController::set_controller_log('$results from request to 1o', print_r($results, true));
-    self::process_controller_log();
+    log_debug('$results from request to 1o', $results);
     return $results;
+  }
+
+
+  public static function set_tax_amt($amt = 0, $id = '')
+  {
+    set_transient($id . '_taxamt', $amt, 60);
+  }
+
+  public static function get_tax_amt($id = '')
+  {
+    if (!$id) {
+      return false;
+    }
+    return get_transient($id . '_taxamt') ?: false;
   }
 
   /**
@@ -367,12 +329,13 @@ class OneO_REST_DataController
   public static function create_a_cart($order_id, $kid, $args, $type = '')
   {
     # Step 1: Create new Paseto for request.
-    $newPaseto = OneO_REST_DataController::create_paseto_from_request($kid);
+    $ss = OneO_REST_DataController::get_stored_secret();
+    $newPaseto = paseto_create_token($ss, $kid, OOMP_PASETO_EXP);
 
     # Step 2: Do request to graphql to get line items.
     $getLineItems = new Oo_graphQLRequest($newPaseto);
     $linesRaw = $getLineItems->api_line_items($order_id);
-    OneO_REST_DataController::set_controller_log('process_request: line_items', print_r($getLineItems, true));
+    log_debug('process_request: line_items', $getLineItems);
 
     // Do Something here to process line items??
     $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : [];
@@ -573,19 +536,6 @@ class OneO_REST_DataController
   }
 
   /**
-   * Creates PASETO Token FROM requests from 1o for return response.
-   * Internal call only.
-   *
-   * @param string $kid : 'kid' variable from request.
-   * @return string $token : token for response to 1o
-   */
-  private static function create_paseto_from_request($kid)
-  {
-    $ss = OneO_REST_DataController::get_stored_secret();
-    return paseto_create_token($ss, $kid, OOMP_PASETO_EXP);
-  }
-
-  /**
    * Gets Directives
    *
    * @param $directives :The Directives from the Request Body. May need to be sanitized.
@@ -595,7 +545,7 @@ class OneO_REST_DataController
   {
     if (is_array($requestBody) && !empty($requestBody)) {
       $directives = isset($requestBody['directives']) ? $requestBody['directives'] : false;
-      OneO_REST_DataController::set_controller_log('directives in get_directives()', print_r($directives, true));
+      log_debug('directives in get_directives()', $directives);
       if ($directives !== false && !empty($directives)) {
         return $directives;
       } else {
@@ -719,7 +669,9 @@ class DirectiveRunner
 
     $ret = $this->$methodName($args);
     if (!is_array($ret)) {
-      $ret = ['status' => $ret];
+      $ret = [
+          'status' => $ret === null ? self::OK : $ret,
+      ];
       if (isset($args['order_id'])) {
         $ret['order_id'] = $args['order_id'];
       }
@@ -740,9 +692,6 @@ class DirectiveRunner
     $newPaseto = $this->_createPasetoToken();
     $updateTax = new Oo_graphQLRequest($newPaseto);
     $updateTax->api_update_tax_amount($this->order_id, $args);
-
-    # Step 5: If ok response, then return finishing repsponse to initial request.
-    return DirectiveRunner::OK;
   }
 
   public function directive__health_check()
@@ -771,18 +720,19 @@ class DirectiveRunner
     if ($checkMessage) {
       return $checkMessage;
     }
+    return self::OK;
   }
 
   public function directive__update_product_pricing()
   {
-    OneO_REST_DataController::set_controller_log('process_future_directive: update_product_pricing', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
+    log_debug('process_future_directive: update_product_pricing', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
     //todo
     return 'future';
   }
 
   public function directive__inventory_check()
   {
-    OneO_REST_DataController::set_controller_log('process_future_directive: inventory_check', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
+    log_debug('process_future_directive: inventory_check', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
     //todo
     return 'future';
   }
@@ -802,7 +752,7 @@ class DirectiveRunner
 
     # Step 3: If not empty, get product data for request.
     if ($prodURL) {
-      $productId = url_to_postid_1o($prodURL);
+      $productId = url_to_postId($prodURL);
       $productTemp = new WC_Product_Factory();
       $productType = $productTemp->get_product_type($productId);
       $product = $productTemp->get_product($productId);
@@ -880,7 +830,7 @@ class DirectiveRunner
     if ($canProcess) {
       $req = new Oo_graphQLRequest($newPaseto);
       $oORequest = $req->api_import_product(/*$args['product_url'],*/ $args);
-      OneO_REST_DataController::set_controller_log('process_directive: import_product_from_url', print_r($oORequest, true));
+      log_debug('process_directive: import_product_from_url', $oORequest);
     }
 
     if ($oORequest && !$processed) {
@@ -893,32 +843,26 @@ class DirectiveRunner
 
   public function directive__update_available_shipping_rates()
   {
-    OneO_REST_DataController::set_controller_log('process_directive: update_available_shipping_rates', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
+    log_debug('process_directive: update_available_shipping_rates', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
     $args = OneO_REST_DataController::create_a_cart($this->order_id, $this->kid, $this->args, '');
 
     # Step 4: Update shipping rates on GraphQL.
     $newPaseto2 = $this->_createPasetoToken();
     $updateShipping = new Oo_graphQLRequest($newPaseto2);
     $updateShipping->api_update_ship_rates($this->order_id, $args);
-    OneO_REST_DataController::set_controller_log('update_ship_rates', print_r($updateShipping, true));
-
-    # Step 5: If ok response, then return finishing repsponse to initial request.
-    return self::OK;
+    log_debug('update_ship_rates', $updateShipping);
   }
 
   public function directive__update_availability()
   {
-    OneO_REST_DataController::set_controller_log('process_directive: update_availability', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
+    log_debug('process_directive: update_availability', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
     $args = OneO_REST_DataController::create_a_cart($this->order_id, $this->kid, $this->args, 'items_avail');
 
     # Update Availability on GraphQL.
     $newPaseto = $this->_createPasetoToken();
     $req = new Oo_graphQLRequest($newPaseto);
     $req->api_update_availability($this->order_id, $args);
-    OneO_REST_DataController::set_controller_log('update_availability', print_r($req, true));
-
-    # If ok response, then return finishing response to initial request.
-    return self::OK;
+    log_debug('update_availability', $req);
   }
 
   public function directive__complete_order()
@@ -930,7 +874,7 @@ class DirectiveRunner
     $args = $this->args;
     $getOrderData = new Oo_graphQLRequest($newPaseto);
     $result = $getOrderData->api_order_data($this->order_id);
-    OneO_REST_DataController::set_controller_log('process_directive: $getOrderData', print_r($getOrderData, true));
+    log_debug('process_directive: $getOrderData', $getOrderData);
 
     # Step 3: prepare order data for Woo import
     $orderData = OneO_REST_DataController::process_order_data($result);
@@ -953,7 +897,5 @@ class DirectiveRunner
     }
     $req = new Oo_graphQLRequest($newPaseto);
     $req->api_complete_order($this->order_id, $args);
-    # Step 4: If ok response, then return finishing repsponse to initial request.
-    return self::OK;
   }
 }

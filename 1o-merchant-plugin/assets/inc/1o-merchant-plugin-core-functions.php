@@ -123,6 +123,21 @@ function paseto_footer_kid($footer)
 }
 
 /**
+ * Controller log function - if turned on
+ * @param string $name
+ * @param mixed $logged
+ */
+function log_debug($name, $logged = null)
+{
+  if (error_reporting() === E_ALL) {
+    error_log("1o-merchant-plugin DEBUG: $name");
+    if ($logged != null) {
+      error_log("1o-merchant-plugin DEBUG context: " . print_r($logged, true));
+    }
+  }
+}
+
+/**
  * Get the 1o Options and parse for use.
  */
 function get_oneO_options()
@@ -155,9 +170,9 @@ function oneO_addWooOrder($orderData, $orderid)
   $email = $orderData['customer']['email'];
   $externalData = $orderData['order']['externalData'];
   $wooOrderkey = isset($externalData->WooID) && $externalData->WooID != '' ? $externalData->WooID : false;
-  OneO_REST_DataController::set_controller_log('externalData', print_r($externalData, true));
+  log_debug('externalData', $externalData);
   if ($wooOrderkey !== false) {
-    $checkKey = oneO_order_key_exists("_order_key", $wooOrderkey);
+    $checkKey = oneO_order_key_exists($wooOrderkey);
     // if order key exists, order has already been porcessed.
     if ($checkKey) {
       /**
@@ -354,27 +369,31 @@ function oneO_doSplitName($name)
   $results['last'] = trim($last);
   return $results;
 }
-
 /**
  * Check if order key exists in database
  *
- * @param string $key
- * @param string $orderKey
+ * @param string $orderKey Key to lookup
+ * @param string $key Name of the meta_key that will contain the value
  * @return bool
  */
-function oneO_order_key_exists($key = "_order_key", $orderKey = '')
+function oneO_order_key_exists($orderKey, $key = "_order_key")
 {
-  if ($orderKey == '') {
+  if (!$orderKey) {
     return false;
   }
   global $wpdb;
   $orderQuery = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->postmeta WHERE `meta_key` = '%s' AND `meta_value` = '%s' LIMIT 1;", [$key, $orderKey]));
-  OneO_REST_DataController::set_controller_log('orderQuery', print_r($orderQuery, true));
+  log_debug('orderQuery', $orderQuery);
 
   return isset($orderQuery[0]);
 }
 
-function url_to_postid_1o($url)
+
+/**
+ * @param string $url
+ * @return int
+ */
+function url_to_postId($url)
 {
   global $wp_rewrite;
   if (isset($_GET['post']) && !empty($_GET['post']) && is_numeric($_GET['post'])) {
