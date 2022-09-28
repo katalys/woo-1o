@@ -11,6 +11,20 @@ class Oo_graphQLRequest
   private $authCode;
 
   /**
+   * @param $kid
+   * @return Oo_graphQLRequest
+   * @throws \ParagonIE\Paseto\Exception\InvalidKeyException
+   * @throws \ParagonIE\Paseto\Exception\InvalidPurposeException
+   * @throws \ParagonIE\Paseto\Exception\PasetoException
+   */
+  static function fromKid($kid)
+  {
+    $ss = base64_decode(get_oneO_options()->secretKey);
+    $token = paseto_create_token($ss, $kid, OOMP_PASETO_EXP);
+    return new self($token);
+  }
+
+  /**
    * @param string $authCode
    */
   public function __construct($authCode)

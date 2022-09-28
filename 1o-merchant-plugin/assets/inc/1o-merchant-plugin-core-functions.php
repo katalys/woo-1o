@@ -402,6 +402,117 @@ function oneO_order_key_exists($orderKey, $key = "_order_key")
   return isset($orderQuery[0]);
 }
 
+function oneO_create_cart($orderId, $kid, $args, $type = '')
+{
+  # Step 2: Do request to graphql to get line items.
+  $getLineItems = Oo_graphQLRequest::fromKid($kid);
+  $linesRaw = $getLineItems->api_line_items($orderId);
+  log_debug('process_request: line_items', $getLineItems);
+
+  // Do Something here to process line items??
+  $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : [];
+
+  # Step 3: Get shipping rates & availability from Woo.
+  /**
+   * Real Shipping Totals
+   * Set up new cart to get real shipping total
+   * */
+  $args['shipping-rates'] = [];
+  $args['items_avail'] = [];
+
+  if (!isset(WC()->cart)) {
+    // initiallize the cart of not yet done.
+    WC()->initialize_cart();
+    if (!function_exists('wc_get_cart_item_data_hash')) {
+      include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
+    }
+  }
+  if (isset(WC()->customer)) {
+    $countryArr = [
+        "United States" => 'US',
+        "Canada" => 'CA',
+    ];
+    $sCountry = isset($linesRaw->data->order->shippingAddressCountry) ? $linesRaw->data->order->shippingAddressCountry : null;
+    $sCountryC = isset($linesRaw->data->order->shippingAddressCountryCode) ? $linesRaw->data->order->shippingAddressCountryCode : null;
+    $sCity = isset($linesRaw->data->order->shippingAddressCity) ? $linesRaw->data->order->shippingAddressCity : null;
+    $sState = isset($linesRaw->data->order->shippingAddressSubdivision) ? $linesRaw->data->order->shippingAddressSubdivision : null;
+    $sStateC = isset($linesRaw->data->order->shippingAddressSubdivisionCode) ? $linesRaw->data->order->shippingAddressSubdivisionCode : null;
+    $sZip = isset($linesRaw->data->order->shippingAddressZip) ? $linesRaw->data->order->shippingAddressZip : null;
+    $sAddress1 = isset($linesRaw->data->order->shippingAddressLine_1) ? $linesRaw->data->order->shippingAddressLine_1 : null;
+    $sAddress2 = isset($linesRaw->data->order->shippingAddressLine_2) ? $linesRaw->data->order->shippingAddressLine_2 : null;
+    $sCountry = is_null($sCountryC) || strlen($sCountryC) > 2 ? $countryArr[$sCountry] : $sCountryC;
+    WC()->customer->set_shipping_country($sCountry);
+    WC()->customer->set_shipping_state($sState);
+    WC()->customer->set_shipping_postcode($sZip);
+    WC()->customer->set_shipping_city($sCity);
+    WC()->customer->set_shipping_address($sAddress1);
+    WC()->customer->set_shipping_address_1($sAddress1);
+    WC()->customer->set_shipping_address_2($sAddress2);
+  }
+  if (!empty($lines)) {
+    foreach ($lines as $line) {
+      $product_id = $line->productExternalId;
+      $quantity = $line->quantity;
+      WC()->cart->add_to_cart($product_id, $quantity);
+
+      $productTemp = new WC_Product_Factory();
+      $product = $productTemp->get_product($product_id);
+      $availability = $product->is_in_stock();
+      $args['items_avail'][] = (object)[
+          "id" => $line->id,
+          "available" => $availability,
+      ];
+    }
+  }
+
+  WC()->cart->maybe_set_cart_cookies();
+  WC()->cart->calculate_shipping();
+  WC()->cart->calculate_totals();
+  $countCart = WC()->cart->get_cart_contents_count();
+  foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
+    // Check if a shipping for the current package exist
+    if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
+      // Loop through shipping rates for the current package
+      foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
+        $rate_id = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
+        $method_id = $shipping_rate->get_method_id(); // The shipping method slug
+        $instance_id = $shipping_rate->get_instance_id(); // The instance ID
+        $label_name = $shipping_rate->get_label(); // The label name of the method
+        $cost = $shipping_rate->get_cost(); // The cost without tax
+        $tax_cost = $shipping_rate->get_shipping_tax(); // The tax cost
+        //$taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
+        $itemPriceEx = number_format($cost, 2, '.', '');
+        $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
+        //set up rates array for 1o
+        $args['shipping-rates'][] = (object)[
+            "handle" => $method_id . '-' . $instance_id . '|' . (isset($itemPriceEx) ? ($itemPriceEx * 100) : '0') . '|' . str_replace(" ", "-", $label_name),
+            "title" => $label_name,
+            "amount" => $itemPriceEx * 100,
+        ];
+      }
+    }
+  }
+  $taxesArray = WC()->cart->get_taxes();
+  $taxTotal = 0;
+  if (is_array($taxesArray) && !empty($taxesArray)) {
+    foreach ($taxesArray as $taxCode => $taxAmt) {
+      $taxTotal = $taxTotal + $taxAmt;
+    }
+  }
+
+  // Save to database temporarily, will be read by directive__update_tax_amounts()
+  set_transient($orderId . '_taxamt', $taxTotal, 60);
+
+  $args['tax_amt'] = $taxTotal;
+  WC()->cart->empty_cart();
+  if ($type == 'tax_amt') {
+    return $args['tax_amt'];
+  } elseif ($type == 'shipping_rates') {
+    return $args['shipping-rates'];
+  }
+  return $args;
+}
+
 
 /**
  * @param string $url
