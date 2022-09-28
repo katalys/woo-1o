@@ -204,7 +204,7 @@ class SettingsPage
                 in the fields below. Log in to your 1o Admin console > Settings > Apps & Integrations, select Platforms
                 tab, click WooCommerce and follow the instructions.</p>
             <form method="post" action="options.php" class="settings-form-1o <?php echo $setting_class; ?>">
-              <?php settings_fields('oneO_settings_option_group'); ?>
+              <?php settings_fields('katalys_shop_merchant_group'); ?>
               <?php do_settings_sections('oneO-settings-admin'); ?>
               <?php do_settings_sections('oneO-settings-admin-two'); ?>
               <?php submit_button(__('Save 1o Settings')); ?>
@@ -230,8 +230,8 @@ class SettingsPage
   public function oneO_settings_page_init()
   {
     register_setting(
-        'oneO_settings_option_group', // option_group
-        'oneO_settings_option_name', // option_name
+        'katalys_shop_merchant_group', // option_group
+        'katalys_shop_merchant', // option_name
         [$this, 'oneO_settings_sanitize'] // sanitize_callback
     );
 

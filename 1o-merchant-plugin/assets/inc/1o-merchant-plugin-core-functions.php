@@ -121,7 +121,7 @@ function oneO_options()
   static $cachedOptions;
 
   if ($cachedOptions) {
-    $opts = get_option('oneO_settings_option_name', []);
+    $opts = get_option('katalys_shop_merchant') ?: [];
 
     $cachedOptions = new OneO_Options();
     $cachedOptions->endpoint = !empty($opts['api_endpoint']) ? $opts['api_endpoint'] : get_rest_url(null, OOMP_NAMESPACE) . '/';
