@@ -17,7 +17,7 @@ define('OOMP_LOC_URL', plugins_url('assets', __FILE__)); // absolute URL path
 
 // If this file is called directly, abort
 if (!defined('WPINC')) {
-    die;
+  die;
 }
 
 // Include the Settings Page Class
@@ -27,38 +27,27 @@ require_once __DIR__ . '/assets/inc/SettingsPage.php';
 require_once __DIR__ . '/assets/inc/1o-merchant-plugin-core-functions.php';
 require_once __DIR__ . '/assets/inc/GraphQLRequest.php';
 
-// Ajax
-require_once __DIR__ . '/assets/inc/1o-merchant-plugin-ajax-request.php';
+// REST endpoint
+require_once __DIR__ . '/assets/inc/ApiController.php';
+require_once __DIR__ . '/assets/inc/ApiDirectives.php';
+add_action('rest_api_init', [ApiController::class, 'register_routes']);
 
 // use Composer for PASETO library
 include_once __DIR__ . '/vendor/autoload.php';
 
 // Setup admin page
 if (is_admin()) {
-    // Admin Scripts
-    add_action('admin_enqueue_scripts', function () {
-        // admin_css
-        wp_enqueue_style('1o-merchant-plugin-admin-css', OOMP_LOC_URL . '/css/1o-merchant-plugin-admin.css', null, time(), 'all');
-        // admin_js
-        //wp_enqueue_script('1o-merchant-plugin-admin-js', OOMP_LOC_URL . '/js/1o-merchant-plugin-admin.js', ['jquery'], time(), true);
-    });
-
-    /* add the global to the admin menu for use */
-    //add_action('admin_menu', function () {
-    //}, 999);
-
-    /* Initialize the settings page object */
-    new SettingsPage();
-
-} else {
-    // Front End Scripts
-    //add_action('wp_enqueue_scripts', function () {
-        // load admin CSS
-        //wp_enqueue_style('1o-merchant-plugin-core-css', OOMP_LOC_URL . '/css/1o-merchant-plugin-core.css', null, time(), 'all');
-        // load admin JS
-        //wp_enqueue_script('1o-merchant-plugin-core-js', OOMP_LOC_URL . '/js/1o-merchant-plugin-core.js', ['jquery'], time(), true);
-    //});
+  new SettingsPage();
 }
+
+// Front End Scripts
+//add_action('wp_enqueue_scripts', function () {
+// load admin CSS
+//wp_enqueue_style('1o-merchant-plugin-core-css', OOMP_LOC_URL . '/css/1o-merchant-plugin-core.css', null, time(), 'all');
+// load admin JS
+//wp_enqueue_script('1o-merchant-plugin-core-js', OOMP_LOC_URL . '/js/1o-merchant-plugin-core.js', ['jquery'], time(), true);
+//});
+
 
 /**
  * Add 1o Order Column to order list page.
@@ -88,10 +77,3 @@ add_action('manage_shop_order_posts_custom_column', function ($column) {
     }
   }
 });
-
-/**
- * Custom Update Mechanism
- *
- * Only use this if plugin is being managed manually (outside of WordPress Repository).
- */
-//include __DIR__ . '/updates/register.php';

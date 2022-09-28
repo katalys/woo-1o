@@ -3,7 +3,7 @@ namespace KatalysMerchantPlugin;
 use Exception;
 
 /**
- * API proxy for GraphQL requests to the 1o system.
+ * Definition for all available API calls to the 1o system.
  */
 class GraphQLRequest
 {
@@ -11,6 +11,8 @@ class GraphQLRequest
   private $authCode;
 
   /**
+   * Shortcut factory method.
+   *
    * @param $kid
    * @return GraphQLRequest
    * @throws \ParagonIE\Paseto\Exception\InvalidKeyException
@@ -20,7 +22,7 @@ class GraphQLRequest
   static function fromKid($kid)
   {
     $ss = base64_decode(oneO_options()->secretKey);
-    $token = paseto_create_token($ss, $kid, OOMP_PASETO_EXP);
+    $token = paseto_create_token($ss, $kid);
     return new self($token);
   }
 

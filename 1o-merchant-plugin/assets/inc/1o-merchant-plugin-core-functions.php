@@ -21,7 +21,7 @@ use ParagonIE\Paseto\Keys\SymmetricKey;
  * @throws PasetoException
  * @throws \Exception
  */
-function paseto_create_token($sharedKey, $footer = '', $exp = 'P01D')
+function paseto_create_token($sharedKey, $footer = '', $exp = OOMP_PASETO_EXP)
 {
   $sharedKey = new SymmetricKey($sharedKey);
   return Builder::getLocal($sharedKey)
