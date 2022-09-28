@@ -1,0 +1,7 @@
+1o-merchant-plugin/vendor/**/*.md
+1o-merchant-plugin/vendor/**/appveyor.yml
+1o-merchant-plugin/vendor/**/phpunit*
+1o-merchant-plugin/vendor/**/psalm.xml
+1o-merchant-plugin/vendor/paragonie/paseto/docs/
+1o-merchant-plugin/vendor/paragonie/paseto/tests/
+1o-merchant-plugin/vendor/paragonie/paseto/.*
