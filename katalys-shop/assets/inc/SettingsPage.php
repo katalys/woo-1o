@@ -323,7 +323,7 @@ class SettingsPage
   public function public_key_callback()
   {
     printf(
-        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-public-key" name="oneO_settings_option_name[public_key]" id="public_key" value="%s">',
+        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-public-key" name="katalys_shop_merchant[public_key]" id="public_key" value="%s">',
         esc_attr(oneO_options()->publicKey)
     );
   }
@@ -331,7 +331,7 @@ class SettingsPage
   public function secret_key_callback()
   {
     printf(
-        '<input class="regular-text medium-text-input" type="password" autocomplete="1o-shared-secret" name="oneO_settings_option_name[secret_key]" id="secret_key" value="%s"><span id="secret_key-toggle" class="dashicons dashicons-visibility"></span>',
+        '<input class="regular-text medium-text-input" type="password" autocomplete="1o-shared-secret" name="katalys_shop_merchant[secret_key]" id="secret_key" value="%s"><span id="secret_key-toggle" class="dashicons dashicons-visibility"></span>',
         esc_attr(oneO_options()->secretKey)
     );
     ?>
@@ -358,7 +358,7 @@ class SettingsPage
   public function integration_id_callback()
   {
     printf(
-        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-integration-id" name="oneO_settings_option_name[integration_id]" id="integration_id" value="%s">',
+        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-integration-id" name="katalys_shop_merchant[integration_id]" id="integration_id" value="%s">',
         esc_attr(oneO_options()->integrationId)
     );
   }
@@ -366,7 +366,7 @@ class SettingsPage
   public function graphql_callback()
   {
     printf(
-        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-graphql-endpoint" name="oneO_settings_option_name[graphql_endpoint]" id="graphql_endpoint" value="%s">',
+        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-graphql-endpoint" name="katalys_shop_merchant[graphql_endpoint]" id="graphql_endpoint" value="%s">',
         esc_attr(oneO_options()->graphqlEndpoint)
     );
   }
@@ -376,7 +376,7 @@ class SettingsPage
     $endpoint = oneO_options()->endpoint;
     ?>
       <input class="regular-text medium-text-input" type="text" autocomplete="none"
-             name="oneO_settings_option_name[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr($endpoint) ?>"
+             name="katalys_shop_merchant[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr($endpoint) ?>"
              disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>
       <p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in
           your 1o Admin Console.</p>
