@@ -13,7 +13,6 @@ namespace KatalysMerchantPlugin;
 const OOMP_VER_NUM = '1.1.0'; // same as plugin version up top
 const OOMP_NAMESPACE = '/1o-to-store-api'; // namespace for API endpoint
 const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time. Use 'PT05M' for production, 'P01Y' for dev
-define('OOMP_LOC_PATH', __DIR__ . '/assets/inc'); // absolute file path for PHP files
 define('OOMP_LOC_URL', plugins_url('assets', __FILE__)); // absolute URL path
 
 // If this file is called directly, abort
@@ -22,13 +21,14 @@ if (!defined('WPINC')) {
 }
 
 // Include the Settings Page Class
-require_once OOMP_LOC_PATH . '/settings-page.php';
+require_once __DIR__ . '/assets/inc/settings-page.php';
 
 // Functions
-require_once OOMP_LOC_PATH . '/1o-merchant-plugin-core-functions.php';
+require_once __DIR__ . '/assets/inc/1o-merchant-plugin-core-functions.php';
+require_once __DIR__ . '/assets/inc/graphql-requests.php';
 
 // Ajax
-require_once OOMP_LOC_PATH . '/1o-merchant-plugin-ajax-request.php';
+require_once __DIR__ . '/assets/inc/1o-merchant-plugin-ajax-request.php';
 
 // use Composer for PASETO library
 include_once __DIR__ . '/vendor/autoload.php';
