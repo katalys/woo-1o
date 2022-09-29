@@ -11,76 +11,69 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Provides automatic order fulfillment integration with Katalys Shop (formerly 1o.io) orders for WooCommerce.
 
 == Description ==
-Do you want more customers for your eCommerce brand? [RevOffers](https://www.revoffers.com/) is the performance-based advertising network for transformational health products and brands — and our plugin opens the door to high-converting in-market traffic from the RevOffers Advertiser Network.
-Our plugin enables technical integration in one, no-hassle step. It listens for order-related hooks within your WordPress / WooCommerce installation and reports to the RevOffers Attribution Engine when the order is complete. Our back-end system does the rest, analyzing and reporting on how much growth RevOffers is driving for you, month after month.
-In this version we also add fulfillment integration with the Katalys Shop. This means you can choose to take advantage of the Katalys Shop, which brings you a frictionless, fully responsive e-commerce technology that allows product discovery and product purchase to take place anywhere on the web. In this case the plugin makes sure products can be imported into Katalys Shops directly from your products in WooCommerce, as well as pushing orders into your flow automatically. This allows you to sell more, in more places, through extending products in your WooCommerce installation to any content on the web and beyond.
+Increase conversions and lower Customer Acquisition Cost. [Katalys](https://www.1o.io/) Our simplest plugin yet brings you the power of the Katalys Shop. The Katalys Shop is a frictionless, fully responsive e-commerce technology that allows product discovery and product purchase to take place anywhere on the web. In this case the plugin makes sure products can be imported into Katalys Shops directly from your products in WooCommerce, as well as pushing orders into your fulfillment flow automatically. All the while using your WooCommerce installation and your own payment gateways. The Katalys Shop allows you to sell more, in more places, through extending products in your WooCommerce installation to any content on the web and beyond.
+In a couple of clicks you can get set up with the plugin and start creating Katalys Shops!
 
 
-## Open Your Account Now
-Ready to drive more sales? It begins with qualified traffic. It’s easy to get started:
+## Get started with Katalys Shops
+Ready to drive more sales? It’s easy to get started:
 
-- Fill out our Advertiser Survey to apply for an account.
+- Fill out our form to set up an account.
 - We will review your application and may ask for verification before approving your account. Once it’s approved, we'll activate your account on our platform.
-- Finally, install our [free WordPress plugin](https://wordpress.org/plugins/revoffers-advertiser-integration/) to complete the required Technical Integration.  The plugin will automatically configure itself based on your approved domain.
-- Questions? Contact us at [support@revoffers.com](support@revoffers.com).
+- Finally, install our [free WordPress plugin](https://wordpress.org/plugins/katalys-shop/) to complete the required Technical Integration.  The plugin will automatically configure itself based on your approved domain.
+- Questions? Contact us at [info@katalys.com](info@katalys.com).
 
-Our pricing structure is built specifically for your business needs.  We have the ability to structure our affiliate offers based on cart value, coupon, fixed fee, and more.  Since RevOffers is a performance network, you only pay when RevOffers drives verified/paid orders!
+Our pricing structure is built specifically for your business needs. You only pay when the Katalys Shop drives verified/paid orders! Want to talk about other options? Reach out and talk to us about it.
 
 ## Drive More Sales, Automatically
-The RevOffers plugin for WordPress / WooCommerce enables you to easily and automatically drive more eCommerce sales. It’s designed to help you succeed in:
+The Katalys Shop plugin for WordPress / WooCommerce enables you to easily and automatically drive more eCommerce sales. It’s designed to help you succeed in:
 
-- Driving more traffic to your website
-- Making connections with prospective customers for your products/services
-- Attracting qualified leads to sign up for your mailing list
+- Having product discovery and product purchase take place anywhere on the web
+- Starting conversations and connections with prospective customers for your products/services earlier
+- Close sales faster at point of discovery when possible
 - Generating more sales, every day
 - Paying only for sales that really happen
-- Generating additional SEO-friendly links from publishers
-- Having product discovery and product purchase take place anywhere on the web
 
 *********
 
 ## Feature Highlights
 
-### Easily Create Optimized Affiliate Campaigns
-The RevOffers plugin for WordPress / WooCommerce helps you collect data in support of an effective affiliate program:
+### Easily Create your Katalys Shops
+The Katalys plugin for WordPress / WooCommerce helps you collect data in support of an effective execution of campaigns:
 
-- Create CPS, CPA, or CPL offers
-- Track hits and sales across your eCommerce website
-- Set up special business rules and conditions for custom offers
-- End-to-end campaign management
+- Point of discovery sales vs. conversions coming later through your site (you’ll see both)
+- What deployments and placements work best for you
+- Special offers and product launches taken to another level
+- Perfect for lowering your customer acquisition costs
 
 ### Plugin Features
 
-- Increase transparency through granular reporting and intelligent dashboards
-- Industry’s only built-in fraud protection, which automatically detects and rejects click fraud for all RevOffers customers.
-- SOC 2 Type II certification, EU-U.S. Privacy Shield certification, GDPR privacy certification, and other measures.
-- With 99.9% system uptime and the most extensive documentation in the industry, you can relax knowing the best team in the business has got your back.
+- Easy import of products into Katalys Shops
+- Orders go automatically into your normal fulfillment flow
+- Use your own payment gateways
+- Reporting is crystal clear and helps you improve campaigns
 
-## Why Brands Love RevOffers
+## Why Brands Love Katalys Shops
 
-### Performance Marketing for Positive Change!
-We acquire customers for you through our connections with hundreds of curated publishers, marketers, and influencers around the world. RevOffers is a performance-based ad network, which means we only get paid when our advertisers make sales.
+### Acquire new customers and extend your shops to anywhere!
+You can use the shops in all of your existing relationships with publishers, marketers and influencers. Who drives the most sales? You’ll soon know for sure. Or talk to us about how we can acquire customers for you through our connections with hundreds of curated publishers, marketers, and influencers around the world. Katalys Shops can be deployed in content, in campaigns, in video and has even been used in ads. And you only pay when partners and publishers generate sales.
 
-### Affiliate Industry Knowledge
-Our publishers and advertisers are in experienced hands when it comes to structuring offers and driving performance.
+### Ecommerce Industry Knowledge
+Our publishers and advertisers are in experienced hands when it comes to structuring offers and driving performance. We can help get those deals across the line.
 
--   *Marketing Savvy*
+-   *Forward leaning*
 
-    Let us help you grow your affiliate and eCommerce revenue with our collective decades of experience.
+    Let us help you grow your customer base and eCommerce revenue with our collective decades of experience.
 
--   *We Care*
+-   *Your business is important to us*
 
     We only allow transparent, transformative brands and safe, quality, compliant traffic from our publishers.
 
--   *Strong Relationships*
+-   *Long, Strong Relationships*
 
     We focus on building sustainable relationships with our Advertisers and Publishers, so everyone wins.
 
--   *Legal Cannabis Focus*
-
-    Until RevOffers, there wasn’t a strong centralized place for legal cannabis Advertisers and Publishers to exchange services.
-
--   *Born to Rev*
+-   *Born to Grow*
 
     Driving results on performance is in our blood. Clicks and impressions are not enough if you want to grow a business.
 
