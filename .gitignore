@@ -5,3 +5,4 @@ katalys-shop/vendor/**/psalm.xml
 katalys-shop/vendor/paragonie/paseto/docs/
 katalys-shop/vendor/paragonie/paseto/tests/
 katalys-shop/vendor/paragonie/paseto/.*
+*.zip
