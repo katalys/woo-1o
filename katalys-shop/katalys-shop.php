@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Katalys Shop Merchant Plugin
+Plugin Name: Katalys Shop
 URI: https://katalys.com/
 Description: Merchant bridge to allow automatic order fulfillment within Katalys + 1o Shop cart connections.
 Version: 1.1.0
