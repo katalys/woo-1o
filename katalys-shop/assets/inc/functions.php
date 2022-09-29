@@ -1,5 +1,6 @@
 <?php
 namespace KatalysMerchantPlugin;
+use WC_Product_Factory;
 use DateInterval;
 use DateTime;
 use ParagonIE\ConstantTime\Base64UrlSafe;

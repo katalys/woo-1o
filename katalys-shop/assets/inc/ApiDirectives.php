@@ -1,5 +1,6 @@
 <?php
 namespace KatalysMerchantPlugin;
+use WC_Product_Factory;
 
 /**
  * Class holding execution and routing for all available directives.
