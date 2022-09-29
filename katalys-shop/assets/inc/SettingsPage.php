@@ -322,20 +322,17 @@ class SettingsPage
 
   public function public_key_callback()
   {
-    printf(
-        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-public-key" name="katalys_shop_merchant[public_key]" id="public_key" value="%s">',
-        esc_attr(oneO_options()->publicKey)
-    );
+    ?>
+      <input class="regular-text medium-text-input" type="text" autocomplete="1o-public-key" name="katalys_shop_merchant[public_key]" id="public_key" value="<?php echo esc_attr(oneO_options()->publicKey) ?>"/>
+    <?php
   }
 
   public function secret_key_callback()
   {
-    printf(
-        '<input class="regular-text medium-text-input" type="password" autocomplete="1o-shared-secret" name="katalys_shop_merchant[secret_key]" id="secret_key" value="%s"><span id="secret_key-toggle" class="dashicons dashicons-visibility"></span>',
-        esc_attr(oneO_options()->secretKey)
-    );
     ?>
-      <script>
+      <input class="regular-text medium-text-input" type="password" autocomplete="1o-shared-secret" name="katalys_shop_merchant[secret_key]" id="secret_key" value="<?php echo esc_attr(oneO_options()->secretKey) ?>"/>
+      <span id="secret_key-toggle" class="dashicons dashicons-visibility"></span>
+      <script type="text/javascript">
           const oneO_el = document.querySelector('#secret_key-toggle');
           const oneO_field = document.querySelector('#secret_key');
           const handleToggle = (event) => {
@@ -357,18 +354,16 @@ class SettingsPage
 
   public function integration_id_callback()
   {
-    printf(
-        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-integration-id" name="katalys_shop_merchant[integration_id]" id="integration_id" value="%s">',
-        esc_attr(oneO_options()->integrationId)
-    );
+    ?>
+      <input class="regular-text medium-text-input" type="text" autocomplete="1o-integration-id" name="katalys_shop_merchant[integration_id]" id="integration_id" value="<?php echo esc_attr(oneO_options()->integrationId) ?>"/>
+    <?php
   }
 
   public function graphql_callback()
   {
-    printf(
-        '<input class="regular-text medium-text-input" type="text" autocomplete="1o-graphql-endpoint" name="katalys_shop_merchant[graphql_endpoint]" id="graphql_endpoint" value="%s">',
-        esc_attr(oneO_options()->graphqlEndpoint)
-    );
+    ?>
+      <input class="regular-text medium-text-input" type="text" autocomplete="1o-graphql-endpoint" name="katalys_shop_merchant[graphql_endpoint]" id="graphql_endpoint" value="<?php echo esc_attr(oneO_options()->graphqlEndpoint) ?>"/>
+    <?php
   }
 
   public function api_endpoint_callback()
@@ -377,10 +372,10 @@ class SettingsPage
     ?>
       <input class="regular-text medium-text-input" type="text" autocomplete="none"
              name="katalys_shop_merchant[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr($endpoint) ?>"
-             disabled>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>
+             disabled/>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>
       <p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in
           your 1o Admin Console.</p>
-      <script>
+      <script type="text/javascript">
           document.querySelector('#endpoint_copy').addEventListener('click', function (e) {
               var copyText = document.querySelector('#api_endpoint');
               var copyLink = document.querySelector('#endpoint_copy');
