@@ -1,8 +1,8 @@
 <?php
 namespace KatalysMerchantPlugin;
-use WP_Error;
 use ParagonIE\Paseto\Keys\SymmetricKey;
 use ParagonIE\Paseto\Protocol\Version2;
+use WP_Error;
 
 /**
  * Class that routes incoming REST calls to functions.
@@ -122,7 +122,7 @@ class ApiController
       return new WP_Error('Error-200', 'No KID extracted from token', ['status' => 400]);
     }
     if ($options->publicKey != $footerString) {
-      return new WP_Error('Error-200', 'PublicKey does not match IDs on file. settings:' . print_r(get_option('katalys_shop_merchant'), true), ['status' => 403]);
+      return new WP_Error('Error-200', 'PublicKey does not match IDs on file.', ['status' => 403]);
     }
     if ($options->integrationId != $integrationId) {
       return new WP_Error('Error-200', 'IntegrationID does not match IDs on file.', ['status' => 403]);
@@ -139,15 +139,23 @@ class ApiController
       return new WP_Error('Error-300', 'PASETO Token is Expired.', ['status' => 403]);
     }
 
-    try {
-      // valid - move on & process request
-      $resultsArray = [];
-      foreach ($directives as $directive) {
-        log_debug("======= $directive ======");
+    // valid - move on & process request
+    $resultsArray = [];
+    foreach ($directives as $directive) {
+      log_debug("======= $directive ======");
+      try {
         $resultsArray[] = self::process_directive($directive, $footer);
+      } catch (\Exception $e) {
+        $resultsArray[] = [
+            'source_id' => $directive['id'], // directive id
+            'source_directive' => $directive['directive'], // directive name
+            'status' => 'failed', // "failed" means exception/crash, while "error" means business-logic problem
+            'data' => [
+                'message' => $e->getMessage(),
+                'details' => $e->getTraceAsString(),
+            ],
+        ];
       }
-    } catch (\Exception $e) {
-      return new WP_Error('Error-500', $e->getMessage(), ['status' => 500]);
     }
 
     log_debug('$results from request to 1o', $resultsArray);
@@ -177,11 +185,9 @@ class ApiController
     $data = isset($processed->data) ? $processed->data : null;
 
     $return_arr = [
-        'integration_id' => oneO_options()->integrationId,
-        'endpoint' => oneO_options()->endpoint,
         'source_id' => $directive['id'], // directive id
         'source_directive' => $directive['directive'], // directive name
-        'status' => $status, // ok or error or error message
+        'status' => $status, // ok or error message
     ];
     if ($order_id != null) {
       $return_arr["order_id"] = $order_id; // order_id if present

@@ -29,8 +29,11 @@ class ApiDirectives
     $this->order_id = !empty($args['order_id']) ? $args['order_id'] : null;
 
     $methodName = 'directive__' . strtolower($directive);
-    if (!preg_match('#^\w+$#', $methodName) || !method_exists($this, $methodName)) {
-      throw new \Exception("Bad directive name: $methodName");
+    if (!preg_match('#^\w+$#', $methodName)) {
+      throw new \Exception("Invalid methodName: $methodName");
+    }
+    if (!method_exists($this, $methodName)) {
+      throw new \Exception("No directive handler for: $directive");
     }
 
     $ret = $this->$methodName($args);
@@ -202,6 +205,7 @@ class ApiDirectives
       $retArr['status'] = self::OK;
     } elseif (is_null($processed)) {
       $retArr['status'] = 'error';
+      $retArr['error'] = ''; //TODO << message to show to user on the screen
     }
     return $retArr;
   }
