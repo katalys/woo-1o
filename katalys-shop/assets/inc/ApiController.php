@@ -139,11 +139,15 @@ class ApiController
       return new WP_Error('Error-300', 'PASETO Token is Expired.', ['status' => 403]);
     }
 
-    // valid - move on & process request
-    $resultsArray = [];
-    foreach ($directives as $directive) {
-      log_debug("======= $directive ======");
-      $resultsArray[] = self::process_directive($directive, $footer);
+    try {
+      // valid - move on & process request
+      $resultsArray = [];
+      foreach ($directives as $directive) {
+        log_debug("======= $directive ======");
+        $resultsArray[] = self::process_directive($directive, $footer);
+      }
+    } catch (\Exception $e) {
+      return new WP_Error('Error-500', $e->getMessage(), ['status' => 500]);
     }
 
     log_debug('$results from request to 1o', $resultsArray);
