@@ -1,0 +1,8 @@
+katalys-shop/vendor/**/*.md
+katalys-shop/vendor/**/appveyor.yml
+katalys-shop/vendor/**/phpunit*
+katalys-shop/vendor/**/psalm.xml
+katalys-shop/vendor/paragonie/paseto/docs/
+katalys-shop/vendor/paragonie/paseto/tests/
+katalys-shop/vendor/paragonie/paseto/.*
+*.zip

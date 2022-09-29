@@ -1,0 +1,10 @@
+{
+  "prefer-stable": true,
+  "readme": "readme.txt",
+  "require": {
+    "php": ">=5.5",
+    "ext-mbstring": "*",
+    "ext-json": "*",
+    "paragonie/paseto": "^1.1"
+  }
+}
