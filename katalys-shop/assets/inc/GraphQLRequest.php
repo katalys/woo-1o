@@ -50,36 +50,42 @@ class GraphQLRequest
     if (empty($request['query'])) {
       throw new GraphQLException("Unknown request", 401);
     }
+    if (isset($request['variables'])) {
+      $variableMap = $request['variables'];
+    } else {
+      $variableMap = [];
+      $request['variables'] = null; // ensure key exists
+    }
     // many methods require an ID field -- if defined but empty, this is an error condition
-    if (isset($request['variables']) && array_key_exists('id', $request['variables']) && !$request['variables']['id']) {
+    if (array_key_exists('id', $variableMap) && !$variableMap['id']) {
       throw new GraphQLException("Cannot Process Directive - Order Id is blank but required", 402);
     }
 
     /**
      * Main Request - Using native wp_remote_get
      */
-    $response = wp_remote_get(
+    $response = wp_remote_request(
         $endpoint,
         [
             'method' => 'POST',
             'headers' => [
-                'content-type' => 'application/json',
+                'content-type' => 'application/json; charset=utf-8',
                 'user-agent' => '1o WordPress API: ' . get_bloginfo('url'),
-                'authorization' => "Bearer {$this->authCode}",
+                'authorization' => "Bearer " . $this->authCode,
             ],
-            'body' => $request,
+            'body' => json_encode($request, JSON_UNESCAPED_SLASHES),
         ]
     );
 
     if (is_wp_error($response)) {
-      throw new GraphQLException($response->get_error_message(), 404);
+      throw new GraphQLException($response->get_error_message() . ', query: ' . substr($request['query'], 0, 40), 404);
     }
     $responseCode = $response['response']['code'];
     if ($responseCode != 200 && $responseCode != 201) {
-      throw new GraphQLException("Response code: $responseCode", 405);
+      throw new GraphQLException("Response code[$responseCode], query: " . substr($request['query'], 0, 40), 405);
     }
 
-    $body = wp_remote_retrieve_body($response);
+    $body = $response['body'];
     return json_decode($body);
   }
 
