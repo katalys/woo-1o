@@ -505,7 +505,7 @@ function url_to_postId($url)
 {
   global $wp_rewrite;
   if (isset($_GET['post']) && !empty($_GET['post']) && is_numeric($_GET['post'])) {
-    return $_GET['post'];
+    return intval($_GET['post']);
   }
   if (preg_match('#[?&](p|post|page_id|attachment_id)=(\d+)#', $url, $values)) {
     $id = absint($values[2]);
@@ -541,7 +541,7 @@ function url_to_postId($url)
       foreach ($GLOBALS['wp_post_types'] as $key => $value) {
         if (isset($_GET[$key]) && !empty($_GET[$key])) {
           $args = [
-              'name' => $_GET[$key],
+              'name' => sanitize_text_field($_GET[$key]),
               'post_type' => $key,
               'showposts' => 1,
           ];
@@ -621,9 +621,9 @@ function url_to_postId($url)
         if (isset($wp->extra_query_vars[$wpvar])) {
           $query[$wpvar] = $wp->extra_query_vars[$wpvar];
         } elseif (isset($_POST[$wpvar])) {
-          $query[$wpvar] = $_POST[$wpvar];
+          $query[$wpvar] = sanitize_text_field($_POST[$wpvar]);
         } elseif (isset($_GET[$wpvar])) {
-          $query[$wpvar] = $_GET[$wpvar];
+          $query[$wpvar] = sanitize_text_field($_GET[$wpvar]);
         } elseif (isset($query_vars[$wpvar])) {
           $query[$wpvar] = $query_vars[$wpvar];
         }

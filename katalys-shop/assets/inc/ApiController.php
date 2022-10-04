@@ -58,6 +58,10 @@ class ApiController
       //todo look for '1o-bearer-token', 'bearer' headers?
     }
 
+    if (!$token) {
+      return ['', ''];
+    }
+    $token = sanitize_text_field($token);
     $token = trim($token);
     if (stripos($token, 'Bearer ') === 0) {
       $token = substr($token, 7);
