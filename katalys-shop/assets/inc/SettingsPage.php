@@ -203,14 +203,12 @@ class SettingsPage
           <?php
         } else {
           $opt = oneO_options();
-          $setting_class = $opt->publicKey && $opt->secretKey && $opt->integrationId && $opt->graphqlEndpoint
-              ? 'settings_set'
-              : 'settings_unset';
+          $optIsValid = $opt->publicKey && $opt->secretKey && $opt->integrationId && $opt->graphqlEndpoint;
           ?>
             <p>Enter your <strong>Integration ID</strong>, <strong>API Key</strong> and <strong>Shared Secret</strong>
                 in the fields below. Log in to your 1o Admin console > Settings > Apps & Integrations, select Platforms
                 tab, click WooCommerce and follow the instructions.</p>
-            <form method="post" action="options.php" class="settings-form-1o <?php echo $setting_class; ?>">
+            <form method="post" action="options.php" class="settings-form-1o <?php echo $optIsValid ? 'settings_set' : 'settings_unset'; ?>">
               <?php settings_fields('katalys_shop_merchant_group'); ?>
               <?php do_settings_sections('oneO-settings-admin'); ?>
               <?php do_settings_sections('oneO-settings-admin-two'); ?>

@@ -64,8 +64,7 @@ add_action('manage_shop_order_posts_custom_column', function ($column) {
     $order = wc_get_order($post->ID);
     $isOneO = $order->get_meta('_is-1o-order', true, 'view');
     if ($isOneO) {
-      $oneOID = esc_attr($order->get_meta('_1o-order-number', true, 'view'));
-      echo $oneOID;
+      echo esc_attr($order->get_meta('_1o-order-number', true, 'view'));
     }
   }
 });
