@@ -61,20 +61,21 @@ class ApiController
   {
     $token = '';
     if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-      $token = trim($_SERVER["HTTP_AUTHORIZATION"]);
+      $token = $_SERVER["HTTP_AUTHORIZATION"];
     } elseif (isset($_SERVER['Authorization'])) {
-      $token = trim($_SERVER["Authorization"]);
+      $token = $_SERVER["Authorization"];
     } elseif (function_exists('apache_request_headers')) {
       $requestHeaders = apache_request_headers();
       $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
 
       if (isset($requestHeaders['Authorization'])) {
-        $token = trim($requestHeaders['Authorization']);
+        $token = $requestHeaders['Authorization'];
       }
     } else {
       //todo look for '1o-bearer-token', 'bearer' headers?
     }
 
+    $token = trim($token);
     if (stripos($token, 'Bearer ') === 0) {
       $token = substr($token, 7);
     }
