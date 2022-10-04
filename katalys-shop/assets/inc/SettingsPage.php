@@ -150,9 +150,16 @@ class SettingsPage
           <h2>1o Settings Page</h2>
         <?php settings_errors(); ?>
         <?php
-        $active_tab = isset($_GET['tab']) ? $_GET['tab'] : '';
+        switch (isset($_GET['tab']) ? $_GET['tab'] : '') {
+          case 'getting_started':
+            $active_tab = 'getting_started';
+            break;
+          case 'settings':
+          default:
+            $active_tab = 'settings';
+        }
         ?>
-          <h2 class="nav-tab-wrapper"><a href="?page=1o-settings&tab=setting"
+          <h2 class="nav-tab-wrapper"><a href="?page=1o-settings&tab=settings"
                                          class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
               <a href="?page=1o-settings&tab=getting_started"
                  class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting
@@ -368,10 +375,9 @@ class SettingsPage
 
   public function api_endpoint_callback()
   {
-    $endpoint = oneO_options()->endpoint;
     ?>
       <input class="regular-text medium-text-input" type="text" autocomplete="none"
-             name="katalys_shop_merchant[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr($endpoint) ?>"
+             name="katalys_shop_merchant[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr(oneO_options()->endpoint) ?>"
              disabled/>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>
       <p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in
           your 1o Admin Console.</p>
