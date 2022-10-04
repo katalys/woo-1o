@@ -22,7 +22,6 @@ class ApiController
         [
             'methods' => ['GET', 'POST'],
             'callback' => [$self, 'handle_request'],
-            'permission_callback' => [$self, 'handle_request_permissions_check'],
         ],
         'schema' => [$self, 'get_request_schema'],
     ]);
@@ -31,31 +30,15 @@ class ApiController
         [
             'methods' => ['GET'],
             'callback' => [$self, 'handle_paseto_request'],
-            'permission_callback' => [$self, 'handle_request_permissions_check'],
         ],
         'schema' => [$self, 'get_request_schema'],
     ]);
   }
 
   /**
-   * Check permissions for the posts. Basic check for Bearer Token.
-   * Called by REST router.
-   *
-   * @return true|WP_Error
-   */
-  public function handle_request_permissions_check()
-  {
-    $token = self::get_token_from_headers();
-    if ($token) {
-      return true;
-    }
-    return new WP_Error('Error-000', 'Not Allowed. No Bearer token found.', ['status' => 403]);
-  }
-
-  /**
    * Get Authorization Header from headers for verifying Paseto token.
    *
-   * @return string $token
+   * @return array(string, string) Token and decoded footer
    */
   private static function get_token_from_headers()
   {
@@ -79,7 +62,8 @@ class ApiController
     if (stripos($token, 'Bearer ') === 0) {
       $token = substr($token, 7);
     }
-    return $token;
+    $footer = paseto_decode_footer($token);
+    return [$token, $footer];
   }
 
   /**
@@ -93,14 +77,31 @@ class ApiController
    */
   public function handle_request($request)
   {
-    $token = self::get_token_from_headers();
+    list($token, $footer) = self::get_token_from_headers();
     if (!$token) {
-      return new WP_Error('Error-100', 'No Token Provided', ['status' => 403]);
+      return new WP_Error('Error-100', 'No token provided', ['status' => 403]);
+    }
+    if (!$footer) {
+      return new WP_Error('Error-200', 'Invalid token footer', ['status' => 400]);
     }
 
+    $options = oneO_options();
+    $footerString = paseto_footer_kid($footer);
     $integrationId = $request->get_param('integrationId');
+    if (!$footerString) {
+      return new WP_Error('Error-200', 'No KID extracted from token', ['status' => 400]);
+    }
+    if ($options->publicKey != $footerString) {
+      return new WP_Error('Error-200', 'PublicKey does not match IDs on file.', ['status' => 403]);
+    }
     if (empty($integrationId)) {
       return new WP_Error('Error-102', 'No Integration ID Provided', ['status' => 400]);
+    }
+    if ($options->integrationId != $integrationId) {
+      return new WP_Error('Error-200', 'IntegrationID does not match IDs on file.', ['status' => 403]);
+    }
+    if (!$options->secretKey) {
+      return new WP_Error('Error-200', 'SecretID is empty', ['status' => 403]);
     }
 
     $requestBody = $request->get_json_params();
@@ -112,25 +113,6 @@ class ApiController
     }
     $directives = $requestBody['directives'];
     log_debug('directives in get_directives()', $directives);
-
-    $options = oneO_options();
-    $footer = paseto_decode_footer($token);
-    if (!$footer) {
-      return new WP_Error('Error-200', 'Invalid token footer', ['status' => 400]);
-    }
-    $footerString = paseto_footer_kid($footer);
-    if (!$footerString) {
-      return new WP_Error('Error-200', 'No KID extracted from token', ['status' => 400]);
-    }
-    if ($options->publicKey != $footerString) {
-      return new WP_Error('Error-200', 'PublicKey does not match IDs on file.', ['status' => 403]);
-    }
-    if ($options->integrationId != $integrationId) {
-      return new WP_Error('Error-200', 'IntegrationID does not match IDs on file.', ['status' => 403]);
-    }
-    if (!$options->secretKey) {
-      return new WP_Error('Error-200', 'SecretID is empty', ['status' => 403]);
-    }
 
     // key exists and can be used to decrypt.
     $key = new SymmetricKey(base64_decode($options->secretKey));
