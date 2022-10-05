@@ -140,8 +140,8 @@ class ApiDirectives
           $retArr["title"] = $product->get_name(); //title
           $retArr["currency"] = get_woocommerce_currency();
           $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
-          $retArr["price"] = round(($product->get_sale_price('view') * 100), 0, PHP_ROUND_HALF_UP);
-          $retArr["compare_at_price"] = round(($product->get_regular_price('view') * 100), 0, PHP_ROUND_HALF_UP);
+          $retArr["price"] = round($product->get_sale_price('view') * 100);
+          $retArr["compare_at_price"] = round($product->get_regular_price('view') * 100);
           $prodDesc = $product->get_description();
           //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
           //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
@@ -165,8 +165,8 @@ class ApiDirectives
           $retArr["title"] = $product->get_name(); //title
           $retArr["currency"] = get_woocommerce_currency();
           $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
-          $retArr["price"] = (number_format((float)$product->get_sale_price('view'), 2) * 100);
-          $retArr["compare_at_price"] = (number_format((float)$product->get_regular_price('view'), 2) * 100);
+          $retArr["price"] = round($product->get_sale_price('view') * 100);
+          $retArr["compare_at_price"] = round($product->get_regular_price('view') * 100);
           $prodDesc = $product->get_description();
           //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
           //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
@@ -333,8 +333,8 @@ class ApiDirectives
           $pvtemp = [
             //"title" => $productTitle, // Only needed if different than main product.
               "subtitle" => $subtitleName,
-              "price" => round(($variant['display_price'] * 100), 0, PHP_ROUND_HALF_UP),
-              "compare_at_price" => round(($variant['display_regular_price'] * 100), 0, PHP_ROUND_HALF_UP),
+              "price" => round($variant['display_price'] * 100),
+              "compare_at_price" => round($variant['display_regular_price'] * 100),
               "currency" => $currency,
               "currency_sign" => $currencySign,
               "external_id" => (string)$variant['variation_id'],
@@ -372,7 +372,7 @@ class ApiDirectives
     log_debug('process_directive: update_available_shipping_rates', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
     $args = oneO_create_cart($this->order_id, $this->kid, $this->args);
 
-    # Step 4: Update shipping rates on GraphQL.
+    # Update shipping rates on GraphQL.
     $req = $this->_gqlRequest();
     $req->api_update_ship_rates($this->order_id, $args);
     log_debug('update_ship_rates', $req);
@@ -436,10 +436,10 @@ class ApiDirectives
           $products[] = [
               "id" => $v->productExternalId,
               "qty" => $v->quantity,
-              'price' => $v->price,
+              'price' => $v->price / 100,
               'currency' => $v->currency,
-              'tax' => $v->tax,
-              'total' => ($v->price * $v->quantity),
+              'tax' => $v->tax / 100,
+              'total' => (($v->price / 100) * $v->quantity),
               'variantExternalId' => $v->variantExternalId,
           ];
         }
@@ -477,10 +477,10 @@ class ApiDirectives
       ];
       $order = [
           'status' => $data->fulfillmentStatus,
-          'total' => $data->total,
-          'totalPrice' => $data->totalPrice,
-          'totalShipping' => $data->totalShipping,
-          'totalTax' => $data->totalTax,
+          'total' => $data->total / 100,
+          'totalPrice' => $data->totalPrice / 100,
+          'totalShipping' => $data->totalShipping / 100,
+          'totalTax' => $data->totalTax / 100,
           'chosenShipping' => $data->chosenShippingRateHandle,
           'currency' => $data->currency,
           'externalData' => ($data->externalData != '' ? json_decode($data->externalData) : (object)[]),

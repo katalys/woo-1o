@@ -205,10 +205,10 @@ function oneO_addWooOrder($orderData, $orderid)
           'total' => $custom_price_for_this_order, // e.g. 32.95
           'quantity' => qty (int)
       */
-      if ($prod->get_price() != ($product['price'] / 100)) {
-        $args['subtotal'] = ($product['price'] / 100);
-        $args['total'] = ($product['total'] / 100);
-        $discount = ($product['price'] / 100) - $prod->get_price();
+      if ($prod->get_price() != ($product['price'])) {
+        $args['subtotal'] = ($product['price']);
+        $args['total'] = ($product['total']);
+        $discount = ($product['price']) - $prod->get_price();
         $discount_string = "katalys.com discount";
         $order->add_coupon($discount_string, $discount, 0);
       }
@@ -284,7 +284,7 @@ function oneO_addWooOrder($orderData, $orderid)
   $currency = $orderData['order']['currency'];
   $transID = $orderData['transactions']['id']; // ?? might not be needed ??
   $transName = $orderData['transactions']['name'];
-  $shippingCost = $orderData['order']['totalShipping'] / 100;
+  $shippingCost = $orderData['order']['totalShipping'];
   $chosenShipping = $orderData['order']['chosenShipping'];
   $shippingCostArr = explode("|", $chosenShipping);
   $shipName = isset($shippingCostArr[2]) ? str_replace('-', " ", $shippingCostArr[2]) : '';
@@ -312,12 +312,12 @@ function oneO_addWooOrder($orderData, $orderid)
    */
 
   // Set totals in order
-  $order->set_shipping_total($shippingCost / 100);
+  $order->set_shipping_total($shippingCost);
   $order->set_discount_total($discount);
   $order->set_discount_tax(0);
-  $order->set_cart_tax($taxPaid / 100);
+  $order->set_cart_tax($taxPaid);
   //$order->set_shipping_tax(0);
-  $order->set_total($orderTotal / 100);
+  $order->set_total($orderTotal);
   $order->calculate_totals();
   $order->update_status('completed', 'added by 1o - order:' . $orderid);
   $order->update_meta_data('_is-1o-order', '1');
@@ -463,13 +463,13 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
         $cost = $shipping_rate->get_cost(); // The cost without tax
         $tax_cost = $shipping_rate->get_shipping_tax(); // The tax cost
         //$taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
-        $itemPriceEx = number_format($cost, 2, '.', '');
+        $itemPriceEx = round($cost * 100);
         $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
         //set up rates array for 1o
         $args['shipping-rates'][] = (object)[
-            "handle" => $method_id . '-' . $instance_id . '|' . ($itemPriceEx * 100) . '|' . str_replace(" ", "-", $label_name),
+            "handle" => $method_id . '-' . $instance_id . '|' . ($itemPriceEx) . '|' . str_replace(" ", "-", $label_name),
             "title" => $label_name,
-            "amount" => $itemPriceEx * 100,
+            "amount" => $itemPriceEx,
         ];
       }
     }
@@ -485,7 +485,7 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
   // Save to database temporarily, will be read by directive__update_tax_amounts()
   set_transient($orderId . '_taxamt', $taxTotal, 60);
 
-  $args['tax_amt'] = $taxTotal;
+  $args['tax_amt'] = round($taxTotal * 100);
   WC()->cart->empty_cart();
   if ($type == 'tax_amt') {
     return $args['tax_amt'];
