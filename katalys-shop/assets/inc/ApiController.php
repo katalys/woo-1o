@@ -170,6 +170,7 @@ class ApiController
     $status = isset($processed->status) ? $processed->status : 'unknown';
     $order_id = isset($processed->order_id) ? $processed->order_id : null;
     $data = isset($processed->data) ? $processed->data : null;
+    $result = isset($processed->result) ? $processed->result : null;
 
     $return_arr = [
         'source_id' => $directive['id'], // directive id
@@ -182,7 +183,9 @@ class ApiController
     if ($data != null) {
       $return_arr["data"] = $data;
     }
-
+    if ($result != null) {
+      $return_arr["result"] = $result;
+    }
     return $return_arr;
   }
 

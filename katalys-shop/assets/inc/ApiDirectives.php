@@ -123,77 +123,81 @@ class ApiDirectives
     # Step 3: If not empty, get product data for request.
     if ($prodURL) {
       $productId = url_to_postId($prodURL);
-      $productTemp = new WC_Product_Factory();
-      $productType = $productTemp->get_product_type($productId);
-      $product = $productTemp->get_product($productId);
-      $isDownloadable = $product->is_downloadable();
-
-      if ($product->get_status() != 'publish') {
-        $args['product_to_import'] = 'not published';
-        $processed = "Product must be set to Published to be imported.";
-      } elseif ($productType == 'simple' && !$isDownloadable) { //get regular product data (no variants)
-        $canProcess = true;
-        $retArr["name"] = $product->get_slug(); //slug
-        $retArr["title"] = $product->get_name(); //title
-        $retArr["currency"] = get_woocommerce_currency();
-        $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
-        $retArr["price"] = round(($product->get_sale_price('view') * 100), 0, PHP_ROUND_HALF_UP);
-        $retArr["compare_at_price"] = round(($product->get_regular_price('view') * 100), 0, PHP_ROUND_HALF_UP);
-        $prodDesc = $product->get_description();
-        //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
-        //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
-        $retArr["summary_html"] = $prodDesc; // HTML description
-        $retArr["external_id"] = (string)$productId; //product ID
-        $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
-        $retArr["images"] = self::import__get_product_images($product);
-        //$retArr['sku'] = $product->get_sku();
-        //TODO: SKU needs to be added on 1o end still.
-        $options = self::import__product_options($product);
-        $retArr["option_names"] = $options['group'];
-        $retArr["variant"] = false; //bool
-        $retArr["variants"] = []; //empty array (no variants)
-        //$retArr["available"] = $product->is_in_stock();
-        //TODO: Product Availability Boolean needs to be added on 1o end still.
-        $returnObj = (object)$retArr;
-        $args['product_to_import'] = $returnObj;
-      } elseif ($productType == 'variable' && !$isDownloadable) { //get variable product data (with variants)
-        $canProcess = true;
-        $retArr["name"] = $product->get_slug(); //slug
-        $retArr["title"] = $product->get_name(); //title
-        $retArr["currency"] = get_woocommerce_currency();
-        $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
-        $retArr["price"] = (number_format((float)$product->get_sale_price('view'), 2) * 100);
-        $retArr["compare_at_price"] = (number_format((float)$product->get_regular_price('view'), 2) * 100);
-        $prodDesc = $product->get_description();
-        //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
-        //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
-        $retArr["summary_html"] = $prodDesc;
-        $retArr["external_id"] = (string)$productId;
-        $retArr["shop_url"] = $prodURL;
-        $retArr["images"] = self::import__get_product_images($product);
-        //$retArr['sku'] = $product->get_sku();
-        //TODO: SKU needs to be added on 1o end still.
-        $options = self::import__product_options($product);
-        $retArr["option_names"] = $options['group'];
-        $retArr["variant"] = false; //bool
-        $variants = $product->get_available_variations();
-        $processedVariants = [];
-        if (is_array($variants) && !empty($variants)) {
-          $processedVariants = self::import__process_variants($variants, $options['names'], $retArr["title"], $retArr["currency"], $retArr["currency_sign"]);
-        }
-        $retArr["variants"] = $processedVariants;
-        //$retArr["available"] = $product->is_in_stock();
-        //TODO: Product Availability Boolean needs to be added on 1o end still.
-        $returnObj = (object)$retArr;
-        $args['product_to_import'] = $returnObj;
-      } elseif ($productType == 'downloadable' || $isDownloadable) {
-        $processed = 'Product type "Downloadable" not accepted.';
-      } else {
-        $processed = 'Product type "' . $productType . '" not accepted.';
+      if (!$productId) {
+        $canProcess = false;
       }
-      // Acceptable Types: Simple, Variable;
-      // Other types: grouped, virtual, downloadable, external/affiliate
-      // There could also be these types if using a plugin: subscription, bookable, mempership, bundled, auction
+      else {
+        $productTemp = new WC_Product_Factory();
+        $productType = $productTemp->get_product_type($productId);
+        $product = $productTemp->get_product($productId);
+        $isDownloadable = $product->is_downloadable();
+        if ($product->get_status() != 'publish') {
+          $args['product_to_import'] = 'not published';
+          $processed = "Product must be set to Published to be imported.";
+        } elseif ($productType == 'simple' && !$isDownloadable) { //get regular product data (no variants)
+          $canProcess = true;
+          $retArr["name"] = $product->get_slug(); //slug
+          $retArr["title"] = $product->get_name(); //title
+          $retArr["currency"] = get_woocommerce_currency();
+          $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
+          $retArr["price"] = round(($product->get_sale_price('view') * 100), 0, PHP_ROUND_HALF_UP);
+          $retArr["compare_at_price"] = round(($product->get_regular_price('view') * 100), 0, PHP_ROUND_HALF_UP);
+          $prodDesc = $product->get_description();
+          //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
+          //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
+          $retArr["summary_html"] = $prodDesc; // HTML description
+          $retArr["external_id"] = (string)$productId; //product ID
+          $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
+          $retArr["images"] = self::import__get_product_images($product);
+          //$retArr['sku'] = $product->get_sku();
+          //TODO: SKU needs to be added on 1o end still.
+          $options = self::import__product_options($product);
+          $retArr["option_names"] = $options['group'];
+          $retArr["variant"] = false; //bool
+          $retArr["variants"] = []; //empty array (no variants)
+          //$retArr["available"] = $product->is_in_stock();
+          //TODO: Product Availability Boolean needs to be added on 1o end still.
+          $returnObj = (object)$retArr;
+          $args['product_to_import'] = $returnObj;
+        } elseif ($productType == 'variable' && !$isDownloadable) { //get variable product data (with variants)
+          $canProcess = true;
+          $retArr["name"] = $product->get_slug(); //slug
+          $retArr["title"] = $product->get_name(); //title
+          $retArr["currency"] = get_woocommerce_currency();
+          $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
+          $retArr["price"] = (number_format((float)$product->get_sale_price('view'), 2) * 100);
+          $retArr["compare_at_price"] = (number_format((float)$product->get_regular_price('view'), 2) * 100);
+          $prodDesc = $product->get_description();
+          //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
+          //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
+          $retArr["summary_html"] = $prodDesc;
+          $retArr["external_id"] = (string)$productId;
+          $retArr["shop_url"] = $prodURL;
+          $retArr["images"] = self::import__get_product_images($product);
+          //$retArr['sku'] = $product->get_sku();
+          //TODO: SKU needs to be added on 1o end still.
+          $options = self::import__product_options($product);
+          $retArr["option_names"] = $options['group'];
+          $retArr["variant"] = false; //bool
+          $variants = $product->get_available_variations();
+          $processedVariants = [];
+          if (is_array($variants) && !empty($variants)) {
+            $processedVariants = self::import__process_variants($variants, $options['names'], $retArr["title"], $retArr["currency"], $retArr["currency_sign"]);
+          }
+          $retArr["variants"] = $processedVariants;
+          //$retArr["available"] = $product->is_in_stock();
+          //TODO: Product Availability Boolean needs to be added on 1o end still.
+          $returnObj = (object)$retArr;
+          $args['product_to_import'] = $returnObj;
+        } elseif ($productType == 'downloadable' || $isDownloadable) {
+          $processed = 'Product type "Downloadable" not accepted.';
+        } else {
+          $processed = 'Product type "' . $productType . '" not accepted.';
+        }
+        // Acceptable Types: Simple, Variable;
+        // Other types: grouped, virtual, downloadable, external/affiliate
+        // There could also be these types if using a plugin: subscription, bookable, mempership, bundled, auction
+      }
     }
 
     $oORequest = false;
@@ -204,9 +208,10 @@ class ApiDirectives
 
     if ($oORequest && !$processed) {
       $retArr['status'] = self::OK;
+      $retArr['result'] = $oORequest->data->CreateProduct->id;
     } elseif (is_null($processed)) {
       $retArr['status'] = 'error';
-      $retArr['error'] = ''; //TODO << message to show to user on the screen
+      $retArr['error'] = 'Unable to import Product - Please check the URL'; //TODO << message to show to user on the screen
     }
     return $retArr;
   }
