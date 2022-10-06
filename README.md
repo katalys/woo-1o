@@ -22,7 +22,7 @@ cp -r trunk svn/
 
 # Commit changes to remove SVN server
 cd svn/
-svn add trunk/*
+svn add trunk/* --force
 svn ci -m 'release version XXXXX' --username katalysdev
 # >> enter password
 ```
