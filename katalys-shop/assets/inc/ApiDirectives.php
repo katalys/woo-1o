@@ -211,7 +211,7 @@ class ApiDirectives
       $retArr['result'] = $oORequest->data->CreateProduct->id;
     } elseif (is_null($processed)) {
       $retArr['status'] = 'error';
-      $retArr['error'] = 'Unable to import Product - Please check the URL'; //TODO << message to show to user on the screen
+      $retArr['error'] = 'Unable to import Product - Please check the URL';
     }
     return $retArr;
   }
