@@ -2,24 +2,25 @@ name: Deploy to WordPress.org
 
 on:
   workflow_dispatch:
-    commit_message:
-      description: 'SVN commit message to send; should contain release-version'
-      required: true
-      type: string
-    plugin_name:
-      description: 'code-slug name of the WordPress plugin'
-      default: katalys-shop
-      required: true
-      type: string
-    svn_user:
-      description: 'SVN username'
-      default: katalysdev
-      required: true
-      type: string
-    svn_pass:
-      description: 'SVN password'
-      required: true
-      type: string
+    inputs:
+      commit_message:
+        description: 'SVN commit message to send; should contain release-version'
+        required: true
+        type: string
+      plugin_name:
+        description: 'code-slug name of the WordPress plugin'
+        default: katalys-shop
+        required: true
+        type: string
+      svn_user:
+        description: 'SVN username'
+        default: katalysdev
+        required: true
+        type: string
+      svn_pass:
+        description: 'SVN password'
+        required: true
+        type: string
 
 jobs:
   deploy:
@@ -30,8 +31,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Package zipfile
         run: |
-          cp -r trunk ${{ inputs.plugin_name }}
-          zip -qr ${{ inputs.plugin_name }}.zip ${{ inputs.plugin_name }}
+          cp -r trunk '${{ inputs.plugin_name }}'
+          zip -qr '${{ inputs.plugin_name }}'.zip '${{ inputs.plugin_name }}'
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
