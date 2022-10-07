@@ -1,0 +1,51 @@
+name: Deploy to WordPress.org
+
+on:
+  workflow_dispatch:
+    commit_message:
+      description: 'SVN commit message to send; should contain release-version'
+      required: true
+      type: string
+    plugin_name:
+      description: 'code-slug name of the WordPress plugin'
+      default: katalys-shop
+      required: true
+      type: string
+    svn_user:
+      description: 'SVN username'
+      default: katalysdev
+      required: true
+      type: string
+    svn_pass:
+      description: 'SVN password'
+      required: true
+      type: string
+
+jobs:
+  zip-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Package zipfile
+        run: |
+          cp -r trunk '${{ inputs.plugin_name }}'
+          zip -qr '${{ inputs.plugin_name }}'.zip '${{ inputs.plugin_name }}'
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: katalys-shop
+          path: ${{ github.workspace }}/${{ inputs.plugin_name }}.zip
+      - name: SVN checkout
+        run: |
+          # Clone repo
+          svn co https://plugins.svn.wordpress.org/'${{ inputs.plugin_name }}' __svn
+          cd __svn
+          rm -rf trunk/
+          cp -r ../trunk ./
+          # Detect code updates
+          svn add trunk/* --force
+          svn st | grep ^! | awk '{print " --force "$2}' | xargs svn rm
+          svn status
+          # Commit/push
+          #svn ci -m '${{ inputs.commit_message }}' --username '${{ inputs.svn_user }}' --non-interactive --no-auth-cache --password '${{ inputs.svn_pass }}'
