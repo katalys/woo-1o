@@ -12,15 +12,6 @@ on:
         default: katalys-shop
         required: true
         type: string
-      svn_user:
-        description: 'SVN username'
-        default: katalysdev
-        required: true
-        type: string
-      svn_pass:
-        description: 'SVN password'
-        required: true
-        type: string
 
 jobs:
   deploy:
@@ -60,4 +51,4 @@ jobs:
           echo "Found the following changes:"
           svn status
           # Commit/push
-          svn ci -m '${{ inputs.commit_message }}' --username '${{ inputs.svn_user }}' --non-interactive --no-auth-cache --password '${{ inputs.svn_pass }}'
+          svn ci -m '${{ inputs.commit_message }}' --username '${{ secrets.WORDPRESS_USERNAME }}' --non-interactive --no-auth-cache --password '${{ secrets.WORDPRESS_PASSWORD }}'
