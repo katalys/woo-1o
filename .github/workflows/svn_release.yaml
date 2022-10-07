@@ -41,12 +41,13 @@ jobs:
       - name: SVN checkout
         run: |
           # Clone repo
-          svn co https://plugins.svn.wordpress.org/'${{ inputs.plugin_name }}' __svn
+          svn co 'https://plugins.svn.wordpress.org/${{ inputs.plugin_name }}' __svn
           cd __svn
           rm -rf trunk/
           cp -r ../trunk ./
+          cd trunk/
           # Detect code updates
-          svn add trunk/* --force
+          svn add . --force
           svn st | grep ^! | awk '{print " --force "$2}' | xargs svn rm
           svn status
           # Commit/push
