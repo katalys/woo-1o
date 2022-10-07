@@ -60,4 +60,4 @@ jobs:
           echo "Found the following changes:"
           svn status
           # Commit/push
-          #svn ci -m '${{ inputs.commit_message }}' --username '${{ inputs.svn_user }}' --non-interactive --no-auth-cache --password '${{ inputs.svn_pass }}'
+          svn ci -m '${{ inputs.commit_message }}' --username '${{ inputs.svn_user }}' --non-interactive --no-auth-cache --password '${{ inputs.svn_pass }}'
