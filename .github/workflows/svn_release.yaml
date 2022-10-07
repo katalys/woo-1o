@@ -41,16 +41,16 @@ jobs:
       - name: SVN checkout
         run: |
           # Clone repo
-          svn co 'https://plugins.svn.wordpress.org/${{ inputs.plugin_name }}' __svn
+          svn co -q 'https://plugins.svn.wordpress.org/${{ inputs.plugin_name }}' __svn
           cd __svn
           rm -rf trunk/
           cp -r ../trunk ./
           cd trunk/
           # Detect code updates
-          svn add . --force
+          svn add --quiet . --force
           # Remove missing files; svn-rm fails unless list is non-empty
           if svn st | grep ^!; then
-            svn st | grep ^! | awk '{$1=""; print " --force \""substr($0,2)"@\"" }' | xargs svn rm
+            svn st | grep ^! | awk '{$1=""; print " --force \""substr($0,2)"@\"" }' | xargs svn rm --quiet
           fi
           if [[ `svn st | wc -l` -lt 1 ]]; then
             echo "No changes found!"
