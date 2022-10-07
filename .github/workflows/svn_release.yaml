@@ -47,7 +47,7 @@ jobs:
           cp -r ../trunk ./
           cd trunk/
           # Detect code updates
-          svn add * --force
+          svn add . --force
           # Remove missing files; svn-rm fails unless list is non-empty
           if svn st | grep ^!; then
             svn st | grep ^! | awk '{$1=""; print " --force \""substr($0,2)"@\"" }' | xargs svn rm
