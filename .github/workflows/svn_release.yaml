@@ -22,15 +22,16 @@ on:
       type: string
 
 jobs:
-  zip-files:
+  deploy:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
       - name: Package zipfile
         run: |
-          cp -r trunk '${{ inputs.plugin_name }}'
-          zip -qr '${{ inputs.plugin_name }}'.zip '${{ inputs.plugin_name }}'
+          cp -r trunk ${{ inputs.plugin_name }}
+          zip -qr ${{ inputs.plugin_name }}.zip ${{ inputs.plugin_name }}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
