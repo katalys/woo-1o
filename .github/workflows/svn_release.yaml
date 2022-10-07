@@ -48,7 +48,16 @@ jobs:
           cd trunk/
           # Detect code updates
           svn add . --force
-          svn st | grep ^! | awk '{print " --force "$2}' | xargs svn rm
+          # Remove missing files; svn-rm fails unless list is non-empty
+          if svn st | grep ^!; then
+            svn st | grep ^! | awk '{$1=""; print " --force \""substr($0,2)"@\"" }' | xargs svn rm
+          fi
+          if [[ `svn st | wc -l` -lt 1 ]]; then
+            echo "No changes found!"
+            svn status
+            exit 1
+          fi
+          echo "Found the following changes:"
           svn status
           # Commit/push
           #svn ci -m '${{ inputs.commit_message }}' --username '${{ inputs.svn_user }}' --non-interactive --no-auth-cache --password '${{ inputs.svn_pass }}'
