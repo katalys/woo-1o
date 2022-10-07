@@ -84,6 +84,10 @@ Your customers are your customers! Collected data is only used to attribute your
 
 == Changelog ==
 
+2022-10-07: Introducing to Wordpress.org marketplace!
+
 2022-09-26: Dependency reduction
 
-2022-09-01: First version
+2022-09-01: API updates
+
+2022-05-13: First version
