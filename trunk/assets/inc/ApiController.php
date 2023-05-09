@@ -30,6 +30,7 @@ class ApiController
         [
             'methods' => ['GET'],
             'callback' => [$self, 'handle_paseto_request'],
+            'permission_callback' => '__return_true',
         ],
         'schema' => [$self, 'get_request_schema'],
     ]);
