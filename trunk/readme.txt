@@ -4,7 +4,7 @@ Tags: affiliate, revoffers, 1o, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
 Tested up to: 6.0.0
 Requires PHP: 5.5
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,8 @@ Your customers are your customers! Collected data is only used to attribute your
 
 
 == Changelog ==
+
+2023-05-11: Resolve a bug caused by deprecations.
 
 2022-10-07: Introducing to Wordpress.org marketplace!
 

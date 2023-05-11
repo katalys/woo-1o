@@ -22,6 +22,7 @@ class ApiController
         [
             'methods' => ['GET', 'POST'],
             'callback' => [$self, 'handle_request'],
+            'permission_callback' => '__return_true',
         ],
         'schema' => [$self, 'get_request_schema'],
     ]);
