@@ -134,7 +134,7 @@ class ApiController
       log_debug("======= $directive ======");
       try {
         $resultsArray[] = self::process_directive($directive, $footer);
-      } catch (\Exception $e) {
+      } catch (\Throwable $e) {
         $resultsArray[] = [
             'source_id' => $directive['id'], // directive id
             'source_directive' => $directive['directive'], // directive name
