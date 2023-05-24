@@ -140,8 +140,8 @@ class ApiDirectives
           $retArr["title"] = $product->get_name(); //title
           $retArr["currency"] = get_woocommerce_currency();
           $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
-          $retArr["price"] = round($product->get_sale_price('view') * 100);
-          $retArr["compare_at_price"] = round($product->get_regular_price('view') * 100);
+          $retArr["price"] = round((float)$product->get_sale_price('view') * 100);
+          $retArr["compare_at_price"] = round((float)$product->get_regular_price('view') * 100);
           $prodDesc = $product->get_description();
           //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
           //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
@@ -165,8 +165,8 @@ class ApiDirectives
           $retArr["title"] = $product->get_name(); //title
           $retArr["currency"] = get_woocommerce_currency();
           $retArr["currency_sign"] = html_entity_decode(get_woocommerce_currency_symbol());
-          $retArr["price"] = round($product->get_sale_price('view') * 100);
-          $retArr["compare_at_price"] = round($product->get_regular_price('view') * 100);
+          $retArr["price"] = round((float)$product->get_sale_price('view') * 100);
+          $retArr["compare_at_price"] = round((float)$product->get_regular_price('view') * 100);
           $prodDesc = $product->get_description();
           //$retArr["summary_md"] = OneO_REST_DataController::concert_desc_to_markdown($prodDesc);
           //Only use the Markdown or HTML, not both. Markdown takes precedence over HTML.
