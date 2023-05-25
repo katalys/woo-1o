@@ -461,7 +461,7 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
   $countCart = WC()->cart->get_cart_contents_count();
   foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
     // Check if a shipping for the current package exist
-    if (WC()->session->isset('shipping_for_package_' . $package_id)) {
+    if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
       // Loop through shipping rates for the current package
       foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
         $rate_id = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
