@@ -1,5 +1,7 @@
 <?php
+
 namespace KatalysMerchantPlugin;
+
 use WC_Product_Factory;
 use DateInterval;
 use DateTime;
@@ -26,10 +28,10 @@ function paseto_create_token($sharedKey, $footer = '', $exp = OOMP_PASETO_EXP)
 {
   $sharedKey = new SymmetricKey($sharedKey);
   return Builder::getLocal($sharedKey)
-      ->setIssuedAt()
-      ->setNotBefore()
-      ->setExpiration((new DateTime())->add(new DateInterval($exp)))
-      ->setFooter($footer);
+    ->setIssuedAt()
+    ->setNotBefore()
+    ->setExpiration((new DateTime())->add(new DateInterval($exp)))
+    ->setFooter($footer);
 }
 
 /**
@@ -71,8 +73,8 @@ function paseto_decode_footer($token)
   }
   $pieces = explode('.', $token);
   return (count($pieces) === 4 && $pieces[3])
-      ? Base64UrlSafe::decode($pieces[3])
-      : false;
+    ? Base64UrlSafe::decode($pieces[3])
+    : false;
 }
 
 /**
@@ -186,9 +188,9 @@ function oneO_addWooOrder($orderData, $orderid)
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
   $args = [
-      'customer_id' => $user->ID,
-      'customer_note' => 'Created via 1o Merchant Plugin',
-      'created_via' => '1o API',
+    'customer_id' => $user->ID,
+    'customer_note' => 'Created via 1o Merchant Plugin',
+    'created_via' => '1o API',
   ];
   $order = wc_create_order($args);
   if (!empty($products)) {
@@ -402,17 +404,23 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
   $args['shipping-rates'] = [];
   $args['items_avail'] = [];
 
+  if (!isset(WC()->session)) {
+    WC()->session = new WC_Session_Handler();
+    WC()->session->init();
+  }
+
   if (!isset(WC()->cart)) {
     // initiallize the cart of not yet done.
     WC()->initialize_cart();
+    WC()->session->set_customer_session_cookie(true);
     if (!function_exists('wc_get_cart_item_data_hash')) {
       include_once WC_ABSPATH . 'includes/wc-cart-functions.php';
     }
   }
   if (isset(WC()->customer)) {
     $countryArr = [
-        "United States" => 'US',
-        "Canada" => 'CA',
+      "United States" => 'US',
+      "Canada" => 'CA',
     ];
     $sCountry = isset($linesRaw->data->order->shippingAddressCountry) ? $linesRaw->data->order->shippingAddressCountry : null;
     $sCountryC = isset($linesRaw->data->order->shippingAddressCountryCode) ? $linesRaw->data->order->shippingAddressCountryCode : null;
@@ -441,8 +449,8 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
       $product = $productTemp->get_product($product_id);
       $availability = $product->is_in_stock();
       $args['items_avail'][] = (object)[
-          "id" => $line->id,
-          "available" => $availability,
+        "id" => $line->id,
+        "available" => $availability,
       ];
     }
   }
@@ -467,9 +475,9 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
         $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
         //set up rates array for 1o
         $args['shipping-rates'][] = (object)[
-            "handle" => $method_id . '-' . $instance_id . '|' . ($itemPriceEx) . '|' . str_replace(" ", "-", $label_name),
-            "title" => $label_name,
-            "amount" => $itemPriceEx,
+          "handle" => $method_id . '-' . $instance_id . '|' . ($itemPriceEx) . '|' . str_replace(" ", "-", $label_name),
+          "title" => $label_name,
+          "amount" => $itemPriceEx,
         ];
       }
     }
@@ -529,9 +537,9 @@ function url_to_postId($url)
         $url_query = explode('=', $url_query[1]);
         if (isset($url_query[0]) && isset($url_query[1])) {
           $args = [
-              'name' => $url_query[1],
-              'post_type' => $url_query[0],
-              'showposts' => 1,
+            'name' => $url_query[1],
+            'post_type' => $url_query[0],
+            'showposts' => 1,
           ];
           if ($post = get_posts($args)) {
             return $post[0]->ID;
@@ -541,9 +549,9 @@ function url_to_postId($url)
       foreach ($GLOBALS['wp_post_types'] as $key => $value) {
         if (isset($_GET[$key]) && !empty($_GET[$key])) {
           $args = [
-              'name' => sanitize_text_field($_GET[$key]),
-              'post_type' => $key,
-              'showposts' => 1,
+            'name' => sanitize_text_field($_GET[$key]),
+            'post_type' => $key,
+            'showposts' => 1,
           ];
           if ($post = get_posts($args)) {
             return $post[0]->ID;
@@ -579,9 +587,9 @@ function url_to_postId($url)
   }
   $request_match = $url;
   foreach ((array)$rewrite as $match => $query) {
-//    if (!empty($url) && ($url != $request) && (strpos($match, $url) === 0)) {
-//      $request_match = $url . '/' . $request;
-//    }
+    //    if (!empty($url) && ($url != $request) && (strpos($match, $url) === 0)) {
+    //      $request_match = $url . '/' . $request;
+    //    }
     if (preg_match("!^$match!", $request_match, $matches)) {
       $query = preg_replace("!^.+\?!", '', $query);
       $query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
@@ -645,9 +653,9 @@ function url_to_postId($url)
       }
       if (isset($query['pagename']) && !empty($query['pagename'])) {
         $args = [
-            'name' => $query['pagename'],
-            'post_type' => ['post', 'page'], // Added post for custom permalink eg postname
-            'showposts' => 1,
+          'name' => $query['pagename'],
+          'post_type' => ['post', 'page'], // Added post for custom permalink eg postname
+          'showposts' => 1,
         ];
         if ($post = get_posts($args)) {
           return $post[0]->ID;
@@ -666,9 +674,9 @@ function url_to_postId($url)
               if (isset($matched[1]) && !in_array($matched[1], $post_types) && array_key_exists($matched[1], $query_vars)) {
                 $post_types[] = $matched[1];
                 $args = [
-                    'name' => $query_vars[$matched[1]],
-                    'post_type' => $matched[1],
-                    'showposts' => 1,
+                  'name' => $query_vars[$matched[1]],
+                  'post_type' => $matched[1],
+                  'showposts' => 1,
                 ];
                 if ($post = get_posts($args)) {
                   return $post[0]->ID;
