@@ -405,7 +405,7 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
   $args['items_avail'] = [];
 
   if (!isset(WC()->session)) {
-    WC()->session = new WC_Session_Handler();
+    WC()->session = new \WC_Session_Handler();
     WC()->session->init();
   }
 
