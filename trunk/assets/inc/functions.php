@@ -495,6 +495,8 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
 
   $args['tax_amt'] = round($taxTotal * 100);
   WC()->cart->empty_cart();
+
+  // $type logic not currently in use
   if ($type == 'tax_amt') {
     return $args['tax_amt'];
   } elseif ($type == 'shipping_rates') {

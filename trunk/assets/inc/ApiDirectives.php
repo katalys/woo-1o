@@ -63,7 +63,7 @@ class ApiDirectives
     $taxAmt = get_transient($this->order_id . '_taxamt');
     if ($taxAmt == '') {
       // calculate
-      $args = oneO_create_cart($this->order_id, $this->kid, $this->args, 'tax_amt');
+      $args = oneO_create_cart($this->order_id, $this->kid, $this->args);
     } else {
       $args = $this->args;
       $args['tax_amt'] = $taxAmt;
@@ -387,7 +387,7 @@ class ApiDirectives
   public function directive__update_availability()
   {
     log_debug('process_directive: update_availability', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
-    $args = oneO_create_cart($this->order_id, $this->kid, $this->args, 'items_avail');
+    $args = oneO_create_cart($this->order_id, $this->kid, $this->args);
 
     # Update Availability on GraphQL.
     $req = $this->_gqlRequest();
