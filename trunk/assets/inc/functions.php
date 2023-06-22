@@ -321,7 +321,7 @@ function oneO_addWooOrder($orderData, $orderid)
   //$order->set_shipping_tax(0);
   $order->set_total($orderTotal);
   $order->calculate_totals();
-  $order->update_status('completed', 'added by 1o - order:' . $orderid);
+  $order->update_status('processing', 'added by 1o - order:' . $orderid);
   $order->update_meta_data('_is-1o-order', '1');
   $order->update_meta_data('_1o-order-number', $orderid);
   $orderKey = $order->get_order_key();
