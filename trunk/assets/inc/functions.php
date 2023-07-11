@@ -594,7 +594,7 @@ function url_to_postId($url)
     //    }
     if (preg_match("!^$match!", $request_match, $matches)) {
       $query = preg_replace("!^.+\?!", '', $query);
-      $query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
+      $query = addslashes(\WP_MatchesMapRegex::apply($query, $matches));
       global $wp;
       parse_str($query, $query_vars);
       $query = [];
