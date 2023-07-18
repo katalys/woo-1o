@@ -663,7 +663,7 @@ function url_to_postId($url)
           return $post[0]->ID;
         }
       }
-      $query = new WP_Query($query);
+      $query = new \WP_Query($query);
       if (!empty($query->posts) && $query->is_singular) {
         return $query->post->ID;
       } else {
