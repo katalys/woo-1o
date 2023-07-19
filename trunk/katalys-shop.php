@@ -3,14 +3,14 @@
 Plugin Name: Katalys Shop
 URI: https://katalys.com/
 Description: Merchant bridge to allow automatic order fulfillment within Katalys + 1o Shop cart connections.
-Version: 1.1.8
+Version: 1.1.9
 Author: Katalys
 Author URI: https://katalys.com/
 Text Domain: katalys-shop
 */
 namespace KatalysMerchantPlugin;
 
-const OOMP_VER_NUM = '1.1.8'; // version, should match "Version:" above
+const OOMP_VER_NUM = '1.1.9'; // version, should match "Version:" above
 const OOMP_TEXT_DOMAIN = 'katalys-shop'; // filename for the plugin, should match "Text Domain:" above
 const OOMP_NAMESPACE = '1o-to-store-api'; // namespace for API endpoint
 const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time, use 'PT05M' for production, 'P01Y' for dev
