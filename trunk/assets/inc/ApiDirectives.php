@@ -79,12 +79,22 @@ class ApiDirectives
         && isset($oORequest->data->healthCheck)
         && $oORequest->data->healthCheck == 'ok'
     ) {
+      $allPlugins = get_plugins();
+      $activePlugins = get_option('active_plugins'); 
+      $plugins = [];
+      foreach ($activePlugins as $p) {
+        array_push($plugins, (object)[
+          'plugin' => $allPlugins[$p]['Name'],
+          'version' => $allPlugins[$p]['Version'],
+        ]);
+      }
       return [
           'status' => self::OK,
           'data' => (object)[
               'healthy' => true,
               'internal_error' => null,
               'public_error' => null,
+              'plugins_list' => $plugins,
           ],
       ];
     }
