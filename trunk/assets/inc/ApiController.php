@@ -142,6 +142,7 @@ class ApiController
             'data' => [
                 'message' => $e->getMessage(),
                 'details' => $e->getTraceAsString(),
+                'backtrace' => $e->getTrace(),
             ],
         ];
       }
