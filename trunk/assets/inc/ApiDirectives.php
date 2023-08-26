@@ -249,6 +249,9 @@ class ApiDirectives
       $options = $product->get_attributes('view');
       if (is_array($options) && !empty($options)) {
         foreach ($options as $opk => $opv) {
+          if (!isset($opv['variation']) || !$opv['variation']) {
+            continue;
+          }
           $optArray = [];
           $data = $opv->get_data();
           $optArrName = $opv->get_taxonomy_object()->attribute_label;
