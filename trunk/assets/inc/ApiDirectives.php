@@ -165,9 +165,9 @@ class ApiDirectives
           //$retArr['sku'] = $product->get_sku();
           //TODO: SKU needs to be added on 1o end still.
           $options = self::import__product_options($product);
-          $retArr["option_names"] = $options['group'];
-          $retArr["variant"] = false; //bool
-          $retArr["variants"] = []; //empty array (no variants)
+          if (isset($options['group'])) {
+            $retArr["option_names"] = $options['group'];
+          }
           //$retArr["available"] = $product->is_in_stock();
           //TODO: Product Availability Boolean needs to be added on 1o end still.
           $returnObj = (object)$retArr;
@@ -193,14 +193,19 @@ class ApiDirectives
           //$retArr['sku'] = $product->get_sku();
           //TODO: SKU needs to be added on 1o end still.
           $options = self::import__product_options($product);
-          $retArr["option_names"] = $options['group'];
-          $retArr["variant"] = false; //bool
-          $variants = $product->get_available_variations();
-          $processedVariants = [];
-          if (is_array($variants) && !empty($variants)) {
-            $processedVariants = self::import__process_variants($variants, $options['names'], $retArr["title"], $retArr["currency"], $retArr["currency_sign"]);
+          if (isset($options['group'])) {
+            $retArr["option_names"] = $options['group'];
           }
-          $retArr["variants"] = $processedVariants;
+          $variants = $product->get_available_variations();
+          if (is_array($variants) && !empty($variants)) {
+            $retArr["variants"] = self::import__process_variants(
+              $variants,
+              isset($options['names']) ? $options['names'] : [],
+              $retArr["title"],
+              $retArr["currency"],
+              $retArr["currency_sign"]
+            );
+          }
           //$retArr["available"] = $product->is_in_stock();
           //TODO: Product Availability Boolean needs to be added on 1o end still.
           $returnObj = (object)$retArr;
@@ -232,6 +237,34 @@ class ApiDirectives
     return $retArr;
   }
 
+  /**
+   * @param $product
+   * @return array
+   */
+  private static function getOptionsVariations($product)
+  {
+    if (!method_exists($product, 'get_available_variations')) {
+      return [];
+    }
+    $products = $product->get_available_variations();
+    if (!is_array($products)) {
+      return [];
+    }
+
+    $optionsVariations = [];
+    foreach ($products as $data) {
+      if (!isset($data['attributes'])) {
+        continue;
+      }
+      $attributes = array_map(function ($value) {
+        return str_replace('attribute_', '', $value);
+      }, array_keys($data['attributes']));
+      foreach ($attributes as $attribute) {
+        $optionsVariations[$attribute] = $attribute;
+      }
+    }
+    return $optionsVariations;
+  }
 
   /**
    * Get array of options from a product.
@@ -241,50 +274,52 @@ class ApiDirectives
    */
   private static function import__product_options($product)
   {
-    $optGroup = [];
-    $optList = [];
-    $optList2 = [];
-
+    $return = [];
     if (is_object($product)) {
       $options = $product->get_attributes('view');
-      if (is_array($options) && !empty($options)) {
-        foreach ($options as $opk => $opv) {
-          if (!isset($opv['variation']) || !$opv['variation']) {
-              continue;
-          }
-          $optArray = [];
-          $data = $opv->get_data();
-          $optArrName = $opv->get_taxonomy_object()->attribute_label;
-          $optArray['name'] = $optArrName;
-          $optArray['position'] = $data['position'] + 1;
-          $optList2[$opk] = $optArrName;
-          if (is_array($data['options']) && !empty($data['options'])) {
-            $pv = 1;
-            foreach ($data['options'] as $dok => $dov) {
-              $dovName = get_term($dov)->name;
-              $dovSlug = get_term($dov)->slug;
-              $optArray['options'][] = (object)[
-                  "name" => $dovName,
-                  "position" => $pv,
-              ];
-              $optList[$opk][$dovSlug] = $dovName;
-              $optList2[$dovSlug] = $dovName;
-              $pv++;
-            }
-            $optGroup[] = [
-                "name" => $optArray['name'],
-                "position" => $optArray['position'],
-                "options" => $optArray['options'],
-            ];
-          }
+      $variationAttributes = self::getOptionsVariations($product);
+      if (!$variationAttributes) {
+        return [];
+      }
+
+      if (!$options) {
+        return [];
+      }
+
+      foreach ($variationAttributes as $attribute) {
+        if (!isset($options[$attribute])) {
+          continue;
         }
+        $opv = $options[$attribute];
+        $optArray = [];
+        $data = $opv->get_data();
+        $optArrName = $opv->get_taxonomy_object()->attribute_label;
+        $optArray['name'] = $optArrName;
+        $optArray['position'] = $data['position'] + 1;
+        $return['names'][$attribute] = $optArrName;
+        if (!is_array($data['options']) || empty($data['options'])) {
+          continue;
+        }
+        $pv = 1;
+        foreach ($data['options'] as $dok => $dov) {
+          $dovName = get_term($dov)->name;
+          $dovSlug = get_term($dov)->slug;
+          $optArray['options'][] = (object)[
+            "name" => $dovName,
+            "position" => $pv,
+          ];
+          $return['list'][$attribute][$dovSlug] = $dovName;
+          $return['names'][$dovSlug] = $dovName;
+          $pv++;
+        }
+        $return['group'][] = [
+          "name" => $optArray['name'],
+          "position" => $optArray['position'],
+          "options" => $optArray['options'],
+        ];
       }
     }
-    return [
-        'group' => $optGroup,
-        'list' => $optList,
-        'names' => $optList2,
-    ];
+    return $return;
   }
 
   /**
