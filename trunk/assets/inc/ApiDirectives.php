@@ -76,26 +76,29 @@ class ApiDirectives
     # Step 2: Do Health Check Request
     $oORequest = $this->_gqlRequest()->api_health_check();
     if ($oORequest
-        && isset($oORequest->data->healthCheck)
-        && $oORequest->data->healthCheck == 'ok'
+      && isset($oORequest->data->healthCheck)
+      && $oORequest->data->healthCheck == 'ok'
     ) {
       $allPlugins = get_plugins();
-      $activePlugins = get_option('active_plugins'); 
+      $activePlugins = get_option('active_plugins');
       $plugins = [];
       foreach ($activePlugins as $p) {
         array_push($plugins, (object)[
           'plugin' => $allPlugins[$p]['Name'],
           'version' => $allPlugins[$p]['Version'],
+          'Author' => $allPlugins[$p]['Author'],
+          'AuthorURI' => $allPlugins[$p]['AuthorURI'],
+          'TextDomain' => $allPlugins[$p]['TextDomain']
         ]);
       }
       return [
-          'status' => self::OK,
-          'data' => (object)[
-              'healthy' => true,
-              'internal_error' => null,
-              'public_error' => null,
-              'plugins_list' => $plugins,
-          ],
+        'status' => self::OK,
+        'data' => (object)[
+          'healthy' => true,
+          'internal_error' => null,
+          'public_error' => null,
+          'plugins_list' => $plugins,
+        ],
       ];
     }
 
@@ -462,6 +465,7 @@ class ApiDirectives
     # Step 3b: Do request to graphql to complete order.
     // Pass Woo order ID in external data
     $args['external-data'] = ['WooID' => $newOrderID];
+    $args['external_id'] = $newOrderID;
     if ($newOrderID) {
       $args['fulfilled-status'] = 'FULFILLED';
     } else {

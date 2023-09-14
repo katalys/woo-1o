@@ -158,12 +158,20 @@ class GraphQLRequest
   {
     $fulfillStatus = isset($args['fulfilled-status']) ? $args['fulfilled-status'] : 'unknown';
     $externalData = isset($args['external-data']) ? $args['external-data'] : '';
+    if (isset($args['external_id']) && $args['external_id']) {
+      $externalId = $args['external_id'];
+    } else if(isset($args['external-data']['WooID']) && $args['external-data']['WooID']) {
+      $externalId = $args['external-data']['WooID'];
+    } else {
+      $externalId = '';
+    }
     return $this->rawGraphQL([
         'query' => 'mutation CompleteOrder($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id fulfillmentStatus externalData}}',
         'variables' => [
             'id' => $orderId,
             'input' => [
                 'fulfillmentStatus' => $fulfillStatus,
+                'externalId' => $externalId,
                 'externalData' => json_encode($externalData, JSON_UNESCAPED_SLASHES),
             ],
         ],
