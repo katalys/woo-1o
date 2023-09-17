@@ -48,7 +48,7 @@ if (is_admin()) {
  * @return array $columns
  */
 add_filter('manage_edit-shop_order_columns', function ($columns) {
-  $columns['oneo_order_type'] = '1o Order';
+  $columns['oneo_order_type'] = 'Katalys Order';
   return $columns;
 });
 
@@ -62,9 +62,17 @@ add_action('manage_shop_order_posts_custom_column', function ($column) {
   global $post;
   if ('oneo_order_type' === $column) {
     $order = wc_get_order($post->ID);
-    $isOneO = $order->get_meta('_is-1o-order', true, 'view');
+    if ($order->get_meta('_is-1o-order', true, 'view')) {
+      $isOneO = $order->get_meta('_is-1o-order', true, 'view');
+    } else {
+      $isOneO = $order->get_meta('_is-katalys-order', true, 'view');
+    }
     if ($isOneO) {
-      echo esc_attr($order->get_meta('_1o-order-number', true, 'view'));
+      if ($order->get_meta('_1o-order-number', true, 'view')) {
+        echo esc_attr($order->get_meta('_1o-order-number', true, 'view'));
+      } else {
+        echo esc_attr($order->get_meta('_katalys-order-number', true, 'view'));
+      }
     }
   }
 });
