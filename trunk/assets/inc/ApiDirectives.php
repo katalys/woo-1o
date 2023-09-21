@@ -438,7 +438,19 @@ class ApiDirectives
   public function directive__update_availability()
   {
     log_debug('process_directive: update_availability', '[$kid]:' . $this->kid . ' | [order_id]:' . $this->order_id);
-    $args = oneO_create_cart($this->order_id, $this->kid, $this->args);
+    try {
+      $args = oneO_create_cart($this->order_id, $this->kid, $this->args);
+    } catch (\Exception $e) {
+      $args['shipping-rates'] = [];
+      $args['items_avail'] = [];
+      $lines = isset($linesRaw->data->order->lineItems) ? $linesRaw->data->order->lineItems : [];
+      foreach ($lines as $line) {
+        $args['items_avail'][] = (object)[
+          "id" => $line->id,
+          "available" => false,
+        ];
+      }
+    }
 
     # Update Availability on GraphQL.
     $req = $this->_gqlRequest();

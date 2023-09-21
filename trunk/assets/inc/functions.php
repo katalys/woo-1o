@@ -443,11 +443,15 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
     foreach ($lines as $line) {
       $product_id = $line->productExternalId;
       $quantity = $line->quantity;
-      WC()->cart->add_to_cart($product_id, $quantity);
+      $addToCart = WC()->cart->add_to_cart($product_id, $quantity);
 
       $productTemp = new WC_Product_Factory();
       $product = $productTemp->get_product($product_id);
-      $availability = $product->is_in_stock();
+      if ($addToCart === false) {
+        $availability = false;
+      } else {
+        $availability = $product->is_in_stock();
+      }
       $args['items_avail'][] = (object)[
         "id" => $line->id,
         "available" => $availability,
@@ -470,7 +474,6 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
         $label_name = $shipping_rate->get_label(); // The label name of the method
         $cost = $shipping_rate->get_cost(); // The cost without tax
         $tax_cost = $shipping_rate->get_shipping_tax(); // The tax cost
-        //$taxes       = $shipping_rate->get_taxes(); // The taxes details (array)
         $itemPriceEx = round($cost * 100);
         $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
         //set up rates array for 1o
