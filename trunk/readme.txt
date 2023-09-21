@@ -4,7 +4,7 @@ Tags: affiliate, revoffers, 1o, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
 Tested up to: 6.0.0
 Requires PHP: 7.0
-Stable tag: 1.1.11
+Stable tag: 1.1.12
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,11 @@ Your customers are your customers! Collected data is only used to attribute your
 
 
 == Changelog ==
+
+= 1.1.12 =
+* Change attribute meta, external_data, and external_id.
+* Improve API, fix problem with directive update availability
+* Changed data external_id that send for katalys platform.
 
 2023-05-11: Resolve a bug caused by deprecations.
 
