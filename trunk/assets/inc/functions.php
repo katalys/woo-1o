@@ -168,7 +168,7 @@ function oneO_addWooOrder($orderData, $orderid)
   $wooOrderkey = isset($externalData->WooID) && $externalData->WooID != '' ? $externalData->WooID : false;
   log_debug('externalData', $externalData);
   if ($wooOrderkey !== false) {
-    $checkKey = oneO_order_key_exists($wooOrderkey);
+    $checkKey = oneO_order_key_exists($orderid, ['_katalys-order-number', '_1o-order-number']);
     // if order key exists, order has already been porcessed.
     if ($checkKey) {
       /**
@@ -189,8 +189,8 @@ function oneO_addWooOrder($orderData, $orderid)
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
   $args = [
     'customer_id' => $user->ID,
-    'customer_note' => 'Created via 1o Merchant Plugin',
-    'created_via' => '1o API',
+    'customer_note' => 'Created via Katalys Merchant Plugin',
+    'created_via' => 'Katalys API',
   ];
   $order = wc_create_order($args);
   if (!empty($products)) {
@@ -321,12 +321,12 @@ function oneO_addWooOrder($orderData, $orderid)
   //$order->set_shipping_tax(0);
   $order->set_total($orderTotal);
   $order->calculate_totals();
-  $order->update_status('processing', 'added by 1o - order:' . $orderid);
-  $order->update_meta_data('_is-1o-order', '1');
-  $order->update_meta_data('_1o-order-number', $orderid);
+  $order->update_status('processing', 'added by Katalys - order:' . $orderid);
+  $order->update_meta_data('_is-katalys-order', '1');
+  $order->update_meta_data('_katalys-order-number', $orderid);
   $orderKey = $order->get_order_key();
   $order->save();
-  return $orderKey;
+  return $order->get_id();
 }
 
 /**
@@ -374,13 +374,18 @@ function oneO_doSplitName($name)
  * @param string $key Name of the meta_key that will contain the value
  * @return bool
  */
-function oneO_order_key_exists($orderKey, $key = "_order_key")
+function oneO_order_key_exists($orderKey, $key = ["_order_key"])
 {
   if (!$orderKey) {
     return false;
   }
   global $wpdb;
-  $orderQuery = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->postmeta WHERE `meta_key` = '%s' AND `meta_value` = '%s' LIMIT 1;", [$key, $orderKey]));
+  $orderQuery = $wpdb->get_results(
+    $wpdb->prepare(
+      "SELECT * FROM $wpdb->postmeta WHERE `meta_key` IN('" . implode("','", $key) . "') AND `meta_value` = '%s' LIMIT 1;",
+      [$orderKey]
+    )
+  );
   log_debug('orderQuery', $orderQuery);
 
   return isset($orderQuery[0]);
