@@ -168,10 +168,10 @@ class GraphQLRequest
     return $this->rawGraphQL([
         'query' => 'mutation CompleteOrder($id: ID!, $input: OrderInput!){updateOrder(id: $id, input: $input){id fulfillmentStatus externalData}}',
         'variables' => [
-            'id' => $orderId,
+            'id' => (string)$orderId,
             'input' => [
-                'fulfillmentStatus' => $fulfillStatus,
-                'externalId' => $externalId,
+                'fulfillmentStatus' => (string)$fulfillStatus,
+                'externalId' => (string)$externalId,
                 'externalData' => json_encode($externalData, JSON_UNESCAPED_SLASHES),
             ],
         ],
