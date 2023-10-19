@@ -14,6 +14,9 @@ const OOMP_VER_NUM = '1.1.14'; // version, should match "Version:" above
 const OOMP_TEXT_DOMAIN = 'katalys-shop'; // filename for the plugin, should match "Text Domain:" above
 const OOMP_NAMESPACE = '1o-to-store-api'; // namespace for API endpoint
 const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time, use 'PT05M' for production, 'P01Y' for dev
+
+const KATALYS_COUPON_FREE_SHIPPING = '_KS_FREE_SHIPPING_KS_';
+
 define('OOMP_LOC_URL', plugins_url('assets', __FILE__)); // absolute URL path
 
 // If this file is called directly, abort
@@ -51,6 +54,8 @@ add_filter('manage_edit-shop_order_columns', function ($columns) {
   $columns['oneo_order_type'] = 'Katalys Order';
   return $columns;
 });
+
+validateCouponKatalys();
 
 /**
  * Add data to 1o Order Column on order list page.
