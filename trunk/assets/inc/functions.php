@@ -185,6 +185,7 @@ function oneO_addWooOrder($orderData, $orderid)
 
   $products = $orderData['products'];
   $discount = null;
+  $totalDiscount = 0;
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
   $args = [
@@ -208,15 +209,21 @@ function oneO_addWooOrder($orderData, $orderid)
           'quantity' => qty (int)
       */
       if ($prod->get_price() != ($product['price'])) {
-        $args['subtotal'] = ($product['price']);
+        $args['subtotal'] = $prod->get_price();
         $args['total'] = ($product['total']);
         $discount = ($product['price']) - $prod->get_price();
+        $totalDiscount += $discount;
         $discount_string = "katalys.com discount";
         $order->add_coupon($discount_string, $discount, 0);
       }
       $order->add_product($prod, $product['qty'], $args);
     }
   }
+
+  if ($totalDiscount > 0.00) {
+    $order->set_discount_total($totalDiscount);
+  }
+  addCouponFreeShippingInOrder($order);
 
   /* Billing Data */
   $bName = $orderData['billing']['billName'];
@@ -327,6 +334,29 @@ function oneO_addWooOrder($orderData, $orderid)
   $orderKey = $order->get_order_key();
   $order->save();
   return $order->get_id();
+}
+
+/**
+ * Apply coupon for free shipping if exists.
+ *
+ * @return bool
+ */
+function addCouponFreeShippingInOrder($order, $discount = 0)
+{
+  try {
+    $couponCode = KATALYS_COUPON_FREE_SHIPPING;
+    add_filter('katalys_coupon_is_valid', function () {
+      return true;
+    });
+    $couponData = new \WC_Coupon($couponCode);
+    if (!$couponData->get_id()) {
+      return false;
+    }
+    $order->add_coupon($couponCode, $discount, 0);
+    return true;
+  } catch (\Exception $e) {
+    return false;
+  }
 }
 
 /**
