@@ -8,7 +8,11 @@ class ComposerStaticInit79d1f8ed4f330b9e8b356cb109593cfd
 {
     public static $files = array (
         '3109cb1a231dcd04bee1f9f620d46975' => __DIR__ . '/..' . '/paragonie/sodium_compat/autoload.php',
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
+        '3253b43614197c132b67e5f343def5b7' => __DIR__ . '/..' . '/paragonie/easy-ecc/autoload-shim.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -18,8 +22,35 @@ class ComposerStaticInit79d1f8ed4f330b9e8b356cb109593cfd
         ),
         'P' => 
         array (
+            'Psr\\Http\\Message\\' => 17,
+            'Psr\\Http\\Client\\' => 16,
             'ParagonIE\\Paseto\\' => 17,
+            'ParagonIE\\EasyECC\\' => 18,
+            'ParagonIE\\Corner\\' => 17,
             'ParagonIE\\ConstantTime\\' => 23,
+        ),
+        'O' => 
+        array (
+            'OneO\\' => 5,
+        ),
+        'M' => 
+        array (
+            'Mdanter\\Ecc\\' => 12,
+        ),
+        'G' => 
+        array (
+            'GuzzleHttp\\Psr7\\' => 16,
+            'GuzzleHttp\\Promise\\' => 19,
+            'GuzzleHttp\\' => 11,
+            'GraphQL\\' => 8,
+        ),
+        'F' => 
+        array (
+            'FG\\' => 3,
+        ),
+        'D' => 
+        array (
+            'Defuse\\Crypto\\' => 14,
         ),
     );
 
@@ -28,13 +59,62 @@ class ComposerStaticInit79d1f8ed4f330b9e8b356cb109593cfd
         array (
             0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
         ),
+        'Psr\\Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
+        ),
+        'Psr\\Http\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-client/src',
+        ),
         'ParagonIE\\Paseto\\' => 
         array (
             0 => __DIR__ . '/..' . '/paragonie/paseto/src',
         ),
+        'ParagonIE\\EasyECC\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/paragonie/easy-ecc/src',
+        ),
+        'ParagonIE\\Corner\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/paragonie/corner/src',
+        ),
         'ParagonIE\\ConstantTime\\' => 
         array (
             0 => __DIR__ . '/..' . '/paragonie/constant_time_encoding/src',
+        ),
+        'OneO\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/1o/php-utils/src',
+        ),
+        'Mdanter\\Ecc\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mdanter/ecc/src',
+        ),
+        'GuzzleHttp\\Psr7\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
+        ),
+        'GuzzleHttp\\Promise\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/promises/src',
+        ),
+        'GuzzleHttp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
+        'GraphQL\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/gmostafa/php-graphql-client/src',
+        ),
+        'FG\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/fgrosse/phpasn1/lib',
+        ),
+        'Defuse\\Crypto\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/defuse/php-encryption/src',
         ),
     );
 

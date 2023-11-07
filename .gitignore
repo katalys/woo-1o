@@ -7,3 +7,4 @@ trunk/vendor/paragonie/paseto/tests/
 trunk/vendor/paragonie/paseto/.*
 *.zip
 .idea
+.env

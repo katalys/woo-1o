@@ -5,6 +5,6 @@
     "php": ">=7.0",
     "ext-mbstring": "*",
     "ext-json": "*",
-    "paragonie/paseto": "^1.1"
+    "1o/php-utils": "dev-dev"
   }
 }
