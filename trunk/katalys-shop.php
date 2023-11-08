@@ -52,6 +52,20 @@ add_filter('manage_edit-shop_order_columns', function ($columns) {
   return $columns;
 });
 
+add_filter( 'woocommerce_coupon_error', function ($err, $err_code, $object) {
+  if (!function_exists('wc_add_notice')) {
+    return '';
+  }
+  return $err;
+}, 10, 3);
+
+add_filter( 'woocommerce_coupon_message', function ($msg, $msg_code, $object) {
+  if (!function_exists('wc_add_notice')) {
+    return '';
+  }
+  return $msg;
+}, 10, 3);
+
 /**
  * Add data to 1o Order Column on order list page.
  *

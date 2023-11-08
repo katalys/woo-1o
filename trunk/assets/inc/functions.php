@@ -494,6 +494,9 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
   $taxTotal = 0;
   if (is_array($taxesArray) && !empty($taxesArray)) {
     foreach ($taxesArray as $taxCode => $taxAmt) {
+      if (!is_numeric($taxAmt)) {
+        $taxAmt = 0;
+      }
       $taxTotal = $taxTotal + $taxAmt;
     }
   }
