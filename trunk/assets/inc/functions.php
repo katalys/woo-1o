@@ -491,18 +491,18 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
     }
   }
   $taxesArray = WC()->cart->get_taxes();
-  $taxTotal = 0;
+  $taxTotal = 0.00;
   if (is_array($taxesArray) && !empty($taxesArray)) {
     foreach ($taxesArray as $taxCode => $taxAmt) {
       if (!is_numeric($taxAmt)) {
-        $taxAmt = 0;
+        $taxAmt = 0.00;
       }
-      $taxTotal = $taxTotal + $taxAmt;
+      $taxTotal = (float)$taxTotal + (float)$taxAmt;
     }
   }
 
   // Save to database temporarily, will be read by directive__update_tax_amounts()
-  set_transient($orderId . '_taxamt', $taxTotal, 60);
+  set_transient($orderId . '_taxamt', $taxTotal * 100, 60);
 
   $args['tax_amt'] = round($taxTotal * 100);
   WC()->cart->empty_cart();
