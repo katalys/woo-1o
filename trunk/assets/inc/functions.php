@@ -337,6 +337,22 @@ function oneO_addWooOrder($orderData, $orderid)
 }
 
 /**
+ * @return array
+ */
+function getCouponKS()
+{
+  global $wpdb;
+  $coupons = $wpdb->get_results(
+    $wpdb->prepare(
+      "SELECT post_title FROM $wpdb->posts WHERE post_title LIKE %s AND post_type = 'shop_coupon' AND post_status = 'publish' ORDER BY post_date DESC",
+      wc_sanitize_coupon_code( KATALYS_COUPON_FREE_SHIPPING . '%' )
+    )
+  );
+  log_debug('COUPONS KS_', $coupons);
+  return $coupons;
+}
+
+/**
  * Apply coupon for free shipping if exists.
  *
  * @return bool
@@ -344,15 +360,18 @@ function oneO_addWooOrder($orderData, $orderid)
 function addCouponFreeShippingInOrder($order, $discount = 0)
 {
   try {
-    $couponCode = KATALYS_COUPON_FREE_SHIPPING;
-    add_filter('katalys_coupon_is_valid', function () {
-      return true;
-    });
-    $couponData = new \WC_Coupon($couponCode);
-    if (!$couponData->get_id()) {
-      return false;
+    $coupons = getCouponKS();
+    foreach ($coupons as $couponObject) {
+      $couponCode = $couponObject->post_title;
+      add_filter('katalys_coupon_is_valid', function () {
+        return true;
+      });
+      $couponData = new \WC_Coupon($couponCode);
+      if (!$couponData->get_id()) {
+        continue;
+      }
+      $order->add_coupon($couponCode, $discount, 0);
     }
-    $order->add_coupon($couponCode, $discount, 0);
     return true;
   } catch (\Exception $e) {
     return false;
@@ -550,22 +569,27 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
 function addCouponFreeShipping()
 {
   try {
-    $couponCode = KATALYS_COUPON_FREE_SHIPPING;
-    add_filter('katalys_coupon_is_valid', function () {
-      return true;
-    });
-    $couponData = new \WC_Coupon($couponCode);
-    if (!$couponData->get_id()) {
-      return false;
-    }
+    $coupons = getCouponKS();
+    $return = false;
+    foreach ($coupons as $couponObject) {
+      $couponCode = $couponObject->post_title;
+      add_filter('katalys_coupon_is_valid', function () {
+        return true;
+      });
+      $couponData = new \WC_Coupon($couponCode);
+      if (!$couponData->get_id()) {
+        continue;
+      }
 
-    $discounts = new \WC_Discounts(WC()->cart);
-    $valid = $discounts->is_coupon_valid( $couponData );
-    if ( is_wp_error( $valid ) ) {
-      return false;
+      $discounts = new \WC_Discounts(WC()->cart);
+      $valid = $discounts->is_coupon_valid( $couponData );
+      if ( is_wp_error( $valid ) ) {
+        continue;
+      }
+      WC()->cart->apply_coupon($couponCode);
+      $return = true;
     }
-    WC()->cart->apply_coupon($couponCode);
-    return true;
+    return $return;
   } catch (\Exception $e) {
     return false;
   }
@@ -577,14 +601,16 @@ function addCouponFreeShipping()
 function validateCouponKatalys()
 {
   add_filter('woocommerce_coupon_is_valid_for_cart', function ($isType, $coupon) {
-    if (strtoupper($coupon->get_code()) == KATALYS_COUPON_FREE_SHIPPING) {
+    $couponCode = strtoupper($coupon->get_code());
+    if (substr($couponCode, 0, 3) == KATALYS_COUPON_FREE_SHIPPING) {
       return false;
     }
     return $isType;
   }, 10, 2);
 
   add_filter('woocommerce_coupon_is_valid', function ($isValid, $coupon) {
-    if (strtoupper($coupon->get_code()) == KATALYS_COUPON_FREE_SHIPPING && !apply_filters( 'katalys_coupon_is_valid', false)) {
+    $couponCode = strtoupper($coupon->get_code());
+    if (substr($couponCode, 0, 3) == KATALYS_COUPON_FREE_SHIPPING && !apply_filters( 'katalys_coupon_is_valid', false)) {
       return false;
     }
     return $isValid;

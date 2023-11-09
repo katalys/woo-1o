@@ -15,7 +15,10 @@ const OOMP_TEXT_DOMAIN = 'katalys-shop'; // filename for the plugin, should matc
 const OOMP_NAMESPACE = '1o-to-store-api'; // namespace for API endpoint
 const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time, use 'PT05M' for production, 'P01Y' for dev
 
-const KATALYS_COUPON_FREE_SHIPPING = '_KS_FREE_SHIPPING_KS_';
+/**
+ * @const string
+ */
+const KATALYS_COUPON_FREE_SHIPPING = 'KS_';
 
 define('OOMP_LOC_URL', plugins_url('assets', __FILE__)); // absolute URL path
 
