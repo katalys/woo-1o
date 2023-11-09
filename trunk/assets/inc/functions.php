@@ -211,7 +211,7 @@ function oneO_addWooOrder($orderData, $orderid)
       if ($prod->get_price() != ($product['price'])) {
         $args['subtotal'] = $prod->get_price();
         $args['total'] = ($product['total']);
-        $discount = ($product['price']) - $prod->get_price();
+        $discount = ($product['price'] - $prod->get_price()) * ((int)$product['qty'] ?? 1);
         $totalDiscount += $discount;
         $discount_string = "katalys.com discount";
         $order->add_coupon($discount_string, $discount, 0);
@@ -220,7 +220,7 @@ function oneO_addWooOrder($orderData, $orderid)
     }
   }
 
-  if ($totalDiscount > 0.00) {
+  if ($totalDiscount > 0.00 || $totalDiscount < 0.00) {
     $order->set_discount_total($totalDiscount);
   }
   addCouponFreeShippingInOrder($order);
