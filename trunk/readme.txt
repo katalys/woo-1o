@@ -4,7 +4,7 @@ Tags: affiliate, revoffers, 1o, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
 Tested up to: 6.3.1
 Requires PHP: 7.0
-Stable tag: 1.1.14
+Stable tag: 1.1.15
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,11 @@ Your customers are your customers! Collected data is only used to attribute your
 
 
 == Changelog ==
+
+= 1.1.15 =
+* Fix error with function wc_add_notice
+* Fix error with calculating tax
+* New feature - You can add coupons with the prefix KS_ and Woocommerce will use it automatically when the order is from Katalys platform.
 
 = 1.1.14 =
 * Fix error with variable type
