@@ -185,6 +185,7 @@ function oneO_addWooOrder($orderData, $orderid)
 
   $products = $orderData['products'];
   $discount = null;
+  $totalDiscount = 0;
   $random_password = wp_generate_password(12, false);
   $user = email_exists($email) !== false ? get_user_by('email', $email) : wp_create_user($email, $random_password, $email);
   $args = [
@@ -208,15 +209,21 @@ function oneO_addWooOrder($orderData, $orderid)
           'quantity' => qty (int)
       */
       if ($prod->get_price() != ($product['price'])) {
-        $args['subtotal'] = ($product['price']);
+        $args['subtotal'] = $prod->get_price();
         $args['total'] = ($product['total']);
-        $discount = ($product['price']) - $prod->get_price();
+        $discount = ($product['price'] - $prod->get_price()) * ((int)$product['qty'] ?? 1);
+        $totalDiscount += $discount;
         $discount_string = "katalys.com discount";
         $order->add_coupon($discount_string, $discount, 0);
       }
       $order->add_product($prod, $product['qty'], $args);
     }
   }
+
+  if ($totalDiscount > 0.00 || $totalDiscount < 0.00) {
+    $order->set_discount_total($totalDiscount);
+  }
+  addCouponFreeShippingInOrder($order);
 
   /* Billing Data */
   $bName = $orderData['billing']['billName'];
@@ -327,6 +334,48 @@ function oneO_addWooOrder($orderData, $orderid)
   $orderKey = $order->get_order_key();
   $order->save();
   return $order->get_id();
+}
+
+/**
+ * @return array
+ */
+function getCouponKS()
+{
+  global $wpdb;
+  $coupons = $wpdb->get_results(
+    $wpdb->prepare(
+      "SELECT post_title FROM $wpdb->posts WHERE post_title LIKE %s AND post_type = 'shop_coupon' AND post_status = 'publish' ORDER BY post_date DESC",
+      wc_sanitize_coupon_code( KATALYS_COUPON_FREE_SHIPPING . '%' )
+    )
+  );
+  log_debug('COUPONS KS_', $coupons);
+  return $coupons;
+}
+
+/**
+ * Apply coupon for free shipping if exists.
+ *
+ * @return bool
+ */
+function addCouponFreeShippingInOrder($order, $discount = 0)
+{
+  try {
+    $coupons = getCouponKS();
+    foreach ($coupons as $couponObject) {
+      $couponCode = $couponObject->post_title;
+      add_filter('katalys_coupon_is_valid', function () {
+        return true;
+      });
+      $couponData = new \WC_Coupon($couponCode);
+      if (!$couponData->get_id()) {
+        continue;
+      }
+      $order->add_coupon($couponCode, $discount, 0);
+    }
+    return true;
+  } catch (\Exception $e) {
+    return false;
+  }
 }
 
 /**
@@ -467,21 +516,20 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
   WC()->cart->maybe_set_cart_cookies();
   WC()->cart->calculate_shipping();
   WC()->cart->calculate_totals();
-  $countCart = WC()->cart->get_cart_contents_count();
+  $freeShipping = addCouponFreeShipping();
   foreach (WC()->cart->get_shipping_packages() as $package_id => $package) {
     // Check if a shipping for the current package exist
     if (WC()->session->__isset('shipping_for_package_' . $package_id)) {
       // Loop through shipping rates for the current package
       foreach (WC()->session->get('shipping_for_package_' . $package_id)['rates'] as $shipping_rate_id => $shipping_rate) {
-        $rate_id = $shipping_rate->get_id(); // same as $shipping_rate_id variable (combination of the shipping method and instance ID)
         $method_id = $shipping_rate->get_method_id(); // The shipping method slug
         $instance_id = $shipping_rate->get_instance_id(); // The instance ID
         $label_name = $shipping_rate->get_label(); // The label name of the method
         $cost = $shipping_rate->get_cost(); // The cost without tax
-        $tax_cost = $shipping_rate->get_shipping_tax(); // The tax cost
         $itemPriceEx = round($cost * 100);
-        $itemPriceIn = number_format($cost / 100 * 24 + $cost, 2, '.', '');
-        //set up rates array for 1o
+        if ($freeShipping && $itemPriceEx > 0.00) {
+          continue;
+        }
         $args['shipping-rates'][] = (object)[
           "handle" => $method_id . '-' . $instance_id . '|' . ($itemPriceEx) . '|' . str_replace(" ", "-", $label_name),
           "title" => $label_name,
@@ -516,6 +564,61 @@ function oneO_create_cart($orderId, $kid, $args, $type = '')
   return $args;
 }
 
+/**
+ * Apply coupon for free shipping if exists.
+ *
+ * @return bool
+ */
+function addCouponFreeShipping()
+{
+  try {
+    $coupons = getCouponKS();
+    $return = false;
+    foreach ($coupons as $couponObject) {
+      $couponCode = $couponObject->post_title;
+      add_filter('katalys_coupon_is_valid', function () {
+        return true;
+      });
+      $couponData = new \WC_Coupon($couponCode);
+      if (!$couponData->get_id()) {
+        continue;
+      }
+
+      $discounts = new \WC_Discounts(WC()->cart);
+      $valid = $discounts->is_coupon_valid( $couponData );
+      if ( is_wp_error( $valid ) ) {
+        continue;
+      }
+      WC()->cart->apply_coupon($couponCode);
+      $return = true;
+    }
+    return $return;
+  } catch (\Exception $e) {
+    return false;
+  }
+}
+
+/**
+ * @return void
+ */
+function validateCouponKatalys()
+{
+  add_filter('woocommerce_coupon_is_valid_for_cart', function ($isType, $coupon) {
+    $couponCode = strtoupper($coupon->get_code());
+    if (substr($couponCode, 0, 3) == KATALYS_COUPON_FREE_SHIPPING) {
+      return false;
+    }
+    return $isType;
+  }, 10, 2);
+
+  add_filter('woocommerce_coupon_is_valid', function ($isValid, $coupon) {
+    $couponCode = strtoupper($coupon->get_code());
+    if (substr($couponCode, 0, 3) == KATALYS_COUPON_FREE_SHIPPING && !apply_filters( 'katalys_coupon_is_valid', false)) {
+      return false;
+    }
+    return $isValid;
+  }, 10, 2);
+}
 
 /**
  * Convert a URL into a Post ID (for use during product-import).
