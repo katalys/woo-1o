@@ -124,7 +124,7 @@ class ApiDirectives
       $productId = $productArg['external_id'];
       $productFactory = new WC_Product_Factory();
       $product = $productFactory->get_product($productId);
-      $data['id'] = $productArg['external_id'];
+      $data['id'] = $productArg['id'];
       if (!isset($productArg['variants'])) {
         $data['price'] = round((float)$product->get_sale_price('view') * 100);
         $data["currency"] = get_woocommerce_currency();
@@ -137,7 +137,7 @@ class ApiDirectives
         $productVariantFactory = new WC_Product_Factory();
         $productVariant = $productVariantFactory->get_product($variantId);
         $data['variants'][] = [
-          'id' => $variant['external_id'],
+          'id' => $variant['id'],
           'currency' => get_woocommerce_currency(),
           'price' => round((float)$productVariant->get_sale_price('view') * 100),
           'compare_at_price' => round((float)$productVariant->get_regular_price('view') * 100)
