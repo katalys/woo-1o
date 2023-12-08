@@ -493,7 +493,7 @@ function sendNotification($event)
   $params['domain'] = $host;
   $params['url'] = ($isHttps ? 'https' : 'http') . "://" . $host . $uri;
   $params['site_id'] = getSiteId();
-  $params['plugin_version'] = PLUGIN_VERSION;
+  $params['plugin_version'] = \KatalysMerchantPlugin\OOMP_VER_NUM;
 
   $user = wp_get_current_user();
   if ($user) {

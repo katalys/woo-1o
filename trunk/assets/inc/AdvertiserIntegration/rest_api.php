@@ -150,7 +150,7 @@ $routes = [
       global $woocommerce;
       $wooVersion = $woocommerce ? ($woocommerce->version ?: '<active_but_unknown>') : '<inactive>';
       $wpVersion = $wp_version ?: '<unknown>';
-      $pluginVersion = \revoffers\PLUGIN_VERSION;
+      $pluginVersion = \KatalysMerchantPlugin\OOMP_VER_NUM;
 
       $ch = curl_init('https://db.revoffers.com/v2/_tr');
       curl_setopt_array($ch, [

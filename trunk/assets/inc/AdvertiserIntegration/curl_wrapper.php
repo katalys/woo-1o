@@ -17,7 +17,7 @@ function getDefault()
     global $woocommerce;
     $wooVersion = $woocommerce ? ($woocommerce->version ?: '<active_but_unknown>') : '<inactive>';
     $wpVersion = $wp_version ?: '<unknown>';
-    $pluginVersion = \revoffers\PLUGIN_VERSION;
+    $pluginVersion = \KatalysMerchantPlugin\OOMP_VER_NUM;
 
     // RevOffers defaults
     $rollingCurlInstance->options[CURLOPT_FOLLOWLOCATION] = true;
