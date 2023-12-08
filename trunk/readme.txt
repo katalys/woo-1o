@@ -14,6 +14,8 @@ Provides automatic order fulfillment integration with Katalys Shop (formerly 1o.
 Increase conversions and lower Customer Acquisition Cost. [Katalys](https://www.1o.io/) Our simplest plugin yet brings you the power of the Katalys Shop. The Katalys Shop is a frictionless, fully responsive e-commerce technology that allows product discovery and product purchase to take place anywhere on the web. In this case the plugin makes sure products can be imported into Katalys Shops directly from your products in WooCommerce, as well as pushing orders into your fulfillment flow automatically. All the while using your WooCommerce installation and your own payment gateways. The Katalys Shop allows you to sell more, in more places, through extending products in your WooCommerce installation to any content on the web and beyond.
 In a couple of clicks you can get set up with the plugin and start creating Katalys Shops!
 
+Do you want more customers for your eCommerce brand? [Katalys](https://katalys.com/) is the performance-based advertising network for transformational health products and brands — and our plugin opens the door to high-converting in-market traffic from the Advertiser Network.
+Our plugin enables technical integration in one, no-hassle step. It listens for order-related hooks within your WordPress / WooCommerce installation and reports to the Katalys Attribution Engine when the order is complete. Our back-end system does the rest, analyzing and reporting on how much growth Katalys is driving for you, month after month.
 
 ## Get started with Katalys Shops
 Ready to drive more sales? It’s easy to get started:
@@ -33,6 +35,10 @@ The Katalys Shop plugin for WordPress / WooCommerce enables you to easily and au
 - Close sales faster at point of discovery when possible
 - Generating more sales, every day
 - Paying only for sales that really happen
+- Driving more traffic to your website
+- Making connections with prospective customers for your products/services
+- Attracting qualified leads to sign up for your mailing list
+- Generating additional SEO-friendly links from publishers
 
 *********
 
@@ -45,6 +51,10 @@ The Katalys plugin for WordPress / WooCommerce helps you collect data in support
 - What deployments and placements work best for you
 - Special offers and product launches taken to another level
 - Perfect for lowering your customer acquisition costs
+- Create CPS, CPA, or CPL offers
+- Track hits and sales across your eCommerce website
+- Set up special business rules and conditions for custom offers
+- End-to-end campaign management
 
 ### Plugin Features
 
@@ -52,6 +62,10 @@ The Katalys plugin for WordPress / WooCommerce helps you collect data in support
 - Orders go automatically into your normal fulfillment flow
 - Use your own payment gateways
 - Reporting is crystal clear and helps you improve campaigns
+- Increase transparency through granular reporting and intelligent dashboards
+- Industry’s only built-in fraud protection, which automatically detects and rejects click fraud for all Katalys customers.
+- SOC 2 Type II certification, EU-U.S. Privacy Shield certification, GDPR privacy certification, and other measures.
+- With 99.9% system uptime and the most extensive documentation in the industry, you can relax knowing the best team in the business has got your back.
 
 ## Why Brands Love Katalys Shops
 

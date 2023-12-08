@@ -1,6 +1,57 @@
 {
     "packages": [
         {
+            "name": "johnpbloch/wordpress-core",
+            "version": "5.9.8",
+            "version_normalized": "5.9.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/johnpbloch/wordpress-core.git",
+                "reference": "d854322673a1908c4c3b3364a102eda7446a89e5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/d854322673a1908c4c3b3364a102eda7446a89e5",
+                "reference": "d854322673a1908c4c3b3364a102eda7446a89e5",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "php": ">=5.6.20"
+            },
+            "provide": {
+                "wordpress/core-implementation": "5.9.8"
+            },
+            "time": "2023-10-12T19:32:01+00:00",
+            "type": "wordpress-core",
+            "installation-source": "dist",
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "WordPress Community",
+                    "homepage": "https://wordpress.org/about/"
+                }
+            ],
+            "description": "WordPress is open source software you can use to create a beautiful website, blog, or app.",
+            "homepage": "https://wordpress.org/",
+            "keywords": [
+                "blog",
+                "cms",
+                "wordpress"
+            ],
+            "support": {
+                "forum": "https://wordpress.org/support/",
+                "irc": "irc://irc.freenode.net/wordpress",
+                "issues": "https://core.trac.wordpress.org/",
+                "source": "https://core.trac.wordpress.org/browser",
+                "wiki": "https://codex.wordpress.org/"
+            },
+            "install-path": "../johnpbloch/wordpress-core"
+        },
+        {
             "name": "paragonie/constant_time_encoding",
             "version": "v2.6.3",
             "version_normalized": "2.6.3.0",
@@ -175,17 +226,17 @@
         },
         {
             "name": "paragonie/sodium_compat",
-            "version": "v1.19.0",
-            "version_normalized": "1.19.0.0",
+            "version": "v1.20.0",
+            "version_normalized": "1.20.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/paragonie/sodium_compat.git",
-                "reference": "cb15e403ecbe6a6cc515f855c310eb6b1872a933"
+                "reference": "e592a3e06d1fa0d43988c7c7d9948ca836f644b6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/paragonie/sodium_compat/zipball/cb15e403ecbe6a6cc515f855c310eb6b1872a933",
-                "reference": "cb15e403ecbe6a6cc515f855c310eb6b1872a933",
+                "url": "https://api.github.com/repos/paragonie/sodium_compat/zipball/e592a3e06d1fa0d43988c7c7d9948ca836f644b6",
+                "reference": "e592a3e06d1fa0d43988c7c7d9948ca836f644b6",
                 "shasum": ""
             },
             "require": {
@@ -199,7 +250,7 @@
                 "ext-libsodium": "PHP < 7.0: Better performance, password hashing (Argon2i), secure memory management (memzero), and better security.",
                 "ext-sodium": "PHP >= 7.0: Better performance, password hashing (Argon2i), secure memory management (memzero), and better security."
             },
-            "time": "2022-09-26T03:40:35+00:00",
+            "time": "2023-04-30T00:54:53+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -258,23 +309,23 @@
             ],
             "support": {
                 "issues": "https://github.com/paragonie/sodium_compat/issues",
-                "source": "https://github.com/paragonie/sodium_compat/tree/v1.19.0"
+                "source": "https://github.com/paragonie/sodium_compat/tree/v1.20.0"
             },
             "install-path": "../paragonie/sodium_compat"
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "2.0.38",
-            "version_normalized": "2.0.38.0",
+            "version": "2.0.45",
+            "version_normalized": "2.0.45.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "b03536539f43a4f9aa33c4f0b2f3a1c752088fcd"
+                "reference": "28d8f438a0064c9de80857e3270d071495544640"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/b03536539f43a4f9aa33c4f0b2f3a1c752088fcd",
-                "reference": "b03536539f43a4f9aa33c4f0b2f3a1c752088fcd",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/28d8f438a0064c9de80857e3270d071495544640",
+                "reference": "28d8f438a0064c9de80857e3270d071495544640",
                 "shasum": ""
             },
             "require": {
@@ -292,7 +343,7 @@
                 "ext-openssl": "Install the OpenSSL extension in order to speed up a wide variety of cryptographic operations.",
                 "ext-xml": "Install the XML extension to load XML formatted public keys."
             },
-            "time": "2022-09-02T17:04:26+00:00",
+            "time": "2023-09-15T20:55:47+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -357,7 +408,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/2.0.38"
+                "source": "https://github.com/phpseclib/phpseclib/tree/2.0.45"
             },
             "funding": [
                 {
@@ -377,5 +428,7 @@
         }
     ],
     "dev": true,
-    "dev-package-names": []
+    "dev-package-names": [
+        "johnpbloch/wordpress-core"
+    ]
 }

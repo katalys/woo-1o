@@ -5,6 +5,11 @@
     "php": ">=7.0",
     "ext-mbstring": "*",
     "ext-json": "*",
-    "paragonie/paseto": "^1.1"
+    "paragonie/paseto": "^1.1",
+    "ext-openssl": "*",
+    "ext-curl": "*"
+  },
+  "require-dev": {
+    "johnpbloch/wordpress-core": "~5.1"
   }
 }

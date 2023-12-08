@@ -154,16 +154,19 @@ class SettingsPage
           case 'getting_started':
             $active_tab = 'getting_started';
             break;
+          case 'network_settings':
+            $active_tab = 'network_settings';
+            break;
           case 'settings':
           default:
             $active_tab = 'settings';
         }
         ?>
-          <h2 class="nav-tab-wrapper"><a href="?page=1o-settings&tab=settings"
-                                         class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
-              <a href="?page=1o-settings&tab=getting_started"
-                 class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting
-                  Started</a></h2>
+          <h2 class="nav-tab-wrapper">
+              <a href="?page=1o-settings&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
+              <a href="?page=1o-settings&tab=network_settings" class="nav-tab <?php echo $active_tab == 'network_settings' ? 'nav-tab-active' : ''; ?>">Network Settings</a>
+              <a href="?page=1o-settings&tab=getting_started" class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting Started</a>
+          </h2>
         <?php
         if ($active_tab === 'getting_started') {
           ?>
@@ -201,6 +204,8 @@ class SettingsPage
             <p>Get in touch with us and we'll help install it for you.</p>
             <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
           <?php
+        } else if ($active_tab == 'network_settings') {
+          require_once __DIR__ . '/AdvertiserIntegration/admin_page.php';
         } else {
           $opt = oneO_options();
           $optIsValid = $opt->publicKey && $opt->secretKey && $opt->integrationId && $opt->graphqlEndpoint;
@@ -212,6 +217,7 @@ class SettingsPage
               <?php settings_fields('katalys_shop_merchant_group'); ?>
               <?php do_settings_sections('oneO-settings-admin'); ?>
               <?php do_settings_sections('oneO-settings-admin-two'); ?>
+              <?php do_settings_sections('oneO-settings-admin-three'); ?>
               <?php submit_button(__('Save 1o Settings')); ?>
             </form>
           <?php
