@@ -26,7 +26,7 @@ function run()
   }
 
   // require WP bootstrap
-  require_once ABSPATH . 'wp-load.php';
+  require_once __DIR__ . '/../../../../../../wp-load.php';
   require_once __DIR__ . '/admin_func.php';
 
   ini_set('display_errors', 1);
