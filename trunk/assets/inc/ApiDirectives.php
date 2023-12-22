@@ -344,6 +344,9 @@ class ApiDirectives
         $opv = $options[$attribute];
         $optArray = [];
         $data = $opv->get_data();
+        if (!$opv->get_taxonomy_object()) {
+          continue;
+        }
         $optArrName = $opv->get_taxonomy_object()->attribute_label;
         $optArray['name'] = $optArrName;
         $optArray['position'] = $data['position'] + 1;
@@ -353,6 +356,9 @@ class ApiDirectives
         }
         $pv = 1;
         foreach ($data['options'] as $dok => $dov) {
+          if (!get_term($dov)) {
+            continue;
+          }
           $dovName = get_term($dov)->name;
           $dovSlug = get_term($dov)->slug;
           $optArray['options'][] = (object)[
@@ -434,6 +440,9 @@ class ApiDirectives
           if (isset($variant['attributes']) && !empty($variant['attributes'])) {
             $tempSTN = [];
             foreach ($variant['attributes'] as $vav) {
+              if (!isset($optionNames[$vav])) {
+                continue;
+              }
               $tempSTN[] = $optionNames[$vav];
             }
             $subtitleName = implode("/", $tempSTN);
@@ -459,6 +468,14 @@ class ApiDirectives
             $np = 1;
             foreach ($attribs as $attK => $attV) {
               $attName = str_replace("attribute_", "", $attK);
+              if (!isset($optionNames[$attName])) {
+                continue;
+              }
+
+              if (!isset($optionNames[$attV])) {
+                continue;
+              }
+
               $pvtemp['option_' . $np . '_names_path'] = [
                   $optionNames[$attName],
                   $optionNames[$attV],
