@@ -28,6 +28,7 @@ if (!defined('WPINC')) {
 }
 
 // Include the Settings Page Class
+require_once __DIR__ . '/assets/inc/AdvertiserIntegration/advertiser-integration.php';
 require_once __DIR__ . '/assets/inc/SettingsPage.php';
 
 // Functions
