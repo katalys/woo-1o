@@ -1,6 +1,10 @@
 <?php
+
 namespace KatalysMerchantPlugin;
+
 use Exception;
+use OneO\Model\GraphQL;
+use OneO\Model\KatalysToken;
 
 /**
  * Definition for all available API calls to the 1o system.
@@ -9,6 +13,11 @@ class GraphQLRequest
 {
   /** @var string */
   private $authCode;
+
+  /**
+   * @var KatalysToken
+  */
+  protected $katalysToken;
 
   /**
    * Shortcut factory method.
@@ -61,6 +70,9 @@ class GraphQLRequest
       throw new GraphQLException("Cannot Process Directive - Order Id is blank but required", 402);
     }
 
+    $body = json_encode($request, JSON_UNESCAPED_SLASHES);
+    $katalysToken = $this->getKatalysToken()->createToken($body);
+
     /**
      * Main Request - Using native wp_remote_get
      */
@@ -72,8 +84,9 @@ class GraphQLRequest
                 'content-type' => 'application/json; charset=utf-8',
                 'user-agent' => '1o WordPress API: ' . get_bloginfo('url'),
                 'authorization' => "Bearer " . $this->authCode,
+                'x-katalys-token' => $katalysToken
             ],
-            'body' => json_encode($request, JSON_UNESCAPED_SLASHES),
+            'body' => $body,
         ]
     );
 
@@ -87,6 +100,22 @@ class GraphQLRequest
 
     $body = $response['body'];
     return json_decode($body);
+  }
+
+  /**
+   * @return KatalysToken
+   */
+  public function getKatalysToken(): KatalysToken
+  {
+    if ($this->katalysToken) {
+      return $this->katalysToken;
+    }
+    $secretKey = oneO_options()->secretKey;
+    $publicKey = oneO_options()->publicKey;
+    $this->katalysToken = new KatalysToken();
+    $this->katalysToken->setSecret($secretKey);
+    $this->katalysToken->setKeyId($publicKey);
+    return $this->katalysToken;
   }
 
   /**

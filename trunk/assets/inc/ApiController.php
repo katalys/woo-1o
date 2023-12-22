@@ -128,6 +128,18 @@ class ApiController
       return new WP_Error('Error-300', 'PASETO Token is Expired.', ['status' => 403]);
     }
 
+    if ($this->getKatalysToken()) {
+      $katalys = new \OneO\Model\KatalysToken();
+      $katalys->setSecret($options->secretKey)->setKeyId($footerString);
+      try {
+        if (!$katalys->verifyToken($this->getKatalysToken(), $request->get_body())) {
+          return new WP_Error('Error-200', "Error with Katalys's token.", ['status' => 400]);
+        }
+      } catch (\Exception $e) {
+        return new WP_Error('Error-200', $e->getMessage(), ['status' => 400]);
+      }
+    }
+
     // valid - move on & process request
     $resultsArray = [];
     foreach ($directives as $directive) {
@@ -150,6 +162,21 @@ class ApiController
 
     log_debug('$results from request to 1o', $resultsArray);
     return ['results' => $resultsArray];
+  }
+
+  /**
+   * @return string|null
+   */
+  public function getKatalysToken()
+  {
+    if (isset($_SERVER['HTTP_X_KATALYS_TOKEN'])) {
+      return $_SERVER['HTTP_X_KATALYS_TOKEN'];
+    } else if (isset($_SERVER['X_KATALYS_TOKEN'])) {
+      return $_SERVER['X_KATALYS_TOKEN'];
+    } else if (isset($_SERVER["x-katalys-token"])) {
+      return $_SERVER["x-katalys-token"];
+    }
+    return null;
   }
 
   /**
