@@ -315,6 +315,9 @@ class ApiDirectives
           $return['names'][$dovSlug] = $dovName;
           $pv++;
         }
+        if (!$optArray['name']) {
+            continue;
+        }
         $return['group'][] = [
           "name" => $optArray['name'],
           "position" => $optArray['position'],
