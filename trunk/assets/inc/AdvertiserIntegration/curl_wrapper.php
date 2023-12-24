@@ -1,5 +1,5 @@
 <?php
-namespace revoffers\http;
+namespace revoffers_embed\http;
 
 /**
  * Static initializer.

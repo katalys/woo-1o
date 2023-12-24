@@ -9,7 +9,7 @@
  * Katalys. By being able to receive these events, we hope Advertisers
  * can see deeper into the RevOffers attribution model.
  */
-namespace revoffers\rest;
+namespace revoffers_embed\rest;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -29,14 +29,14 @@ $routes = [
     }
     try {
       $e = null;
-      $request = \revoffers\recordOrderId($orderId, 'restapi_conv', $e);
+      $request = \revoffers_embed\recordOrderId($orderId, 'restapi_conv', $e);
       if ($e instanceof \Exception) throw $e;
 
       if (!$request) {
         return new WP_REST_Response(['success' => false, 'error' => "order_id $orderId is not found"], 404);
       }
 
-      \revoffers\http\getDefault()->waitFor($request);
+      \revoffers_embed\http\getDefault()->waitFor($request);
       $info = $request->info;
       $success = in_array($info['http_code'], [200,204]);
       return new WP_REST_Response(['success' => $success, 'info' => $info]);
@@ -67,20 +67,20 @@ $routes = [
     $done = 0;
     $startTime = microtime(true);
     $breakFlag = false;
-    $iterator = \revoffers\admin\iterateOrdersByDate([$dateFrom, $dateTo], $breakFlag, $opts);
+    $iterator = \revoffers_embed\admin\iterateOrdersByDate([$dateFrom, $dateTo], $breakFlag, $opts);
     $map = [];
 
     foreach ($iterator as $orderOrId) {
       $orderId = $opts['objects'] ? $orderOrId->get_order_number() : $orderOrId;
       $map[$orderId] = '?';
-      $request = \revoffers\recordOrderId($orderOrId, 'restapi_conv');
+      $request = \revoffers_embed\recordOrderId($orderOrId, 'restapi_conv');
       $request->callback = function() use ($request, $orderId, &$map, &$done) {
         $done++;
         $map[$orderId] = in_array($request->info['http_code'], [200,204]);
       };
     }
 
-    $rollingCurlInstance = \revoffers\http\getDefault();
+    $rollingCurlInstance = \revoffers_embed\http\getDefault();
     while ($rollingCurlInstance->tick()) {
       if ($startTime + $timeout < microtime(true)) {
         $breakFlag = true;
@@ -126,7 +126,7 @@ $routes = [
     $offset = (int) $request->get_param('offset');
     $timeout = ((int) $request->get_param('timeout')) ?: 55;
     $startTime = microtime(true);
-    $iterator = \revoffers\admin\iterateProducts(['offset' => $offset], $breakFlag);
+    $iterator = \revoffers_embed\admin\iterateProducts(['offset' => $offset], $breakFlag);
     $fp = fopen('php://temp', 'w+');
 
     foreach ($iterator as $product) {

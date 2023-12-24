@@ -9,7 +9,7 @@
  * and remain compliant with your contract terms. The UI export feature will timeout with
  * large databases, so this script is a replacement that is more memory efficient.
  */
-namespace revoffers\exporter;
+namespace revoffers_embed\exporter;
 declare(ticks=10);
 
 // protect from web invocation
@@ -45,12 +45,12 @@ function run()
   $clearLine = `tput el`;
   $lines = 0;
   $startDate = '-1 year';
-  $total = \revoffers\admin\countOrders($startDate);
+  $total = \revoffers_embed\admin\countOrders($startDate);
 
   try {
     global $revoffers_break;
-    $orderIterator = \revoffers\admin\iterateOrdersByDate($startDate, $revoffers_break);
-    $iterator = \revoffers\admin\printOrdersToStream($orderIterator, $fp);
+    $orderIterator = \revoffers_embed\admin\iterateOrdersByDate($startDate, $revoffers_break);
+    $iterator = \revoffers_embed\admin\printOrdersToStream($orderIterator, $fp);
     foreach ($iterator as $i => $_) {
       $lines = $i + 1;// offset starts @ 0
       if ($i > 0 && $i % 5 === 0) {

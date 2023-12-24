@@ -31,9 +31,9 @@
     <div class="field">
       <label for="revoffers_site_id">Katalys Site ID</label>
       <div style="margin-bottom:8px">This identifies your web property when your website is available from multiple domains.</div>
-      <span class="pre">Default value:</span> <strong style="display:inline-block;padding:4px;"><?php echo esc_attr(\revoffers\getSiteId(false)); ?></strong><br/>
+      <span class="pre">Default value:</span> <strong style="display:inline-block;padding:4px;"><?php echo esc_attr(\revoffers_embed\getSiteId(false)); ?></strong><br/>
       <span class="pre">Your value:</span> <input type="text" id="revoffers_site_id" name="revoffers_site_id" value="<?php echo esc_attr(get_option('revoffers_site_id')); ?>" placeholder="<use default>"/>
-      <?php if (\revoffers\hasCustomSiteId() && !get_option('revoffers_site_id')) { ?>
+      <?php if (\revoffers_embed\hasCustomSiteId() && !get_option('revoffers_site_id')) { ?>
         <p class="desc">Your HTTP_HOST header does not match your WordPress <code>site_url</code>. Ask a Katalys representative if you need a value here!</p>
       <?php } else { ?>
         <p class="desc">DO NOT ENTER A VALUE HERE UNLESS DIRECTED BY A KATALYS REPRESENTATIVE!</p>
@@ -45,7 +45,7 @@
       <?php if (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) { ?>
         <div class="desc">You have disabled the wp-cron.php file. Ensure your crontab or system cron is configured correctly before activating this option.</div>
       <?php } ?>
-      <span class="pre">Default value:</span> <strong style="display:inline-block;padding:4px;"><?=\revoffers\shouldUseCron(false) ? 'yes' : 'no'?></strong><br/>
+      <span class="pre">Default value:</span> <strong style="display:inline-block;padding:4px;"><?=\revoffers_embed\shouldUseCron(false) ? 'yes' : 'no'?></strong><br/>
       <span class="pre">Your value:</span>
       <?php $val = get_option('revoffers_use_cron'); ?>
       <select id="revoffers_use_cron" name="revoffers_use_cron">

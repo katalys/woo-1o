@@ -4,7 +4,7 @@ Plugin Name: RevOffers Advertiser Integration
 Description: Integrate RevOffers tracking snippet to reward influencers driving customers to your site.
 */
 
-namespace revoffers;
+namespace revoffers_embed;
 
 use WC_DateTime;
 use WC_Order;

@@ -1,5 +1,5 @@
 <?php
-namespace revoffers\admin;
+namespace revoffers_embed\admin;
 
 if (defined('ABSPATH')) {
   init_admin();
@@ -253,7 +253,7 @@ function printOrdersToStream($iterator, $fp)
     yield $i => $orderId;// delegate to caller to print status
 
     $e = null;
-    $params = \revoffers\getOrderSafe($orderId, true, $e);
+    $params = \revoffers_embed\getOrderSafe($orderId, true, $e);
     if ($e) {
       fwrite($fp, "$e\n");
     }
@@ -336,7 +336,7 @@ function getProduct($product_id)
     if (!$_product) return null;
   }
 
-  $prodAttr = \revoffers\makeSafeExtract($_product);
+  $prodAttr = \revoffers_embed\makeSafeExtract($_product);
   $prod = [
     'id' => $product_id,
   ];
