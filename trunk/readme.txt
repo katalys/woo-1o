@@ -4,7 +4,7 @@ Tags: affiliate, revoffers, 1o, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
 Tested up to: 6.3.1
 Requires PHP: 7.0
-Stable tag: 1.1.16
+Stable tag: 1.1.17
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -98,7 +98,10 @@ Your customers are your customers! Collected data is only used to attribute your
 
 == Changelog ==
 
-- 1.1.16 =
+= 1.1.17 =
+* Namespace fix
+
+= 1.1.16 =
 * Added a new token to authenticate the API.
 * Added a new API to update price.
 * Added the plugin Katalys Advertiser Integration(Revoffers Advertiser).
