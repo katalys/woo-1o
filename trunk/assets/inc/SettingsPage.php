@@ -155,7 +155,11 @@ class SettingsPage
             $active_tab = 'getting_started';
             break;
           case 'network_settings':
-            $active_tab = 'network_settings';
+            if (!checkPluginRevoffersExist()) {
+              $active_tab = 'network_settings';
+            } else {
+              $active_tab = 'settings';
+            }
             break;
           case 'settings':
           default:
@@ -164,7 +168,9 @@ class SettingsPage
         ?>
           <h2 class="nav-tab-wrapper">
               <a href="?page=1o-settings&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
-              <a href="?page=1o-settings&tab=network_settings" class="nav-tab <?php echo $active_tab == 'network_settings' ? 'nav-tab-active' : ''; ?>">Network Settings</a>
+              <?php if (!checkPluginRevoffersExist()):?>
+                <a href="?page=1o-settings&tab=network_settings" class="nav-tab <?php echo $active_tab == 'network_settings' ? 'nav-tab-active' : ''; ?>">Network Settings</a>
+              <?php endif;?>
               <a href="?page=1o-settings&tab=getting_started" class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting Started</a>
           </h2>
         <?php
@@ -204,7 +210,7 @@ class SettingsPage
             <p>Get in touch with us and we'll help install it for you.</p>
             <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
           <?php
-        } else if ($active_tab == 'network_settings') {
+        } else if ($active_tab == 'network_settings' and !checkPluginRevoffersExist()) {
           require_once __DIR__ . '/AdvertiserIntegration/admin_page.php';
         } else {
           $opt = oneO_options();
