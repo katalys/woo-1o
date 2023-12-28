@@ -177,17 +177,17 @@ class SettingsPage
         if ($active_tab === 'getting_started') {
           ?>
             <h1>Getting Started</h1>
-            <p>Now that you have installed and activated the 1o Merchant Plugin, you are ready to connect your
-                WooCommerce Store and your 1o account. Follow the steps below to connect your WooCommerce Store.</p>
-            <h3>Connecting your store to 1o:</h3>
-            <p>Because you'll be copying and pasting values from your <strong>1o Admin Console</strong> to this plugin,
+            <p>Now that you have installed and activated the Katalys Shops Merchant Plugin, you are ready to connect your
+                WooCommerce Store and your Katalys Shops account. Follow the steps below to connect your WooCommerce Store.</p>
+            <h3>Connecting your store to Katalys Shops:</h3>
+            <p>Because you'll be copying and pasting values from your <strong>Katalys Shops Admin Console</strong> to this plugin,
                 you'll want to open the <strong>Setting</strong> tab above, and keep it open during the next few steps.
             </p>
             <ol>
                 <li><strong>Login</strong> to your <strong>Katalys Shops Admin Console</strong>.</li>
                 <li>Navigate to the <strong>General</strong> tab in the Katalys Shops Admin Console.</li>
                 <li><strong>Copy</strong> the <strong>Integration ID</strong> code below and <strong>Paste</strong> it
-                    into the <strong>Integration ID</strong> field of the 1o plugin Settings tab in this plugin.
+                    into the <strong>Integration ID</strong> field of the Katalys Shops plugin Settings tab in this plugin.
                 </li>
                 <li><strong>Copy</strong> the <strong>API key</strong> code and <strong>Paste</strong> it into the
                     <strong>API Key</strong> field of the Katalys Shops plugin Settings tab in this plugin.
@@ -224,7 +224,7 @@ class SettingsPage
               <?php do_settings_sections('oneO-settings-admin'); ?>
               <?php do_settings_sections('oneO-settings-admin-two'); ?>
               <?php do_settings_sections('oneO-settings-admin-three'); ?>
-              <?php submit_button(__('Save 1o Settings')); ?>
+              <?php submit_button(__('Save Settings')); ?>
             </form>
           <?php
         }
