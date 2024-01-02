@@ -1,16 +1,16 @@
 <?php
 /*
-Plugin Name: Katalys Shop
+Plugin Name: Katalys
 URI: https://katalys.com/
-Description: Merchant bridge to allow automatic order fulfillment within Katalys + 1o Shop cart connections.
-Version: 1.1.17
+Description: Katalys tracking to reward influencers and driving customers + Katalys embeddebale Shops.
+Version: 1.1.18
 Author: Katalys
 Author URI: https://katalys.com/
 Text Domain: katalys-shop
 */
 namespace KatalysMerchantPlugin;
 
-const OOMP_VER_NUM = '1.1.17'; // version, should match "Version:" above
+const OOMP_VER_NUM = '1.1.18'; // version, should match "Version:" above
 const OOMP_TEXT_DOMAIN = 'katalys-shop'; // filename for the plugin, should match "Text Domain:" above
 const OOMP_NAMESPACE = '1o-to-store-api'; // namespace for API endpoint
 const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time, use 'PT05M' for production, 'P01Y' for dev
@@ -27,8 +27,22 @@ if (!defined('WPINC')) {
   die;
 }
 
+/**
+ * @return bool
+ */
+function checkPluginRevoffersExist()
+{
+  $activePlugins = get_option('active_plugins');
+  if (in_array('revoffers-advertiser-integration/revoffers-advertiser-integration.php', $activePlugins)) {
+    return true;
+  }
+  return false;
+}
+
 // Include the Settings Page Class
-require_once __DIR__ . '/assets/inc/AdvertiserIntegration/advertiser-integration.php';
+if (!checkPluginRevoffersExist()) {
+  require_once __DIR__ . '/assets/inc/AdvertiserIntegration/advertiser-integration.php';
+}
 require_once __DIR__ . '/assets/inc/SettingsPage.php';
 
 // Functions

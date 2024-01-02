@@ -35,8 +35,8 @@ class SettingsPage
   {
     if ('stand-alone' === $this->menu_type) {
       add_menu_page(
-          '1o Settings',
-          '1o Settings',
+          'Katalys Shops Settings',
+          'Katalys Shops Settings',
           'manage_options',
           '1o-settings',
           [$this, 'oneO_settings_create_admin_page'],
@@ -45,8 +45,8 @@ class SettingsPage
       );
     } else {
       add_options_page(
-          '1o Settings',
-          '1o Settings',
+          'Katalys Shops Settings',
+          'Katalys Shops Settings',
           'manage_options',
           '1o-settings',
           [$this, 'oneO_settings_create_admin_page']
@@ -147,7 +147,7 @@ class SettingsPage
       </style>
 
       <div class="wrap">
-          <h2>1o Settings Page</h2>
+          <h2>Katalys Shops Settings Page</h2>
         <?php settings_errors(); ?>
         <?php
         switch (isset($_GET['tab']) ? $_GET['tab'] : '') {
@@ -155,7 +155,11 @@ class SettingsPage
             $active_tab = 'getting_started';
             break;
           case 'network_settings':
-            $active_tab = 'network_settings';
+            if (!checkPluginRevoffersExist()) {
+              $active_tab = 'network_settings';
+            } else {
+              $active_tab = 'settings';
+            }
             break;
           case 'settings':
           default:
@@ -164,37 +168,39 @@ class SettingsPage
         ?>
           <h2 class="nav-tab-wrapper">
               <a href="?page=1o-settings&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
-              <a href="?page=1o-settings&tab=network_settings" class="nav-tab <?php echo $active_tab == 'network_settings' ? 'nav-tab-active' : ''; ?>">Network Settings</a>
+              <?php if (!checkPluginRevoffersExist()):?>
+                <a href="?page=1o-settings&tab=network_settings" class="nav-tab <?php echo $active_tab == 'network_settings' ? 'nav-tab-active' : ''; ?>">Network Settings</a>
+              <?php endif;?>
               <a href="?page=1o-settings&tab=getting_started" class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting Started</a>
           </h2>
         <?php
         if ($active_tab === 'getting_started') {
           ?>
             <h1>Getting Started</h1>
-            <p>Now that you have installed and activated the 1o Merchant Plugin, you are ready to connect your
-                WooCommerce Store and your 1o account. Follow the steps below to connect your WooCommerce Store.</p>
-            <h3>Connecting your store to 1o:</h3>
-            <p>Because you'll be copying and pasting values from your <strong>1o Admin Console</strong> to this plugin,
+            <p>Now that you have installed and activated the Katalys Shops Merchant Plugin, you are ready to connect your
+                WooCommerce Store and your Katalys Shops account. Follow the steps below to connect your WooCommerce Store.</p>
+            <h3>Connecting your store to Katalys Shops:</h3>
+            <p>Because you'll be copying and pasting values from your <strong>Katalys Shops Admin Console</strong> to this plugin,
                 you'll want to open the <strong>Setting</strong> tab above, and keep it open during the next few steps.
             </p>
             <ol>
-                <li><strong>Login</strong> to your <strong>1o Admin Console</strong>.</li>
-                <li>Navigate to the <strong>General</strong> tab in the 1o Admin Console.</li>
+                <li><strong>Login</strong> to your <strong>Katalys Shops Admin Console</strong>.</li>
+                <li>Navigate to the <strong>General</strong> tab in the Katalys Shops Admin Console.</li>
                 <li><strong>Copy</strong> the <strong>Integration ID</strong> code below and <strong>Paste</strong> it
-                    into the <strong>Integration ID</strong> field of the 1o plugin Settings tab in this plugin.
+                    into the <strong>Integration ID</strong> field of the Katalys Shops plugin Settings tab in this plugin.
                 </li>
                 <li><strong>Copy</strong> the <strong>API key</strong> code and <strong>Paste</strong> it into the
-                    <strong>API Key</strong> field of the 1o plugin Settings tab in this plugin.
+                    <strong>API Key</strong> field of the Katalys Shops plugin Settings tab in this plugin.
                 </li>
                 <li><strong>Copy</strong> the <strong>Shared Secret</strong> code and <strong>Paste</strong> it into the
-                    <strong>Shared secret</strong> field of the 1o plugin Settings tab in this plugin.
+                    <strong>Shared secret</strong> field of the Katalys Shops plugin Settings tab in this plugin.
                 </li>
-                <li>Click the <strong>Save Settings</strong> button in the 1o plugin Settings tab in this plugin to save
+                <li>Click the <strong>Save Settings</strong> button in the Katalys Shops plugin Settings tab in this plugin to save
                     your settings.
                 </li>
-                <li>Return to the 1o Admin Console and click <strong>Save & Generate GraphQL ID</strong> button.</li>
+                <li>Return to the Katalys Shops Admin Console and click <strong>Save & Generate GraphQL ID</strong> button.</li>
                 <li>Navigate to <strong>GraphQL</strong> tab and copy the url.</li>
-                <li>Navigate back to your 1o Admin Console > Settings > Apps & integrations and select <strong>WooCommerce</strong>.
+                <li>Navigate back to your Katalys Shops Admin Console > Settings > Apps & integrations and select <strong>WooCommerce</strong>.
                 </li>
                 <li>Click the <strong>Settings</strong> tab and paste the url in the GraphQL field.</li>
                 <li>Click <strong>Save</strong> and you are done!</li>
@@ -204,21 +210,21 @@ class SettingsPage
             <p>Get in touch with us and we'll help install it for you.</p>
             <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
           <?php
-        } else if ($active_tab == 'network_settings') {
+        } else if ($active_tab == 'network_settings' and !checkPluginRevoffersExist()) {
           require_once __DIR__ . '/AdvertiserIntegration/admin_page.php';
         } else {
           $opt = oneO_options();
           $optIsValid = $opt->publicKey && $opt->secretKey && $opt->integrationId && $opt->graphqlEndpoint;
           ?>
             <p>Enter your <strong>Integration ID</strong>, <strong>API Key</strong> and <strong>Shared Secret</strong>
-                in the fields below. Log in to your 1o Admin console > Settings > Apps & Integrations, select Platforms
+                in the fields below. Log in to your Katalys Shops Admin console > Settings > Apps & Integrations, select Platforms
                 tab, click WooCommerce and follow the instructions.</p>
             <form method="post" action="options.php" class="settings-form-1o <?php echo $optIsValid ? 'settings_set' : 'settings_unset'; ?>">
               <?php settings_fields('katalys_shop_merchant_group'); ?>
               <?php do_settings_sections('oneO-settings-admin'); ?>
               <?php do_settings_sections('oneO-settings-admin-two'); ?>
               <?php do_settings_sections('oneO-settings-admin-three'); ?>
-              <?php submit_button(__('Save 1o Settings')); ?>
+              <?php submit_button(__('Save Settings')); ?>
             </form>
           <?php
         }
@@ -226,7 +232,7 @@ class SettingsPage
           <nav>
               <ul class="settings-1o-nav">
                   <li><a href="https://1o.io/users/log-in" target="_blank">Merchant Login</a></li>
-                  <li><a href="https://www.1o.io/" target="_blank">About 1o</a></li>
+                  <li><a href="https://www.1o.io/" target="_blank">About Katalys Shops</a></li>
                   <li><a href="https://www.1o.io/help-intro.html" target="_blank">Help Center</a></li>
                   <li><a href="https://www.1o.io/tos.html" target="_blank">Terms</a></li>
                   <li><a href="https://www.1o.io/privacy.html" target="_blank">Privacy</a></li>
@@ -269,7 +275,7 @@ class SettingsPage
 
     add_settings_field(
         'graphql_endpoint', // id
-        '1o GraphQL Endpoint', // title
+        'GraphQL Endpoint', // title
         [$this, 'graphql_callback'], // callback
         'oneO-settings-admin', // page
         'oneO_settings_setting_section' // section
@@ -384,7 +390,7 @@ class SettingsPage
              name="katalys_shop_merchant[api_endpoint]" id="api_endpoint" value="<?php echo esc_attr(oneO_options()->endpoint) ?>"
              disabled/>&nbsp;&nbsp;<a href="#" id="endpoint_copy">Copy</a>
       <p class="description" id="api_endpoint-description">Copy this URL to your account integration settings page in
-          your 1o Admin Console.</p>
+          your Katalys Shops Admin Console.</p>
       <script type="text/javascript">
           document.querySelector('#endpoint_copy').addEventListener('click', function (e) {
               var copyText = document.querySelector('#api_endpoint');
