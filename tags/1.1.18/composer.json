@@ -1,0 +1,16 @@
+{
+  "prefer-stable": true,
+  "readme": "readme.txt",
+  "require": {
+    "php": ">=7.0",
+    "ext-mbstring": "*",
+    "ext-json": "*",
+    "1o/php-utils": "dev-dev",
+    "paragonie/paseto": "^1.1",
+    "ext-openssl": "*",
+    "ext-curl": "*"
+  },
+  "require-dev": {
+    "johnpbloch/wordpress-core": "~5.1"
+  }
+}
