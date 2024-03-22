@@ -117,6 +117,37 @@ function log_debug($name, $logged = null)
 }
 
 /**
+ * @param string $url
+ * @return string
+ */
+function prepareUrlGraphQl(string $url): string
+{
+  $url = trim($url);
+  $save = false;
+  if (strpos($url, '1o.io/graphql') !== false) {
+    $url = 'https://shop.katalys.com/graphql';
+    $save = true;
+  } elseif (strpos($url, 'staging.1o.io/graphql') !== false) {
+    $url = 'https://shop.staging.katalys.com/graphql';
+    $save = true;
+  } elseif (strpos($url, 'dev.1o.io/graphql') !== false) {
+    $url = 'https://shop.dev.katalys.com/graphql';
+    $save = true;
+  }
+
+  if ($save) {
+    $settingsPage = new SettingsPage();
+    $opts = get_option('katalys_shop_merchant') ?: [];
+    if ($opts) {
+      $opts['graphql_endpoint'] = $url;
+      $fields = $settingsPage->oneO_settings_sanitize($opts);
+      update_option('katalys_shop_merchant', $fields);
+    }
+  }
+  return $url;
+}
+
+/**
  * Get the 1o Options and parse for use.
  */
 function oneO_options()
@@ -132,6 +163,7 @@ function oneO_options()
     $cachedOptions->secretKey = !empty($opts['secret_key']) ? $opts['secret_key'] : '';
     $cachedOptions->integrationId = !empty($opts['integration_id']) ? $opts['integration_id'] : '';
     $cachedOptions->graphqlEndpoint = !empty($opts['graphql_endpoint']) ? $opts['graphql_endpoint'] : '';
+    $cachedOptions->graphqlEndpoint = prepareUrlGraphQl($cachedOptions->graphqlEndpoint);
   }
 
   return $cachedOptions;
