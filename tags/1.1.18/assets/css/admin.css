@@ -1,0 +1,5 @@
+@charset "utf-8";
+/* CSS ADMIN */
+
+#toplevel_page_1o-settings img {max-width:20px;margin-left:5px;}
+#toplevel_page_1o-settings .current img {fill: red;}

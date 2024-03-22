@@ -17,6 +17,21 @@ In a couple of clicks you can get set up with the plugin and start creating Kata
 Do you want more customers for your eCommerce brand? [Katalys](https://katalys.com/) is the performance-based advertising network for transformational health products and brands — and our plugin opens the door to high-converting in-market traffic from the Advertiser Network.
 Our plugin enables technical integration in one, no-hassle step. It listens for order-related hooks within your WordPress / WooCommerce installation and reports to the Katalys Attribution Engine when the order is complete. Our back-end system does the rest, analyzing and reporting on how much growth Katalys is driving for you, month after month.
 
+## Rollback Version
+
+You can reinstall the last version without error. Remove the actual module, after that, access the plugin link https://wordpress.org/plugins/katalys-shop/advanced/. You will find the version in Advanced Options.
+
+If happen error with your version, after rollback, You can send an email to us about the problem. In the email, please, give us the information below:
+
+* Wordpress version
+* Plugin Version
+* PHP version
+* Description the error
+* step-by-step instructions to get error
+* Screenshot and video if possible
+
+Send us the email with the details above to *support@katalys.com*.
+
 ## Get started with Katalys Shops
 Ready to drive more sales? It’s easy to get started:
 
