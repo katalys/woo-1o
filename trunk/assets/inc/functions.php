@@ -124,14 +124,8 @@ function prepareUrlGraphQl(string $url): string
 {
   $url = trim($url);
   $save = false;
-  if (strpos($url, '1o.io/graphql') !== false) {
-    $url = 'https://shop.katalys.com/graphql';
-    $save = true;
-  } elseif (strpos($url, 'staging.1o.io/graphql') !== false) {
-    $url = 'https://shop.staging.katalys.com/graphql';
-    $save = true;
-  } elseif (strpos($url, 'dev.1o.io/graphql') !== false) {
-    $url = 'https://shop.dev.katalys.com/graphql';
+  if (strpos($url, '1o.io') !== false) {
+    $url = str_replace('1o.io', 'katalys.com', $url);
     $save = true;
   }
 
