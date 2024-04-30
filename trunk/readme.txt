@@ -1,6 +1,6 @@
 === Katalys Merchant Sales Bridge ===
 Contributors: homeyjd
-Tags: affiliate, revoffers, 1o, shop, embedded commerce, ecommerce
+Tags: affiliate, revoffers, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
 Tested up to: 6.3.1
 Requires PHP: 7.0
@@ -8,10 +8,10 @@ Stable tag: 1.1.19
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Provides automatic order fulfillment integration with Katalys Shop (formerly 1o.io) orders for WooCommerce.
+Provides automatic order fulfillment integration with Katalys Shop orders for WooCommerce.
 
 == Description ==
-Increase conversions and lower Customer Acquisition Cost. [Katalys](https://www.1o.io/) Our simplest plugin yet brings you the power of the Katalys Shop. The Katalys Shop is a frictionless, fully responsive e-commerce technology that allows product discovery and product purchase to take place anywhere on the web. In this case the plugin makes sure products can be imported into Katalys Shops directly from your products in WooCommerce, as well as pushing orders into your fulfillment flow automatically. All the while using your WooCommerce installation and your own payment gateways. The Katalys Shop allows you to sell more, in more places, through extending products in your WooCommerce installation to any content on the web and beyond.
+Increase conversions and lower Customer Acquisition Cost. [Katalys](https://katalys.com/) Our simplest plugin yet brings you the power of the Katalys Shop. The Katalys Shop is a frictionless, fully responsive e-commerce technology that allows product discovery and product purchase to take place anywhere on the web. In this case the plugin makes sure products can be imported into Katalys Shops directly from your products in WooCommerce, as well as pushing orders into your fulfillment flow automatically. All the while using your WooCommerce installation and your own payment gateways. The Katalys Shop allows you to sell more, in more places, through extending products in your WooCommerce installation to any content on the web and beyond.
 In a couple of clicks you can get set up with the plugin and start creating Katalys Shops!
 
 Do you want more customers for your eCommerce brand? [Katalys](https://katalys.com/) is the performance-based advertising network for transformational health products and brands — and our plugin opens the door to high-converting in-market traffic from the Advertiser Network.

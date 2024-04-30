@@ -142,7 +142,7 @@ function prepareUrlGraphQl(string $url): string
 }
 
 /**
- * Get the 1o Options and parse for use.
+ * Get the Katalys Options and parse for use.
  */
 function oneO_options()
 {
@@ -170,7 +170,7 @@ class OneO_Options
 {
   /** @var string Local URL for this website's API */
   public $endpoint;
-  /** @var string URL for the 1o GraphQL API */
+  /** @var string URL for the Katalys GraphQL API */
   public $graphqlEndpoint;
   /** @var string */
   public $integrationId;
@@ -184,7 +184,7 @@ class OneO_Options
  * Set order data and add it to WooCommerce
  *
  * @param array $orderData :Array of order data to process.
- * @param int $orderid :Order ID from 1o.
+ * @param int $orderid :Order ID from Katalys.
  * @return int $orderKey    :Order Key ID after insert into WC orders.
  */
 function oneO_addWooOrder($orderData, $orderid)
@@ -310,7 +310,7 @@ function oneO_addWooOrder($orderData, $orderid)
   /**
    *
    * OTHER DATA IN $OrderData NOT USED :
-   * [order][status] => FULFILLED // 1o status
+   * [order][status] => FULFILLED // Katalys status
    * [order][totalPrice] => 2200 // (calculated on order after other items are added.)
    */
   $orderTotal = $orderData['order']['total'];

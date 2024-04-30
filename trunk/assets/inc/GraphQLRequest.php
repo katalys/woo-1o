@@ -7,7 +7,7 @@ use OneO\Model\GraphQL;
 use OneO\Model\KatalysToken;
 
 /**
- * Definition for all available API calls to the 1o system.
+ * Definition for all available API calls to the Katalys system.
  */
 class GraphQLRequest
 {
@@ -50,7 +50,6 @@ class GraphQLRequest
    */
   public function rawGraphQl(array $request)
   {
-    // https://playground.1o.io/graphql // GraphQL URL for 1o
     $endpoint = oneO_options()->graphqlEndpoint;
 
     if (!$endpoint) {
@@ -82,7 +81,7 @@ class GraphQLRequest
             'method' => 'POST',
             'headers' => [
                 'content-type' => 'application/json; charset=utf-8',
-                'user-agent' => '1o WordPress API: ' . get_bloginfo('url'),
+                'user-agent' => 'Katalys WordPress API: ' . get_bloginfo('url'),
                 'authorization' => "Bearer " . $this->authCode,
                 'x-katalys-token' => $katalysToken
             ],

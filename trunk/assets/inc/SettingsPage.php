@@ -38,17 +38,17 @@ class SettingsPage
           'Katalys Shops Settings',
           'Katalys Shops Settings',
           'manage_options',
-          '1o-settings',
+          'katalys-settings',
           [$this, 'oneO_settings_create_admin_page'],
-          OOMP_LOC_URL . '/img/1o-docs-logo.svg',
-          80 // position
+          OOMP_LOC_URL . '/img/katalys-docs-logo.svg',
+          80
       );
     } else {
       add_options_page(
           'Katalys Shops Settings',
           'Katalys Shops Settings',
           'manage_options',
-          '1o-settings',
+          'katalys-settings',
           [$this, 'oneO_settings_create_admin_page']
       );
     }
@@ -167,11 +167,11 @@ class SettingsPage
         }
         ?>
           <h2 class="nav-tab-wrapper">
-              <a href="?page=1o-settings&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
+              <a href="?page=katalys-settings&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
               <?php if (!checkPluginRevoffersExist()):?>
-                <a href="?page=1o-settings&tab=network_settings" class="nav-tab <?php echo $active_tab == 'network_settings' ? 'nav-tab-active' : ''; ?>">Network Settings</a>
+                <a href="?page=katalys-settings&tab=network_settings" class="nav-tab <?php echo $active_tab == 'network_settings' ? 'nav-tab-active' : ''; ?>">Network Settings</a>
               <?php endif;?>
-              <a href="?page=1o-settings&tab=getting_started" class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting Started</a>
+              <a href="?page=katalys-settings&tab=getting_started" class="nav-tab <?php echo $active_tab == 'getting_started' ? 'nav-tab-active' : ''; ?>">Getting Started</a>
           </h2>
         <?php
         if ($active_tab === 'getting_started') {
@@ -208,7 +208,7 @@ class SettingsPage
             <p>&nbsp;</p>
             <h3>Need help?</h3>
             <p>Get in touch with us and we'll help install it for you.</p>
-            <p><a href="mailto:help@1o.io" class="button button-primary" target="_blank">Get in touch</a></p>
+            <p><a href="mailto:support@katalys.com" class="button button-primary" target="_blank">Get in touch</a></p>
           <?php
         } else if ($active_tab == 'network_settings' and !checkPluginRevoffersExist()) {
           require_once __DIR__ . '/AdvertiserIntegration/admin_page.php';
@@ -231,12 +231,12 @@ class SettingsPage
         ?>
           <nav>
               <ul class="settings-1o-nav">
-                  <li><a href="https://1o.io/users/log-in" target="_blank">Merchant Login</a></li>
-                  <li><a href="https://www.1o.io/" target="_blank">About Katalys Shops</a></li>
-                  <li><a href="https://www.1o.io/help-intro.html" target="_blank">Help Center</a></li>
-                  <li><a href="https://www.1o.io/tos.html" target="_blank">Terms</a></li>
-                  <li><a href="https://www.1o.io/privacy.html" target="_blank">Privacy</a></li>
-                  <li><a href="mailto:help@1o.io" target="_blank">Get In Touch</a></li>
+                  <li><a href="https://auth.katalys.com/login" target="_blank">Merchant Login</a></li>
+                  <li><a href="https://katalys.com/about-us/" target="_blank">About Katalys Shops</a></li>
+                  <li><a href="https://katalys.com/contact-us/" target="_blank">Help Center</a></li>
+                  <li><a href="https://katalys.com/legal/terms-of-use/" target="_blank">Terms</a></li>
+                  <li><a href="https://katalys.com/legal/privacy-policy/" target="_blank">Privacy</a></li>
+                  <li><a href="mailto:support@katalys.com" target="_blank">Get In Touch</a></li>
                   <li class="nav-1o-vesion-num">Version <?php echo OOMP_VER_NUM; ?></li>
               </ul>
           </nav>

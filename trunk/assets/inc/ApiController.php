@@ -10,7 +10,7 @@ use WP_Error;
 class ApiController
 {
   /**
-   * Register namespace Routes with WordPress for 1o Plugin to use.
+   * Register namespace Routes with WordPress for Katalys Plugin to use.
    */
   public static function register_routes($namespace = null)
   {
@@ -56,8 +56,6 @@ class ApiController
       if (isset($requestHeaders['Authorization'])) {
         $token = $requestHeaders['Authorization'];
       }
-    } else {
-      //todo look for '1o-bearer-token', 'bearer' headers?
     }
 
     if (!$token) {
@@ -160,7 +158,7 @@ class ApiController
       }
     }
 
-    log_debug('$results from request to 1o', $resultsArray);
+    log_debug('$results from request to Katalys', $resultsArray);
     return ['results' => $resultsArray];
   }
 
@@ -231,18 +229,13 @@ class ApiController
   public function get_request_schema()
   {
     return [
-      // This tells the spec of JSON Schema we are using which is draft 4.
         '$schema' => 'http://json-schema.org/draft-04/schema#',
-      // The title property marks the identity of the resource.
-        'title' => '1oRequest',
+        'title' => 'KatalysRequest',
         'type' => 'object',
-      // In JSON Schema you can specify object properties in the properties attribute.
         'properties' => [
             'directives' => [
                 'description' => esc_html__('Unique identifier for the object.', 'my-textdomain'),
-                'type' => 'array',
-              #'context' => array( 'view', 'edit', 'embed' ),
-              #'readonly' => true,
+                'type' => 'array'
             ],
             'content' => [
                 'description' => esc_html__('The content for the object.', 'my-textdomain'),
