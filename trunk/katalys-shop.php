@@ -12,7 +12,7 @@ namespace KatalysMerchantPlugin;
 
 const OOMP_VER_NUM = '1.1.19'; // version, should match "Version:" above
 const OOMP_TEXT_DOMAIN = 'katalys-shop'; // filename for the plugin, should match "Text Domain:" above
-const OOMP_NAMESPACE = '1o-to-store-api'; // namespace for API endpoint
+const OOMP_NAMESPACE = 'katalys-to-store-api'; // namespace for API endpoint
 const OOMP_PASETO_EXP = 'PT05M'; // Paseto Expiry time, use 'PT05M' for production, 'P01Y' for dev
 
 /**
@@ -53,6 +53,9 @@ require_once __DIR__ . '/assets/inc/GraphQLRequest.php';
 require_once __DIR__ . '/assets/inc/ApiController.php';
 require_once __DIR__ . '/assets/inc/ApiDirectives.php';
 add_action('rest_api_init', [ApiController::class, 'register_routes']);
+add_action('rest_api_init', function () {
+  ApiController::register_routes('1o-to-store-api');
+});
 
 // use Composer for PASETO library
 include_once __DIR__ . '/vendor/autoload.php';

@@ -214,13 +214,13 @@ class ApiDirectives
           $retArr["shop_url"] = $prodURL; //This is the PRODUCT URL (not really the shop URL)
           $retArr["images"] = self::import__get_product_images($product);
           //$retArr['sku'] = $product->get_sku();
-          //TODO: SKU needs to be added on 1o end still.
+          //TODO: SKU needs to be added on Katalys end still.
           $options = self::import__product_options($product);
           if (isset($options['group'])) {
             $retArr["option_names"] = $options['group'];
           }
           //$retArr["available"] = $product->is_in_stock();
-          //TODO: Product Availability Boolean needs to be added on 1o end still.
+          //TODO: Product Availability Boolean needs to be added on Katalys end still.
           $returnObj = (object)$retArr;
           $args['product_to_import'] = $returnObj;
         } elseif ($productType == 'variable' && !$isDownloadable) { //get variable product data (with variants)
@@ -242,7 +242,7 @@ class ApiDirectives
           $retArr["shop_url"] = $prodURL;
           $retArr["images"] = self::import__get_product_images($product);
           //$retArr['sku'] = $product->get_sku();
-          //TODO: SKU needs to be added on 1o end still.
+          //TODO: SKU needs to be added on Katalys end still.
           $options = self::import__product_options($product);
           if (isset($options['group'])) {
             $retArr["option_names"] = $options['group'];
@@ -258,7 +258,7 @@ class ApiDirectives
             );
           }
           //$retArr["available"] = $product->is_in_stock();
-          //TODO: Product Availability Boolean needs to be added on 1o end still.
+          //TODO: Product Availability Boolean needs to be added on Katalys end still.
           $returnObj = (object)$retArr;
           $args['product_to_import'] = $returnObj;
         } elseif ($productType == 'downloadable' || $isDownloadable) {
@@ -458,7 +458,7 @@ class ApiDirectives
               "shop_url" => get_permalink($variant['variation_id']),
               "variant" => true,
             //'sku' => $variant['sku'],
-            //TODO: Add SKU to at 1o level.
+            //TODO: Add SKU to at Katalys level.
               "images" => [
                   $variant['image']['url'],
               ],
@@ -528,7 +528,7 @@ class ApiDirectives
 
   public function directive__complete_order()
   {
-    # Step 2: Get new order data from 1o - in case anything changed
+    # Step 2: Get new order data from Katalys - in case anything changed
     $args = $this->args;
     $req = $this->_gqlRequest();
     $result = $req->api_order_data($this->order_id);
@@ -557,9 +557,9 @@ class ApiDirectives
   }
 
   /**
-   * Process 1o order data for insert into easy array for insert into WC
+   * Process Katalys order data for insert into easy array for insert into WC
    *
-   * @param array $orderData :Array of order data from 1o
+   * @param array $orderData :Array of order data from Katalys
    * @return array $returnArr   :Array of processed order data or false if none.
    */
   private static function process_order_data($orderData)
