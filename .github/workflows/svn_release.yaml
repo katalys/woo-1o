@@ -36,7 +36,8 @@ jobs:
           cd __svn
           rm -rf trunk/
           cp -r ../trunk ./
-          cd trunk/
+          rm -rf tags/
+          cp -r ../tags ./
           # Detect code updates
           svn add --quiet . --force
           # Remove missing files; svn-rm fails unless list is non-empty
