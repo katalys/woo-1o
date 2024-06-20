@@ -4,7 +4,7 @@ Tags: affiliate, revoffers, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
 Tested up to: 6.3.1
 Requires PHP: 7.0
-Stable tag: 1.1.20
+Stable tag: 1.1.21
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,7 +23,7 @@ Ready to drive more sales? It’s easy to get started:
 - Fill out our form to set up an account.
 - We will review your application and may ask for verification before approving your account. Once it’s approved, we'll activate your account on our platform.
 - Finally, install our [free WordPress plugin](https://wordpress.org/plugins/katalys-shop/) to complete the required Technical Integration.  The plugin will automatically configure itself based on your approved domain.
-- Questions? Contact us at [info@katalys.com](info@katalys.com).
+- Questions? Contact us at [support@katalys.com](support@katalys.com).
 
 Our pricing structure is built specifically for your business needs. You only pay when the Katalys Shop drives verified/paid orders! Want to talk about other options? Reach out and talk to us about it.
 
@@ -97,6 +97,9 @@ Your customers are your customers! Collected data is only used to attribute your
 
 
 == Changelog ==
+
+= 1.1.21 =
+* Change documentation
 
 = 1.1.20 =
 * Fix problem with URL
