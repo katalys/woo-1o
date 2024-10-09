@@ -38,6 +38,8 @@ jobs:
           cp -r ../trunk ./
           rm -rf tags/
           cp -r ../tags ./
+          rm -rf .git
+          rm -rf .gitignore
           # Detect code updates
           svn add --quiet . --force
           # Remove missing files; svn-rm fails unless list is non-empty
