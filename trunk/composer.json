@@ -9,8 +9,5 @@
     "paragonie/paseto": "^1.1",
     "ext-openssl": "*",
     "ext-curl": "*"
-  },
-  "require-dev": {
-    "johnpbloch/wordpress-core": "~5.1"
   }
 }

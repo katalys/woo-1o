@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'eafc57be9e3538d099de507189053a2c35fac8eb',
+        'reference' => 'd53d0574603296dc4caf8e36b87aebfc13865730',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'eafc57be9e3538d099de507189053a2c35fac8eb',
+            'reference' => 'd53d0574603296dc4caf8e36b87aebfc13865730',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -81,15 +81,6 @@
             'install_path' => __DIR__ . '/../guzzlehttp/psr7',
             'aliases' => array(),
             'dev_requirement' => false,
-        ),
-        'johnpbloch/wordpress-core' => array(
-            'pretty_version' => '5.9.8',
-            'version' => '5.9.8.0',
-            'reference' => 'd854322673a1908c4c3b3364a102eda7446a89e5',
-            'type' => 'wordpress-core',
-            'install_path' => __DIR__ . '/../johnpbloch/wordpress-core',
-            'aliases' => array(),
-            'dev_requirement' => true,
         ),
         'mdanter/ecc' => array(
             'pretty_version' => 'v1.0.0',
@@ -225,12 +216,6 @@
             'install_path' => __DIR__ . '/../symfony/deprecation-contracts',
             'aliases' => array(),
             'dev_requirement' => false,
-        ),
-        'wordpress/core-implementation' => array(
-            'dev_requirement' => true,
-            'provided' => array(
-                0 => '5.9.8',
-            ),
         ),
     ),
 );
