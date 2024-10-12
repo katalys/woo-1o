@@ -4,7 +4,7 @@ Tags: affiliate, revoffers, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
 Tested up to: 6.3.1
 Requires PHP: 7.0
-Stable tag: 1.1.22
+Stable tag: 1.1.23
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -97,6 +97,9 @@ Your customers are your customers! Collected data is only used to attribute your
 
 
 == Changelog ==
+
+= 1.1.23 =
+* Remove the libs.
 
 = 1.1.22 =
 * Remove the .gitignore
