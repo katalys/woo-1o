@@ -19,13 +19,13 @@ jobs:
     environment: production
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Package zipfile
         run: |
           cp -r trunk '${{ inputs.plugin_name }}'
           zip -qr '${{ inputs.plugin_name }}'.zip '${{ inputs.plugin_name }}'
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: katalys-shop
           path: ${{ github.workspace }}/${{ inputs.plugin_name }}.zip
