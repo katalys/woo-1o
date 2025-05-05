@@ -29,6 +29,12 @@ jobs:
         with:
           name: katalys-shop
           path: ${{ github.workspace }}/${{ inputs.plugin_name }}.zip
+      # ubuntu-latest no longer includes svn
+      # @see https://github.com/WordPress/five-for-the-future/issues/337
+      - name: Install Subversion
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y subversion
       - name: SVN commit
         run: |
           # Clone repo
