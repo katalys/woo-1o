@@ -1,4 +1,4 @@
-=== Katalys Merchant Sales Bridge ===
+=== Katalys Shops Addon: Merchant Bridge ===
 Contributors: homeyjd
 Tags: affiliate, revoffers, shop, embedded commerce, ecommerce
 Requires at least: 3.0.0
